@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "803667763625",
+    "project_id": "matrix1-6d120",
+    "storage_bucket": "matrix1-6d120.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:803667763625:android:c7a1cb9ea6d22f6a8864b8",
+        "android_client_info": {
+          "package_name": "com.example.eventflow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKbVOO01IsopYhLdfsDhkjwDu_GHg6uqE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
