@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="20dp">
+
+    <ImageView
+        android:id="@+id/btn_back"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_alignParentStart="true"
+        android:layout_centerVertical="true"
+        android:src="@android:drawable/ic_media_previous"
+        app:tint="#FFFFFF" />
+
+    <TextView
+        android:id="@+id/tv_header_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:text="Edit"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/btn_add_event"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:text="Add Event"
+        android:textColor="#7B61FF"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+</RelativeLayout>
