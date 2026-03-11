@@ -3,14 +3,12 @@ package com.example.eventflow;
 import com.google.firebase.Timestamp;
 
 public class Notification {
-    // These are the pieces of information a notification needs
     private String message;      // will show "You've been selected!"
     private String eventName;    // The event name:"
     private String details;      // Extra info"
     private Timestamp timestamp; // When it happened
     private boolean isRead;      // Whether user has seen it
 
-    // Empty constructor
     public Notification() {
     }
 
@@ -19,11 +17,11 @@ public class Notification {
         this.message = message;
         this.eventName = eventName;
         this.details = details;
-        this.timestamp = Timestamp.now(); // Sets time to right now
+        this.timestamp = Timestamp.now();
         this.isRead = false; // New notifications start as unread
     }
 
-    //GETTERS AND SETTERS
+
 
     // Message
     public String getMessage() {

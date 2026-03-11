@@ -29,10 +29,10 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Notification n = notifications.get(position);
 
-        holder.message.setText(n.getMessage());           // "You've been selected!"
-        holder.eventName.setText(n.getEventName() + ":"); // "EVENT 1:"
-        holder.details.setText(n.getDetails());           // "300 attendants"
-        holder.time.setText(getTimeAgo(n.getTimestamp())); // "15 minutes ago"
+        holder.message.setText(n.getMessage());
+        holder.eventName.setText(n.getEventName() + ":");
+        holder.details.setText(n.getDetails());
+        holder.time.setText(getTimeAgo(n.getTimestamp()));
     }
 
     private String getTimeAgo(Timestamp timestamp) {
