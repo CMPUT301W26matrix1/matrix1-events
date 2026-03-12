@@ -12,6 +12,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -26,7 +28,10 @@ public class NotificationsFragment extends Fragment {
     private NotificationsAdapter adapter;
     private List<Notification> notificationList = new ArrayList<>();
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private String userId = "test_user_123";
+    private FirebaseAuth auth = FirebaseAuth.getInstance();
+    private String currentUserId;
+
+
 
     @Nullable
     @Override
@@ -44,17 +49,22 @@ public class NotificationsFragment extends Fragment {
 
         // Set click listener for Clear all button
         clearAllButton.setOnClickListener(v -> clearAllNotifications());
+        if (auth.getCurrentUser() != null) {
+            currentUserId = auth.getCurrentUser().getUid();
 
-        loadNotifications();
+            loadNotifications();
+        } else {
+            Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+        }
 
         return view;
     }
 
     private void loadNotifications() {
-        Log.d("FIREBASE", "Attempting to load notifications for user: " + userId);
+        Log.d("FIREBASE", "Attempting to load notifications for user: " + currentUserId);
 
         db.collection("users")
-                .document(userId)
+                .document(currentUserId)
                 .collection("notifications")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .addSnapshotListener((value, error) -> {
@@ -73,6 +83,7 @@ public class NotificationsFragment extends Fragment {
                     for (QueryDocumentSnapshot doc : value) {
                         Notification notif = doc.toObject(Notification.class);
                         if (notif != null) {
+                            notif.setId(doc.getId());
                             notificationList.add(notif);
                             Log.d("FIREBASE", "Added notification: " + notif.getMessage());
                         }
@@ -91,12 +102,48 @@ public class NotificationsFragment extends Fragment {
                     }
                 });
     }
-
-    private void clearAllNotifications() {
-        Log.d("FIREBASE", "Clearing all notifications for user: " + userId);
+    private void sendNotificationToUser(String userId, String message, String eventName, String details) {
+        Notification notification = new Notification(message, eventName, details);
 
         db.collection("users")
                 .document(userId)
+                .collection("notifications")
+                .add(notification)
+                .addOnSuccessListener(doc -> {
+                    Log.d("FIREBASE", "Notification sent to user: " + userId);
+                    Toast.makeText(getContext(), "Notification sent", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("FIREBASE", "Failed to send notification: " + e.getMessage());
+                    Toast.makeText(getContext(), "Failed to send notification", Toast.LENGTH_SHORT).show();
+                });
+    }
+    private void sendNotificationToCurrentUser() {
+        if (currentUserId == null) return;
+
+        Notification notification = new Notification(
+                "You've been selected!",
+                "Sample Event",
+                "Check event details."
+        );
+
+        db.collection("users")
+                .document(currentUserId)
+                .collection("notifications")
+                .add(notification)
+                .addOnSuccessListener(doc -> {
+                    Toast.makeText(getContext(), "Test notification sent", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Failed to send test notification", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void clearAllNotifications() {
+        Log.d("FIREBASE", "Clearing all notifications for user: " + currentUserId);
+
+        db.collection("users")
+                .document(currentUserId)
                 .collection("notifications")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {

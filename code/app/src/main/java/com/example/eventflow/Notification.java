@@ -10,6 +10,9 @@ public class Notification {
     private Timestamp timestamp; // When it happened
     private boolean isRead;      // Whether user has seen it
 
+    private String id;
+    private String userId;
+
     // Empty constructor
     public Notification() {
     }
@@ -63,5 +66,19 @@ public class Notification {
     }
     public void setRead(boolean read) {
         isRead = read;
+    }
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 }
