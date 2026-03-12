@@ -1,5 +1,6 @@
 package com.example.eventflow.view.profile;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.LayoutInflater;
@@ -66,6 +67,7 @@ public class ProfileContainerFragment extends Fragment {
         });
     }
 
+    @SuppressLint("HardwareIds")
     private String getDeviceId() {
         return Settings.Secure.getString(
                 requireContext().getContentResolver(),
@@ -82,6 +84,12 @@ public class ProfileContainerFragment extends Fragment {
     public void showProfileView(@NonNull Profile profile) {
         FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
         transaction.replace(R.id.profile_container, ProfileViewFragment.newInstance(profile));
+        transaction.commit();
+    }
+
+    public void showEditProfile(@NonNull Profile profile) {
+        FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
+        transaction.replace(R.id.profile_container, EditProfileFragment.newInstance(profile));
         transaction.commit();
     }
 }
