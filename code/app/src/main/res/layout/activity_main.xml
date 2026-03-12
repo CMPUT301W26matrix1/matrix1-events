@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <!--
-    Event Details Screen Layout
-    Contains navigation button to view waiting list.
+ Main screen layout
+ Displays event title and navigation button
 -->
+
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -10,11 +12,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/main_fragment_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
+    <!-- Event Title -->
     <TextView
         android:id="@+id/eventTitle"
         android:layout_width="wrap_content"
@@ -24,8 +22,9 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="60dp" />
+        android:layout_marginTop="60dp"/>
 
+    <!-- View Waiting List Button -->
     <Button
         android:id="@+id/viewWaitingListButton"
         android:layout_width="wrap_content"
@@ -34,25 +33,12 @@
         app:layout_constraintTop_toBottomOf="@id/eventTitle"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="40dp" />
+        android:layout_marginTop="40dp"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
-
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-
-    android:id="@+id/main"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
+    <!-- Fragment Container -->
     <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/fragment_container"
+        android:id="@+id/main_fragment_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
-<androidx.fragment.app.FragmentContainerView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/main_fragment_container"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
