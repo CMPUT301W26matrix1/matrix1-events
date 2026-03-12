@@ -19,7 +19,7 @@ public class ProfileRepository {
 
     public interface SaveProfileCallback {
         void onSuccess();
-        void onFailure(Exception e);
+        void onFailure(@NonNull Exception e);
     }
 
     public interface LoadProfileCallback {
@@ -29,6 +29,14 @@ public class ProfileRepository {
     }
 
     public void saveProfile(@NonNull Profile profile, @NonNull SaveProfileCallback callback) {
+        profilesCollection
+                .document(profile.getDeviceId())
+                .set(profile)
+                .addOnSuccessListener(unused -> callback.onSuccess())
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    public void updateProfile(@NonNull Profile profile, @NonNull SaveProfileCallback callback) {
         profilesCollection
                 .document(profile.getDeviceId())
                 .set(profile)
