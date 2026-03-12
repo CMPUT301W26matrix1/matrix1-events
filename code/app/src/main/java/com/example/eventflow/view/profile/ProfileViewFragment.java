@@ -5,8 +5,11 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.eventflow.R;
@@ -14,59 +17,66 @@ import com.example.eventflow.model.entities.Profile;
 
 public class ProfileViewFragment extends Fragment {
 
-    private static final String ARG_FIRST = "first";
-    private static final String ARG_LAST = "last";
+    private static final String ARG_DEVICE_ID = "deviceId";
+    private static final String ARG_FIRST_NAME = "firstName";
+    private static final String ARG_LAST_NAME = "lastName";
     private static final String ARG_EMAIL = "email";
     private static final String ARG_PHONE = "phone";
 
-    public ProfileViewFragment() {}
+    public ProfileViewFragment() {
+        // Required empty public constructor
+    }
 
-    public static ProfileViewFragment newInstance(Profile profile) {
-
+    public static ProfileViewFragment newInstance(@NonNull Profile profile) {
         ProfileViewFragment fragment = new ProfileViewFragment();
-
         Bundle args = new Bundle();
-        args.putString(ARG_FIRST, profile.getFirstName());
-        args.putString(ARG_LAST, profile.getLastName());
+        args.putString(ARG_DEVICE_ID, profile.getDeviceId());
+        args.putString(ARG_FIRST_NAME, profile.getFirstName());
+        args.putString(ARG_LAST_NAME, profile.getLastName());
         args.putString(ARG_EMAIL, profile.getEmail());
         args.putString(ARG_PHONE, profile.getPhoneNumber());
-
         fragment.setArguments(args);
         return fragment;
     }
 
+    @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater,
-                             ViewGroup container,
-                             Bundle savedInstanceState) {
-
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_profile_view, container, false);
     }
 
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
-        TextView name = view.findViewById(R.id.profile_name);
-        TextView email = view.findViewById(R.id.profile_email);
-        TextView phone = view.findViewById(R.id.profile_phone);
+        TextView tvFullName = view.findViewById(R.id.tvFullName);
+        TextView tvEmail = view.findViewById(R.id.tvEmail);
+        TextView tvPhone = view.findViewById(R.id.tvPhone);
+        TextView tvDeviceId = view.findViewById(R.id.tvDeviceId);
+        Button btnEditProfile = view.findViewById(R.id.btnEditProfile);
 
         Bundle args = getArguments();
-
         if (args != null) {
+            String firstName = args.getString(ARG_FIRST_NAME, "");
+            String lastName = args.getString(ARG_LAST_NAME, "");
+            String email = args.getString(ARG_EMAIL, "");
+            String phone = args.getString(ARG_PHONE, "");
+            String deviceId = args.getString(ARG_DEVICE_ID, "");
 
-            String first = args.getString(ARG_FIRST);
-            String last = args.getString(ARG_LAST);
-            String em = args.getString(ARG_EMAIL);
-            String ph = args.getString(ARG_PHONE);
+            Profile currentProfile = new Profile(deviceId, firstName, lastName, email, phone);
 
-            name.setText(first + " " + last);
-            email.setText(em);
+            tvFullName.setText("Name: " + firstName + " " + lastName);
+            tvEmail.setText("Email: " + email);
+            tvPhone.setText("Phone: " + (TextUtils.isEmpty(phone) ? "Not provided" : phone));
+            tvDeviceId.setText("Device ID: " + deviceId);
 
-            if (TextUtils.isEmpty(ph)) {
-                phone.setText("No phone number");
-            } else {
-                phone.setText(ph);
-            }
+            btnEditProfile.setOnClickListener(v -> {
+                if (getParentFragment() instanceof ProfileContainerFragment) {
+                    ((ProfileContainerFragment) getParentFragment()).showEditProfile(currentProfile);
+                }
+            });
         }
     }
 }
