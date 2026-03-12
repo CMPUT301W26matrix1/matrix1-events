@@ -68,6 +68,9 @@ public class MainActivity extends AppCompatActivity {
         List<String> selected = lotteryController.runLottery(waitingList, 2);
 
         System.out.println("Selected entrants: " + selected);
+
+        Intent intent = new Intent(this, AdminBrowseEventsActivity.class);
+        startActivity(intent);
     }
 
     private void showNotificationsFragment() {
