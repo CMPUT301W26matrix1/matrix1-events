@@ -3,7 +3,9 @@ package com.example.eventflow;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.Timestamp;
@@ -29,10 +31,34 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Notification n = notifications.get(position);
 
-        holder.message.setText(n.getMessage());           // "You've been selected!"
-        holder.eventName.setText(n.getEventName() + ":"); // "EVENT 1:"
-        holder.details.setText(n.getDetails());           // "300 attendants"
-        holder.time.setText(getTimeAgo(n.getTimestamp())); // "15 minutes ago"
+        holder.message.setText(n.getMessage());
+        holder.eventName.setText(n.getEventName() + ":");
+        holder.details.setText(n.getDetails());
+        holder.time.setText(getTimeAgo(n.getTimestamp()));
+
+        // Make the entire notification clickable to view event details (for BOTH types)
+        holder.itemView.setOnClickListener(v -> {
+            Toast.makeText(holder.itemView.getContext(),
+                    "Viewing details for " + n.getEventName(),
+                    Toast.LENGTH_SHORT).show();
+
+            // Later, this will navigate to EventDetailsActivity
+        });
+
+        //Try Again button ONLY for not selected notifications
+        if ("NOT_SELECTED".equals(n.getType())) {
+            holder.tryAgainButton.setVisibility(View.VISIBLE);
+            holder.tryAgainButton.setOnClickListener(v -> {
+                Toast.makeText(holder.itemView.getContext(),
+                        "Added back to waitlist for " + n.getEventName(),
+                        Toast.LENGTH_SHORT).show();
+
+                v.setClickable(true);
+                // Later, this will call a method to rejoin the event
+            });
+        } else {
+            holder.tryAgainButton.setVisibility(View.GONE);
+        }
     }
 
     private String getTimeAgo(Timestamp timestamp) {
@@ -64,6 +90,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView message, eventName, details, time;
+        Button tryAgainButton;
 
         ViewHolder(View v) {
             super(v);
@@ -71,6 +98,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             eventName = v.findViewById(R.id.eventNameTextView);
             details = v.findViewById(R.id.detailsTextView);
             time = v.findViewById(R.id.timestampTextView);
+            tryAgainButton = v.findViewById(R.id.tryAgainButton);
         }
     }
 }
