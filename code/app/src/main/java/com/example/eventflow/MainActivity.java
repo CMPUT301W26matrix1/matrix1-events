@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private void showNotificationsFragment() {
         NotificationsFragment fragment = new NotificationsFragment();
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container, fragment);
+        transaction.replace(R.id.main_fragment_container, fragment);
         transaction.commit();
     }
 }
