@@ -1,0 +1,89 @@
+package com.example.eventflow.model.entities;
+
+import com.google.firebase.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Event {
+    private String eventId;
+    private String name;
+    private String description;
+    private String location;
+    private Timestamp eventDate;
+    private Timestamp registrationStart;
+    private Timestamp registrationEnd;
+    private String organizerId;
+    private String posterUrl;
+    private int capacity;
+    private int waitingListLimit;  // 0 = unlimited
+    private List<String> waitingList; // device IDs
+
+    // Required empty constructor for Firestore
+    public Event() {
+        this.waitingList = new ArrayList<>();
+    }
+
+    public Event(String eventId, String name, String description, String location,
+                 Timestamp eventDate, Timestamp registrationStart, Timestamp registrationEnd,
+                 String organizerId, int capacity, int waitingListLimit) {
+        this.eventId = eventId;
+        this.name = name;
+        this.description = description;
+        this.location = location;
+        this.eventDate = eventDate;
+        this.registrationStart = registrationStart;
+        this.registrationEnd = registrationEnd;
+        this.organizerId = organizerId;
+        this.capacity = capacity;
+        this.waitingListLimit = waitingListLimit;
+        this.waitingList = new ArrayList<>();
+    }
+
+    public String getEventId() { return eventId; }
+    public void setEventId(String eventId) { this.eventId = eventId; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
+
+    public Timestamp getEventDate() { return eventDate; }
+    public void setEventDate(Timestamp eventDate) { this.eventDate = eventDate; }
+
+    public Timestamp getRegistrationStart() { return registrationStart; }
+    public void setRegistrationStart(Timestamp registrationStart) { this.registrationStart = registrationStart; }
+
+    public Timestamp getRegistrationEnd() { return registrationEnd; }
+    public void setRegistrationEnd(Timestamp registrationEnd) { this.registrationEnd = registrationEnd; }
+
+    public String getOrganizerId() { return organizerId; }
+    public void setOrganizerId(String organizerId) { this.organizerId = organizerId; }
+
+    public String getPosterUrl() { return posterUrl; }
+    public void setPosterUrl(String posterUrl) { this.posterUrl = posterUrl; }
+
+    public int getCapacity() { return capacity; }
+    public void setCapacity(int capacity) { this.capacity = capacity; }
+
+    public int getWaitingListLimit() { return waitingListLimit; }
+    public void setWaitingListLimit(int waitingListLimit) { this.waitingListLimit = waitingListLimit; }
+
+    public List<String> getWaitingList() { return waitingList; }
+    public void setWaitingList(List<String> waitingList) { this.waitingList = waitingList; }
+
+    public boolean isRegistrationOpen() {
+        Timestamp now = Timestamp.now();
+        return registrationStart != null && registrationEnd != null
+                && now.compareTo(registrationStart) >= 0
+                && now.compareTo(registrationEnd) <= 0;
+    }
+
+    public boolean isWaitingListFull() {
+        if (waitingListLimit == 0) return false;
+        return waitingList != null && waitingList.size() >= waitingListLimit;
+    }
+}
