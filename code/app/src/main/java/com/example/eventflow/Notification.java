@@ -6,16 +6,30 @@ public class Notification {
     private String message;
     private String eventName;
     private String details;
+    private String eventId;
+    private String notificationId;
     private Timestamp timestamp;
     private boolean isRead;
-    private String type;  // "SELECTED", "NOT_SELECTED"
-    private boolean accepted;  // NEW: tracks if user accepted invitation
+    private String type;
+    private boolean accepted;  // Tracks if user accepted invitation
 
     // Empty constructor required for Firestore
     public Notification() {
     }
 
     // Constructor for SELECTED notifications
+    public Notification(String message, String eventName, String details) {
+        this.message = message;
+        this.eventName = eventName;
+        this.details = details;
+        this.timestamp = Timestamp.now();
+        this.eventId = eventId;
+        this.isRead = false;
+        this.type = "SELECTED";
+        this.accepted = false;
+    }
+
+    // Constructor for NOT_SELECTED notifications
     public Notification(String message, String eventName, String details, String type) {
         this.message = message;
         this.eventName = eventName;
@@ -23,10 +37,9 @@ public class Notification {
         this.type = type;
         this.timestamp = Timestamp.now();
         this.isRead = false;
-        this.accepted = false;  // Default to not accepted
+        this.accepted = false;
     }
 
-    // Getters and Setters
     public String getMessage() {
         return message;
     }
@@ -59,7 +72,7 @@ public class Notification {
         return isRead;
     }
     public void setRead(boolean read) {
-        isRead = read;
+        this.isRead = read;
     }
 
     public String getType() {
