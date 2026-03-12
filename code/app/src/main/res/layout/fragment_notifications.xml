@@ -66,6 +66,15 @@
             android:textSize="24sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"/>
+        <Button
+            android:id="@+id/btn_try_again"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Try Again"
+            android:layout_marginTop="20dp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#BB86FC"/>
+
 
     </LinearLayout>
 

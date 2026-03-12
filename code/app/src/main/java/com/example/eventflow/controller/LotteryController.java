@@ -1,20 +1,20 @@
 package com.example.eventflow.controller;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.ArrayList;
 
 public class LotteryController {
 
-    public static List<String> runLottery(List<String> waitingList, int N) {
+    public List<String> runLottery(List<String> waitingList, int n) {
 
-        // Shuffle the waiting list randomly
+        // Shuffle list randomly
         Collections.shuffle(waitingList);
 
-        // Make sure we don't select more people than available
-        int numberToSelect = Math.min(N, waitingList.size());
+        // Ensure we do not select more entrants than available
+        int count = Math.min(n, waitingList.size());
 
-        // Return selected entrants
-        return new ArrayList<>(waitingList.subList(0, numberToSelect));
+        // Return first n entrants
+        return new ArrayList<>(waitingList.subList(0, count));
     }
 }
