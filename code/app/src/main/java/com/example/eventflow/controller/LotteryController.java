@@ -1,20 +1,34 @@
 package com.example.eventflow.controller;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
+/**
+ * LotteryController
+ *
+ * Handles lottery operations for selecting entrants from the waiting list.
+ * This class now also supports drawing a replacement entrant when
+ * a previously selected entrant rejects the invitation.
+ */
 public class LotteryController {
 
-    public List<String> runLottery(List<String> waitingList, int n) {
+    /**
+     * Draws a replacement entrant from the waiting list.
+     * The first person in the waiting list who is not already selected
+     * becomes the replacement entrant.
+     *
+     * @param waitingList list of all applicants
+     * @param selectedEntrants list of already selected entrants
+     * @return replacement entrant name or null if none available
+     */
+    public String drawReplacement(List<String> waitingList, List<String> selectedEntrants) {
 
-        // Shuffle list randomly
-        Collections.shuffle(waitingList);
+        for (String applicant : waitingList) {
+            if (!selectedEntrants.contains(applicant)) {
+                selectedEntrants.add(applicant);
+                return applicant;
+            }
+        }
 
-        // Ensure we do not select more entrants than available
-        int count = Math.min(n, waitingList.size());
-
-        // Return first n entrants
-        return new ArrayList<>(waitingList.subList(0, count));
+        return null;
     }
 }

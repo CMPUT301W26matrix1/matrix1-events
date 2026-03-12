@@ -9,14 +9,12 @@
         android:label="EventFlow"
         android:roundIcon="@android:drawable/ic_dialog_info"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Eventflow">
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
         <!-- Waiting List Screen -->
         <activity android:name=".WaitingListActivity" />
 
         <!-- Main Screen -->
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-
         <activity
             android:name=".MainActivity"
             android:exported="true">

@@ -1,5 +1,7 @@
 package com.example.eventflow;
 
+import static org.junit.Assert.*;
+
 import com.example.eventflow.controller.LotteryController;
 
 import org.junit.Test;
@@ -7,36 +9,59 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
-
+/**
+ * Unit tests for replacement entrant lottery logic.
+ */
 public class LotteryControllerTest {
 
     @Test
-    public void testLotterySelectsCorrectNumberOfEntrants() {
+    public void testReplacementSelectedCorrectly() {
 
         LotteryController controller = new LotteryController();
 
-        List<String> waitingList = new ArrayList<>();
-        waitingList.add("Alice");
-        waitingList.add("Bob");
-        waitingList.add("Charlie");
-        waitingList.add("David");
+        List<String> waiting = new ArrayList<>();
+        waiting.add("Alice");
+        waiting.add("Bob");
+        waiting.add("Charlie");
 
-        List<String> winners = controller.runLottery(waitingList, 2);
+        List<String> selected = new ArrayList<>();
+        selected.add("Alice");
 
-        assertEquals(2, winners.size());
+        String replacement = controller.drawReplacement(waiting, selected);
+
+        assertEquals("Bob", replacement);
     }
 
     @Test
-    public void testLotteryDoesNotSelectMoreThanAvailable() {
+    public void testReplacementAddedToSelected() {
 
         LotteryController controller = new LotteryController();
 
-        List<String> waitingList = new ArrayList<>();
-        waitingList.add("Alice");
+        List<String> waiting = new ArrayList<>();
+        waiting.add("Alice");
+        waiting.add("Bob");
 
-        List<String> winners = controller.runLottery(waitingList, 5);
+        List<String> selected = new ArrayList<>();
+        selected.add("Alice");
 
-        assertEquals(1, winners.size());
+        controller.drawReplacement(waiting, selected);
+
+        assertTrue(selected.contains("Bob"));
+    }
+
+    @Test
+    public void testNoReplacementAvailable() {
+
+        LotteryController controller = new LotteryController();
+
+        List<String> waiting = new ArrayList<>();
+        waiting.add("Alice");
+
+        List<String> selected = new ArrayList<>();
+        selected.add("Alice");
+
+        String replacement = controller.drawReplacement(waiting, selected);
+
+        assertNull(replacement);
     }
 }
