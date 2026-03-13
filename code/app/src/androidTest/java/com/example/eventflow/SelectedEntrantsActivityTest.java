@@ -10,15 +10,22 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
- * Tests that SelectedEntrantsActivity launches correctly.
+ * Test class for SelectedEntrantsActivity.
+ * Ensures that the activity launches successfully.
  */
 @RunWith(AndroidJUnit4.class)
 public class SelectedEntrantsActivityTest {
 
+    /**
+     * Rule that launches SelectedEntrantsActivity before each test.
+     */
     @Rule
     public ActivityScenarioRule<SelectedEntrantsActivity> activityRule =
             new ActivityScenarioRule<>(SelectedEntrantsActivity.class);
 
+    /**
+     * Test to verify the activity starts without crashing.
+     */
     @Test
     public void activityLaunchesSuccessfully() {
         // passes if activity launches
