@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#121212">  <!-- Black background -->
+
+    <!-- Header with title and clear all - NOW WHITE -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:background="#121212">
+
+        <TextView
+            android:id="@+id/titleTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Notifications"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:layout_centerInParent="true"/>
+
+        <Button
+            android:id="@+id/clearAllButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CLEAR ALL"
+            android:textColor="#BB86FC"
+            android:background="@android:color/transparent"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"/>
+
+    </RelativeLayout>
+
+    <!-- RecyclerView for notifications -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="8dp"
+        android:visibility="visible"/>
+
+    <!-- Empty state - Black background with white text -->
+    <LinearLayout
+        android:id="@+id/emptyView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:background="#121212">  <!-- Changed to black to match main background -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No Notifications!"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"/>  <!-- Changed to white text for black background -->
+
+    </LinearLayout>
+
+
+</LinearLayout>

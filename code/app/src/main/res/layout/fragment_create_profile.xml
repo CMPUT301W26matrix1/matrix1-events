@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@drawable/bg_profile_screen">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Dark rounded main card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_profile_card"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <!-- Top row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@android:color/transparent"
+                    android:contentDescription="Back"
+                    android:padding="8dp"
+                    android:src="@android:drawable/ic_media_previous"
+                    android:tint="#FFFFFF" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Create Profile"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="40dp"
+                    android:layout_height="40dp" />
+            </LinearLayout>
+
+            <!-- Avatar -->
+            <FrameLayout
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/bg_avatar_circle">
+
+                <ImageView
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:layout_gravity="center"
+                    android:src="@android:drawable/ic_menu_myplaces"
+                    android:tint="#1F2A44" />
+            </FrameLayout>
+
+            <!-- First Name -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="First Name"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etFirstName"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_profile_input"
+                android:hint="Enter first name"
+                android:textColorHint="#A9B0B8"
+                android:inputType="textPersonName"
+                android:paddingHorizontal="16dp"
+                android:textColor="#FFFFFF" />
+
+            <!-- Last Name -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Last Name"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etLastName"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_profile_input"
+                android:hint="Enter last name"
+                android:textColorHint="#A9B0B8"
+                android:inputType="textPersonName"
+                android:paddingHorizontal="16dp"
+                android:textColor="#FFFFFF" />
+
+            <!-- Email -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Email"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etEmail"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_profile_input"
+                android:hint="Enter email"
+                android:textColorHint="#A9B0B8"
+                android:inputType="textEmailAddress"
+                android:paddingHorizontal="16dp"
+                android:textColor="#FFFFFF" />
+
+            <!-- Phone Number -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Phone Number"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etPhoneNumber"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_profile_input"
+                android:hint="Optional"
+                android:textColorHint="#A9B0B8"
+                android:inputType="phone"
+                android:paddingHorizontal="16dp"
+                android:textColor="#FFFFFF" />
+
+            <!-- Toggle row to visually match mockup -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Disable Geo-location Tracking"
+                    android:textColor="#A9B0B8"
+                    android:textSize="15sp" />
+
+                <Switch
+                    android:id="@+id/switchGeoTracking"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true" />
+            </LinearLayout>
+
+            <!-- Continue / Save -->
+            <Button
+                android:id="@+id/btnSaveProfile"
+                android:layout_width="245dp"
+                android:layout_height="52dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="28dp"
+                android:background="@drawable/bg_profile_button"
+                android:text="Continue"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
