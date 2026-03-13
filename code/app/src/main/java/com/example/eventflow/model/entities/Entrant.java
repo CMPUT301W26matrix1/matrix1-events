@@ -7,7 +7,7 @@ public class Entrant {
     private String status;
 
     public Entrant() {
-        // Required for Firestore
+
     }
 
     public String getEntrantid() {

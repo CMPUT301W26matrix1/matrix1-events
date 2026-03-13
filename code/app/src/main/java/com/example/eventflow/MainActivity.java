@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
         finalEntrantsButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, OrganizerFinalEntrantsActivity.class);
+            intent.putExtra("eventId", "Tg34Yn6wNXvYAuvczoMA");
             startActivity(intent);
         });
 
