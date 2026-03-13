@@ -24,9 +24,14 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
 
+        finalEntrantsButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, OrganizerFinalEntrantsActivity.class);
+            intent.putExtra("eventId", "Tg34Yn6wNXvYAuvczoMA");
+            startActivity(intent);
+        });
 
-        // Handle system bars (from left)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -80,3 +85,4 @@ public class MainActivity extends AppCompatActivity {
         transaction.commit();
     }
 }
+
