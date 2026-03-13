@@ -3,34 +3,27 @@ package com.example.eventflow;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
-
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.example.eventflow.controller.LotteryController;
-
-import java.util.ArrayList;
-import java.util.List;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.FragmentTransaction;
+import com.example.eventflow.view.profile.ProfileContainerFragment;
+import com.example.eventflow.view.profile.SelectedEntrantsActivity;
 
 /**
  * MainActivity
- * Displays the event details screen and allows the organizer
- * to navigate to the waiting list screen.
+ * Hosts the NotificationsFragment and provides navigation buttons
  */
 public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // Button to open waiting list screen
-        Button button = findViewById(R.id.viewWaitingListButton);
-
-        button.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, WaitingListActivity.class);
-            startActivity(intent);
-        });
         Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
 
         finalEntrantsButton.setOnClickListener(v -> {
@@ -39,20 +32,57 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // Example lottery logic (prototype only)
-        LotteryController lotteryController = new LotteryController();
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
-        ArrayList<String> waitingList = new ArrayList<>();
-        waitingList.add("Alice");
-        waitingList.add("Bob");
-        waitingList.add("Charlie");
-        waitingList.add("David");
+        // Initialize buttons (from right)
+        Button waitingListButton = findViewById(R.id.viewWaitingListButton);
+        Button profileButton = findViewById(R.id.profileButton);
+        Button selectedEntrantsButton = findViewById(R.id.viewSelectedEntrantsButton);
+        Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
 
-        List<String> selected = new ArrayList<>();
-        selected.add(waitingList.get(0));
-        selected.add(waitingList.get(1));
+        // Set click listeners (from right)
+        if (waitingListButton != null) {
+            waitingListButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, WaitingListActivity.class);
+                startActivity(intent);
+            });
+        }
 
-        System.out.println("Selected entrants: " + selected);
+        if (profileButton != null) {
+            profileButton.setOnClickListener(v -> {
+                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                transaction.replace(R.id.main_fragment_container, new ProfileContainerFragment());
+                transaction.addToBackStack(null);
+                transaction.commit();
+            });
+        }
 
+        if (selectedEntrantsButton != null) {
+            selectedEntrantsButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, SelectedEntrantsActivity.class);
+                startActivity(intent);
+            });
+        }
+        if (adminBrowseEventsButton != null) {
+            adminBrowseEventsButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, AdminBrowseEventsActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        // Show NotificationsFragment by default (from left)
+        showNotificationsFragment();
+    }
+
+    private void showNotificationsFragment() {
+        NotificationsFragment fragment = new NotificationsFragment();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.main_fragment_container, fragment);
+        transaction.commit();
     }
 }
+
