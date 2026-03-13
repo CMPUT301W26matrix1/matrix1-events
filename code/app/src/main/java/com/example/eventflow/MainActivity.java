@@ -31,6 +31,12 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, WaitingListActivity.class);
             startActivity(intent);
         });
+        Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
+
+        finalEntrantsButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, OrganizerFinalEntrantsActivity.class);
+            startActivity(intent);
+        });
 
         // Example lottery logic (prototype only)
         LotteryController lotteryController = new LotteryController();
@@ -46,5 +52,6 @@ public class MainActivity extends AppCompatActivity {
         selected.add(waitingList.get(1));
 
         System.out.println("Selected entrants: " + selected);
+
     }
 }
