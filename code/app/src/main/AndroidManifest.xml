@@ -14,8 +14,9 @@
         <!-- Waiting List Screen -->
         <activity android:name=".WaitingListActivity" />
 
-        <!-- Selected Entrants Screen -->
+        <activity android:name=".AdminBrowseEventsActivity" />
         <activity android:name=".view.profile.SelectedEntrantsActivity" />
+        <activity android:name=".EventDetailActivity" />
 
         <!-- Main Screen -->
         <activity
