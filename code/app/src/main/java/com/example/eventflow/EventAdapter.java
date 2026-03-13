@@ -26,8 +26,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
-            name = itemView.findViewById(R.id.eventName);
-            location = itemView.findViewById(R.id.eventLocation);
+            name = itemView.findViewById(R.id.tvEventName);
+            location = itemView.findViewById(R.id.tvEventLocation);
         }
     }
 
