@@ -1,61 +1,51 @@
 package com.example.eventflow;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentTransaction;
 
-import com.example.eventflow.controller.LotteryController;
+import com.example.eventflow.event.EventListFragment;
 import com.example.eventflow.view.profile.ProfileContainerFragment;
 
-import java.util.ArrayList;
-import java.util.List;
-
+/**
+ * MainActivity
+ * Main landing screen for entrant actions.
+ * - Browse events and see waiting list counts
+ * - Open profile flow
+ */
 public class MainActivity extends AppCompatActivity {
+
+    private Button viewWaitingListButton;
+    private Button profileButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Waiting List Button
-        Button waitingListButton = findViewById(R.id.viewWaitingListButton);
+        viewWaitingListButton = findViewById(R.id.viewWaitingListButton);
+        profileButton = findViewById(R.id.profileButton);
 
-        waitingListButton.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, WaitingListActivity.class);
-            startActivity(intent);
-        });
-
-        // Profile Button
-        Button profileButton = findViewById(R.id.profileButton);
+        viewWaitingListButton.setOnClickListener(v -> showEventListFragment());
 
         if (profileButton != null) {
-            profileButton.setOnClickListener(v -> {
-
-                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                transaction.replace(R.id.main_fragment_container, new ProfileContainerFragment());
-                transaction.addToBackStack(null);
-                transaction.commit();
-
-            });
+            profileButton.setOnClickListener(v -> showProfileFragment());
         }
+    }
 
-        // Example lottery logic (prototype only)
-        LotteryController lotteryController = new LotteryController();
+    private void showEventListFragment() {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.main_fragment_container, new EventListFragment());
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
 
-        ArrayList<String> waitingList = new ArrayList<>();
-        waitingList.add("Alice");
-        waitingList.add("Bob");
-        waitingList.add("Charlie");
-        waitingList.add("David");
-
-        List<String> selected = new ArrayList<>();
-        selected.add(waitingList.get(0));
-        selected.add(waitingList.get(1));
-
-        System.out.println("Selected entrants: " + selected);
+    private void showProfileFragment() {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.main_fragment_container, new ProfileContainerFragment());
+        transaction.addToBackStack(null);
+        transaction.commit();
     }
 }
