@@ -17,6 +17,21 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * RecyclerView adapter responsible for rendering a browsable list of
+ * {@link Event} instances and wiring join/leave waiting-list actions.
+ *
+ * <p>The adapter delegates business logic to an {@link EventActionListener}
+ * (implemented by the hosting UI) and keeps only presentation concerns here.</p>
+ *
+ * <p><b>Outstanding issues:</b>
+ * <ul>
+ *   <li>No list-diffing (e.g., {@code ListAdapter}) for more efficient updates.</li>
+ *   <li>No visual empty-state handling inside the list.</li>
+ *   <li>Device ID is passed in as a raw string; could be wrapped in a value object.</li>
+ * </ul>
+ * </p>
+ */
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
 
     public interface EventActionListener {
