@@ -15,6 +15,11 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Activity that displays the event waiting list in the EventFlow app.
+ * Allows organizers to redraw the lottery and select a replacement
+ * entrant from the waiting list.
+ */
 public class WaitingListActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
@@ -26,6 +31,9 @@ public class WaitingListActivity extends AppCompatActivity {
 
     private LotteryController lotteryController;
 
+    /**
+     * Initializes the activity, sets up Firebase, and loads the waiting list.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,6 +67,9 @@ public class WaitingListActivity extends AppCompatActivity {
         loadWaitingListFromFirebase();
     }
 
+    /**
+     * Loads the waiting list from the Firebase Firestore database.
+     */
     private void loadWaitingListFromFirebase() {
 
         db.collection("profiles")
@@ -83,6 +94,9 @@ public class WaitingListActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Displays the waiting list in the TextView.
+     */
     private void displayWaitingList() {
 
         StringBuilder listText = new StringBuilder();
