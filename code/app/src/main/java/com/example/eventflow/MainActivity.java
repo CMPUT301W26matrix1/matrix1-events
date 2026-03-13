@@ -24,7 +24,14 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // Handle system bars (from left)
+        Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
+
+        finalEntrantsButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, OrganizerFinalEntrantsActivity.class);
+            intent.putExtra("eventId", "Tg34Yn6wNXvYAuvczoMA");
+            startActivity(intent);
+        });
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -35,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
         Button waitingListButton = findViewById(R.id.viewWaitingListButton);
         Button profileButton = findViewById(R.id.profileButton);
         Button selectedEntrantsButton = findViewById(R.id.viewSelectedEntrantsButton);
+        Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
 
         // Set click listeners (from right)
         if (waitingListButton != null) {
@@ -59,6 +67,12 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+        if (adminBrowseEventsButton != null) {
+            adminBrowseEventsButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, AdminBrowseEventsActivity.class);
+                startActivity(intent);
+            });
+        }
 
         // Show NotificationsFragment by default (from left)
         showNotificationsFragment();
@@ -71,3 +85,4 @@ public class MainActivity extends AppCompatActivity {
         transaction.commit();
     }
 }
+

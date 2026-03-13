@@ -1,5 +1,6 @@
 package com.example.eventflow;
 
+
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -12,19 +13,13 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
-
-
-/**
- * Fragment that displays real-time notifications using Firestore.
- * Shows notification list with CLEAR ALL functionality.
- * Updates automatically when new notifications arrive.
- * Handles empty state display when no notifications exist.
- */
 
 public class NotificationsFragment extends Fragment {
 
@@ -34,7 +29,10 @@ public class NotificationsFragment extends Fragment {
     private NotificationsAdapter adapter;
     private List<Notification> notificationList = new ArrayList<>();
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private String userId = "test_user_123";
+    private FirebaseAuth auth = FirebaseAuth.getInstance();
+    private String currentUserId;
+
+
 
     @Nullable
     @Override
@@ -46,35 +44,44 @@ public class NotificationsFragment extends Fragment {
 
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyView = view.findViewById(R.id.emptyView);
-        clearAllButton = view.findViewById(R.id.clearAllButton);
+        clearAllButton = view.findViewById(R.id.clearAllButton); //clear all notifications
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new NotificationsAdapter(notificationList);
         recyclerView.setAdapter(adapter);
 
+        // Set click listener for Clear all button
         clearAllButton.setOnClickListener(v -> clearAllNotifications());
+        if (auth.getCurrentUser() != null) {
+            currentUserId = auth.getCurrentUser().getUid();
 
-        loadNotifications();
+            loadNotifications();
+        } else {
+            Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+        }
 
         return view;
     }
 
     private void loadNotifications() {
-
-        Log.d("FIREBASE", "Loading notifications for user: " + userId);
+        Log.d("FIREBASE", "Attempting to load notifications for user: " + currentUserId);
 
         db.collection("users")
-                .document(userId)
+                .document(currentUserId)
                 .collection("notifications")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .addSnapshotListener((value, error) -> {
-
                     if (error != null) {
                         Log.e("FIREBASE", "Error loading notifications: " + error.getMessage());
                         return;
                     }
+                    if (value == null) {
+                        Log.d("FIREBASE", "Value is null");
+                        return;
+                    }
 
-                    if (value == null) return;
+                    Log.d("FIREBASE", "Found " + value.size() + " notifications");
+
 
                     notificationList.clear();
 
@@ -82,6 +89,7 @@ public class NotificationsFragment extends Fragment {
                         Notification notif = doc.toObject(Notification.class);
                         if (notif != null) {
                             notificationList.add(notif);
+                            Log.d("FIREBASE", "Added notification: " + notif.getMessage());
                         }
                     }
 
@@ -90,20 +98,43 @@ public class NotificationsFragment extends Fragment {
                     if (notificationList.isEmpty()) {
                         recyclerView.setVisibility(View.GONE);
                         emptyView.setVisibility(View.VISIBLE);
+                        Log.d("FIREBASE", "No notifications - showing empty view");
                     } else {
                         recyclerView.setVisibility(View.VISIBLE);
                         emptyView.setVisibility(View.GONE);
+                        Log.d("FIREBASE", "Showing " + notificationList.size() + " notifications");
                     }
+                });
+    }
+    private void sendNotificationToCurrentUser() {
+        if (currentUserId == null) return;
+
+        Notification notification = new Notification(
+                "You've been selected!",
+                "Sample Event",
+                "Check event details."
+        );
+
+        db.collection("users")
+                .document(currentUserId)
+                .collection("notifications")
+                .add(notification)
+                .addOnSuccessListener(doc -> {
+                    Toast.makeText(getContext(), "Test notification sent", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Failed to send test notification", Toast.LENGTH_SHORT).show();
                 });
     }
 
     private void clearAllNotifications() {
 
         db.collection("users")
-                .document(userId)
+                .document(currentUserId)
                 .collection("notifications")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
+                    int count = queryDocumentSnapshots.size();
 
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         doc.getReference().delete();
