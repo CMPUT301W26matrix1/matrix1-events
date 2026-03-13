@@ -5,14 +5,17 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@android:drawable/ic_dialog_info"
+        android:icon="@mipmap/ic_launcher"
         android:label="EventFlow"
-        android:roundIcon="@android:drawable/ic_dialog_info"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
         <!-- Waiting List Screen -->
         <activity android:name=".WaitingListActivity" />
+
+        <!-- Selected Entrants Screen -->
+        <activity android:name=".view.profile.SelectedEntrantsActivity" />
 
         <!-- Main Screen -->
         <activity

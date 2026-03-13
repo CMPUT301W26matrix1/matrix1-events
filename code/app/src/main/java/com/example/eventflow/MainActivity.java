@@ -1,29 +1,22 @@
 package com.example.eventflow;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentTransaction;
-
-import com.example.eventflow.event.EventListFragment;
 import com.example.eventflow.view.profile.ProfileContainerFragment;
+import com.example.eventflow.view.profile.SelectedEntrantsActivity;
 
 /**
  * MainActivity
- * Main landing screen for entrant actions.
- * - Browse events and see waiting list counts
- * - Open profile flow
- * - Show notifications
+ * Hosts the NotificationsFragment and provides navigation buttons
  */
 public class MainActivity extends AppCompatActivity {
-
-    private Button viewWaitingListButton;
-    private Button profileButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,49 +24,50 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // Handle system bars (from your version)
+        // Handle system bars (from left)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        // Initialize buttons (from teammate's version)
-        viewWaitingListButton = findViewById(R.id.viewWaitingListButton);
-        profileButton = findViewById(R.id.profileButton);
+        // Initialize buttons (from right)
+        Button waitingListButton = findViewById(R.id.viewWaitingListButton);
+        Button profileButton = findViewById(R.id.profileButton);
+        Button selectedEntrantsButton = findViewById(R.id.viewSelectedEntrantsButton);
 
-        // Set click listeners (from teammate's version)
-        viewWaitingListButton.setOnClickListener(v -> showEventListFragment());
-
-        if (profileButton != null) {
-            profileButton.setOnClickListener(v -> showProfileFragment());
+        // Set click listeners (from right)
+        if (waitingListButton != null) {
+            waitingListButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, WaitingListActivity.class);
+                startActivity(intent);
+            });
         }
 
-        // Show your NotificationsFragment by default (from your version)
+        if (profileButton != null) {
+            profileButton.setOnClickListener(v -> {
+                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                transaction.replace(R.id.main_fragment_container, new ProfileContainerFragment());
+                transaction.addToBackStack(null);
+                transaction.commit();
+            });
+        }
+
+        if (selectedEntrantsButton != null) {
+            selectedEntrantsButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, SelectedEntrantsActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        // Show NotificationsFragment by default (from left)
         showNotificationsFragment();
     }
 
-    // From your version
     private void showNotificationsFragment() {
         NotificationsFragment fragment = new NotificationsFragment();
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.main_fragment_container, fragment);
-        transaction.commit();
-    }
-
-    // From teammate's version
-    private void showEventListFragment() {
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.main_fragment_container, new EventListFragment());
-        transaction.addToBackStack(null);
-        transaction.commit();
-    }
-
-    // From teammate's version
-    private void showProfileFragment() {
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.main_fragment_container, new ProfileContainerFragment());
-        transaction.addToBackStack(null);
         transaction.commit();
     }
 }
