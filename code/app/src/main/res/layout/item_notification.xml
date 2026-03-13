@@ -20,7 +20,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp"
-            android:paddingBottom="40dp">  <!-- Add extra padding at bottom for button -->
+            android:paddingBottom="60dp">
 
             <!-- Message -->
             <TextView
@@ -64,6 +64,71 @@
                 android:textColor="#616161"/>
 
         </LinearLayout>
+
+        <!-- Button Container for ACCEPT and DECLINE -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="16dp">
+
+            <!-- ACCEPT Button -->
+            <Button
+                android:id="@+id/acceptButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ACCEPT"
+                android:textColor="#4CAF50"
+                android:background="@android:color/transparent"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginEnd="2dp"
+                android:visibility="gone"/>
+
+            <!-- DECLINE Button -->
+            <Button
+                android:id="@+id/declineButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="DECLINE"
+                android:textColor="#F44336"
+                android:background="@android:color/transparent"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:visibility="gone"/>
+
+
+        </LinearLayout>
+
+        <!-- Accepted Message (shows after accepting) -->
+        <TextView
+            android:id="@+id/acceptedMessageTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✓ You accepted this invitation"
+            android:textColor="#4CAF50"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_gravity="bottom|end"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="16dp"
+            android:visibility="gone"/>
+
+        <!-- Declined Message (shows after declining) -->
+        <TextView
+            android:id="@+id/declinedMessageTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✗ You declined this invitation"
+            android:textColor="#F44336"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_gravity="bottom|end"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="16dp"
+            android:visibility="gone"/>
 
         <!-- Try Again Button -->
         <Button

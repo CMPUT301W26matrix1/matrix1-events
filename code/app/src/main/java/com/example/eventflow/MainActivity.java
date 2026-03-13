@@ -4,56 +4,110 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.FragmentTransaction;
 
-import com.example.eventflow.controller.LotteryController;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.example.eventflow.event.EventListFragment;
+import com.example.eventflow.view.profile.ProfileContainerFragment;
+import com.example.eventflow.view.profile.SelectedEntrantsActivity;
 
 /**
- * Entry-point activity hosting the main event screen and providing
- * navigation into the waiting list UI.
- *
- * <p>Currently also contains prototype lottery logic used for manual
- * experimentation and not wired into production flows.</p>
- *
- * <p><b>Outstanding issues:</b>
- * <ul>
- *   <li>Lottery prototype code lives in the activity instead of a dedicated test or controller.</li>
- *   <li>Navigation to the browsing fragment is implicit via the layout only.</li>
- * </ul>
- * </p>
+ * MainActivity
+ * Main landing screen for entrant actions.
+ * Hosts navigation buttons and loads fragments such as:
+ * - Event list / waiting list count view
+ * - Profile flow
+ * - Notifications flow
  */
 public class MainActivity extends AppCompatActivity {
 
+    private Button viewWaitingListButton;
+    private Button profileButton;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // Button to open waiting list screen
-        Button button = findViewById(R.id.viewWaitingListButton);
+        viewWaitingListButton = findViewById(R.id.viewWaitingListButton);
+        profileButton = findViewById(R.id.profileButton);
 
-        button.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, WaitingListActivity.class);
-            startActivity(intent);
+        Button selectedEntrantsButton = findViewById(R.id.viewSelectedEntrantsButton);
+        Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
+        Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
+        Button eventsButton = findViewById(R.id.eventsButton);
+
+        /* Entrant flow — browse events and see waiting list counts */
+        if (viewWaitingListButton != null) {
+            viewWaitingListButton.setOnClickListener(v -> showEventListFragment());
+        }
+
+        /* Profile navigation */
+        if (profileButton != null) {
+            profileButton.setOnClickListener(v -> showProfileFragment());
+        }
+
+        /* Organizer – selected entrants */
+        if (selectedEntrantsButton != null) {
+            selectedEntrantsButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, SelectedEntrantsActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        /* Organizer – final entrants */
+        if (finalEntrantsButton != null) {
+            finalEntrantsButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, OrganizerFinalEntrantsActivity.class);
+                intent.putExtra("eventId", "g34Yn6wNXvYAuVcz0MA");
+                startActivity(intent);
+            });
+        }
+
+        /* Admin – browse/manage events */
+        if (adminBrowseEventsButton != null) {
+            adminBrowseEventsButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, WaitingListActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        /* Browse events button */
+        if (eventsButton != null) {
+            eventsButton.setOnClickListener(v -> showEventListFragment());
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
         });
+    }
 
-        // Example lottery logic (prototype only)
-        LotteryController lotteryController = new LotteryController();
+    private void showEventListFragment() {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.main_fragment_container, new EventListFragment());
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
 
-        ArrayList<String> waitingList = new ArrayList<>();
-        waitingList.add("Alice");
-        waitingList.add("Bob");
-        waitingList.add("Charlie");
-        waitingList.add("David");
+    private void showProfileFragment() {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.main_fragment_container, new ProfileContainerFragment());
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
 
-        List<String> selected = new ArrayList<>();
-        selected.add(waitingList.get(0));
-        selected.add(waitingList.get(1));
-
-        System.out.println("Selected entrants: " + selected);
+    private void showNotificationsFragment() {
+        NotificationsFragment fragment = new NotificationsFragment();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.main_fragment_container, fragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
     }
 }

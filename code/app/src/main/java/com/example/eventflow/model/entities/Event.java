@@ -80,11 +80,7 @@ public class Event {
      */
     public String getEventId() { return eventId; }
 
-    /**
-     * Sets the backing Firestore document ID for this event.
-     *
-     * @param eventId event identifier to assign
-     */
+    private String id;
     public void setEventId(String eventId) { this.eventId = eventId; }
 
     /**
@@ -101,11 +97,14 @@ public class Event {
      */
     public void setName(String name) { this.name = name; }
 
-    /**
-     * Returns the event description shown to entrants.
-     *
-     * @return descriptive text for the event
-     */
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public String getDescription() { return description; }
 
     /**
@@ -241,12 +240,10 @@ public class Event {
      */
     public void setWaitingList(List<String> waitingList) { this.waitingList = waitingList; }
 
-    /**
-     * Returns whether registration is currently open based on the
-     * {@link #registrationStart} and {@link #registrationEnd} window.
-     *
-     * @return {@code true} if the current time is within the registration window
-     */
+    public int getWaitingListCount() {
+        return waitingList != null ? waitingList.size() : 0;
+    }
+
     public boolean isRegistrationOpen() {
         Timestamp now = Timestamp.now();
         return registrationStart != null && registrationEnd != null

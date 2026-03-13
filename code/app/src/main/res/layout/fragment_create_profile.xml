@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!-- UI for US 01.02.01: Create Profile -->
+
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -9,13 +13,16 @@
         android:orientation="vertical"
         android:padding="24dp">
 
+        <!-- Screen Title -->
         <TextView
+            android:id="@+id/tvCreateProfileTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Create Profile"
             android:textSize="24sp"
             android:textStyle="bold" />
 
+        <!-- First Name -->
         <EditText
             android:id="@+id/etFirstName"
             android:layout_width="match_parent"
@@ -24,6 +31,7 @@
             android:hint="First Name"
             android:inputType="textPersonName" />
 
+        <!-- Last Name -->
         <EditText
             android:id="@+id/etLastName"
             android:layout_width="match_parent"
@@ -32,6 +40,7 @@
             android:hint="Last Name"
             android:inputType="textPersonName" />
 
+        <!-- Email -->
         <EditText
             android:id="@+id/etEmail"
             android:layout_width="match_parent"
@@ -40,6 +49,7 @@
             android:hint="Email"
             android:inputType="textEmailAddress" />
 
+        <!-- Phone Number -->
         <EditText
             android:id="@+id/etPhoneNumber"
             android:layout_width="match_parent"
@@ -48,6 +58,7 @@
             android:hint="Phone Number (Optional)"
             android:inputType="phone" />
 
+        <!-- Save Profile Button -->
         <Button
             android:id="@+id/btnSaveProfile"
             android:layout_width="match_parent"
@@ -56,4 +67,5 @@
             android:text="Save Profile" />
 
     </LinearLayout>
+
 </ScrollView>
