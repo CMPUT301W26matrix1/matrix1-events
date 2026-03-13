@@ -12,6 +12,13 @@ import com.google.firebase.Timestamp;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+
+/**
+ * Adapter for notification items.
+ * Handles SELECTED (ACCEPT/DECLINE buttons) and NOT_SELECTED (TRY AGAIN button) types.
+ * Updates UI based on user actions (accepted/declined status).
+ *
+ */
 public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdapter.ViewHolder> {
     private List<Notification> notifications;
 
@@ -36,28 +43,92 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         holder.details.setText(n.getDetails());
         holder.time.setText(getTimeAgo(n.getTimestamp()));
 
-        // Make the entire notification clickable to view event details (for BOTH types)
+        // Make the entire notification clickable
         holder.itemView.setOnClickListener(v -> {
             Toast.makeText(holder.itemView.getContext(),
                     "Viewing details for " + n.getEventName(),
                     Toast.LENGTH_SHORT).show();
-
-            // Later, this will navigate to EventDetailsActivity
         });
 
-        //Try Again button ONLY for not selected notifications
-        if ("NOT_SELECTED".equals(n.getType())) {
+        // Handle different notification types
+        if ("SELECTED".equals(n.getType())) {
+            // Check if already accepted
+            if (n.isAccepted()) {
+                // Show accepted message
+                holder.acceptButton.setVisibility(View.GONE);
+                holder.declineButton.setVisibility(View.GONE);
+                holder.acceptedMessage.setVisibility(View.VISIBLE);
+                holder.declinedMessage.setVisibility(View.GONE);
+                holder.tryAgainButton.setVisibility(View.GONE);
+            } else if (n.isDeclined()) {  // Check if already declined
+                // Show declined message
+                holder.acceptButton.setVisibility(View.GONE);
+                holder.declineButton.setVisibility(View.GONE);
+                holder.acceptedMessage.setVisibility(View.GONE);
+                holder.declinedMessage.setVisibility(View.VISIBLE);
+                holder.tryAgainButton.setVisibility(View.GONE);
+            } else {
+                // Show both ACCEPT and DECLINE buttons
+                holder.acceptButton.setVisibility(View.VISIBLE);
+                holder.declineButton.setVisibility(View.VISIBLE);
+                holder.acceptedMessage.setVisibility(View.GONE);
+                holder.declinedMessage.setVisibility(View.GONE);
+                holder.tryAgainButton.setVisibility(View.GONE);
+
+                // ACCEPT button click
+                holder.acceptButton.setOnClickListener(v -> {
+                    n.setAccepted(true);
+                    n.setDeclined(false);
+
+                    Toast.makeText(holder.itemView.getContext(),
+                            "Accepted invitation for " + n.getEventName() + "! You're in!",
+                            Toast.LENGTH_SHORT).show();
+
+                    // Hide buttons, show accepted message
+                    holder.acceptButton.setVisibility(View.GONE);
+                    holder.declineButton.setVisibility(View.GONE);
+                    holder.acceptedMessage.setVisibility(View.VISIBLE);
+                    holder.declinedMessage.setVisibility(View.GONE);
+                });
+
+                // DECLINE button click
+                holder.declineButton.setOnClickListener(v -> {
+                    n.setDeclined(true);
+                    n.setAccepted(false);
+
+                    Toast.makeText(holder.itemView.getContext(),
+                            "Declined invitation for " + n.getEventName(),
+                            Toast.LENGTH_SHORT).show();
+
+                    // Hide buttons, show declined message
+                    holder.acceptButton.setVisibility(View.GONE);
+                    holder.declineButton.setVisibility(View.GONE);
+                    holder.acceptedMessage.setVisibility(View.GONE);
+                    holder.declinedMessage.setVisibility(View.VISIBLE);
+                });
+            }
+
+        } else if ("NOT_SELECTED".equals(n.getType())) {
+            // Show TRY AGAIN button
             holder.tryAgainButton.setVisibility(View.VISIBLE);
+            holder.acceptButton.setVisibility(View.GONE);
+            holder.declineButton.setVisibility(View.GONE);
+            holder.acceptedMessage.setVisibility(View.GONE);
+            holder.declinedMessage.setVisibility(View.GONE);
+
             holder.tryAgainButton.setOnClickListener(v -> {
                 Toast.makeText(holder.itemView.getContext(),
                         "Added back to waitlist for " + n.getEventName(),
                         Toast.LENGTH_SHORT).show();
-
-                v.setClickable(true);
-                // Later, this will call a method to rejoin the event
             });
+
         } else {
+            // No buttons
+            holder.acceptButton.setVisibility(View.GONE);
+            holder.declineButton.setVisibility(View.GONE);
             holder.tryAgainButton.setVisibility(View.GONE);
+            holder.acceptedMessage.setVisibility(View.GONE);
+            holder.declinedMessage.setVisibility(View.GONE);
         }
     }
 
@@ -89,8 +160,8 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView message, eventName, details, time;
-        Button tryAgainButton;
+        TextView message, eventName, details, time, acceptedMessage, declinedMessage;
+        Button acceptButton, declineButton, tryAgainButton;
 
         ViewHolder(View v) {
             super(v);
@@ -98,7 +169,11 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             eventName = v.findViewById(R.id.eventNameTextView);
             details = v.findViewById(R.id.detailsTextView);
             time = v.findViewById(R.id.timestampTextView);
+            acceptButton = v.findViewById(R.id.acceptButton);
+            declineButton = v.findViewById(R.id.declineButton);
             tryAgainButton = v.findViewById(R.id.tryAgainButton);
+            acceptedMessage = v.findViewById(R.id.acceptedMessageTextView);
+            declinedMessage = v.findViewById(R.id.declinedMessageTextView);
         }
     }
 }
