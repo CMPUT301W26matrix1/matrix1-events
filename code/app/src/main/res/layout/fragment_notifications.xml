@@ -36,19 +36,6 @@
 
     </RelativeLayout>
 
-    <!-- VIEW WAITING LIST Button -->
-    <Button
-        android:id="@+id/viewWaitingListButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="VIEW WAITING LIST"
-        android:textColor="#FFFFFF"
-        android:backgroundTint="#6200EE"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:padding="12dp"
-        android:layout_margin="16dp"/>
-
     <!-- RecyclerView for notifications -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"

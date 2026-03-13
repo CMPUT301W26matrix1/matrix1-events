@@ -2,21 +2,26 @@ package com.example.eventflow;
 
 import com.google.firebase.Timestamp;
 
+/**
+ * Notification model for Firestore.
+ * Stores message, event details, timestamp, and user action status.
+ * Supports SELECTED and NOT_SELECTED notification types.
+ *
+ */
 public class Notification {
-    // These are the pieces of information a notification needs
-    private String message;      // will show "You've been selected!"
-    private String eventName;    // The event name:"
-    private String details;      // Extra info"
-    private Timestamp timestamp; // When it happened
-    private boolean isRead;      // Whether user has seen it
-    private String id;
-    private String userId;
+    private String message;
+    private String eventName;
+    private String details;
     private String eventId;
     private String notificationId;
+    private String userId;        // KEEP from right
+    private Timestamp timestamp;
+    private boolean isRead;
     private String type;
     private boolean accepted;
+    private boolean declined;     // KEEP from left
 
-    // Empty constructor
+    // Empty constructor required for Firestore
     public Notification() {
     }
 
@@ -29,6 +34,7 @@ public class Notification {
         this.isRead = false;
         this.type = "SELECTED";
         this.accepted = false;
+        this.declined = false;
     }
 
     // Constructor for NOT_SELECTED notifications
@@ -40,8 +46,10 @@ public class Notification {
         this.timestamp = Timestamp.now();
         this.isRead = false;
         this.accepted = false;
+        this.declined = false;
     }
 
+    // Getters and Setters
     public String getMessage() {
         return message;
     }
@@ -76,24 +84,10 @@ public class Notification {
     public void setRead(boolean read) {
         this.isRead = read;
     }
-    public String getId() {
-        return id;
-    }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
     public String getEventId() {
         return eventId;
     }
-
     public void setEventId(String eventId) {
         this.eventId = eventId;
     }
@@ -101,9 +95,16 @@ public class Notification {
     public String getNotificationId() {
         return notificationId;
     }
-
     public void setNotificationId(String notificationId) {
         this.notificationId = notificationId;
+    }
+
+    // NEW from right
+    public String getUserId() {
+        return userId;
+    }
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getType() {
@@ -118,5 +119,11 @@ public class Notification {
     }
     public void setAccepted(boolean accepted) {
         this.accepted = accepted;
+    }
+    public boolean isDeclined() {
+        return declined;
+    }
+    public void setDeclined(boolean declined) {
+        this.declined = declined;
     }
 }
