@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Container used by ProfileContainerFragment to swap between
+     CreateProfileFragment, ProfileViewFragment, and EditProfileFragment -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/profile_container"
     android:layout_width="match_parent"

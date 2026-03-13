@@ -1,5 +1,6 @@
 package com.example.eventflow.view.profile;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
@@ -86,6 +87,7 @@ public class EditProfileFragment extends Fragment {
         }
     }
 
+    @SuppressLint("HardwareIds")
     private void updateProfile() {
         String firstName = etFirstName.getText().toString().trim();
         String lastName = etLastName.getText().toString().trim();
@@ -104,8 +106,9 @@ public class EditProfileFragment extends Fragment {
                 Settings.Secure.ANDROID_ID
         );
 
-        Profile updatedProfile = profileController.createProfile(
-                deviceId,
+        Profile existingProfile = new Profile(deviceId, "", "", "", "");
+        Profile updatedProfile = profileController.updateProfile(
+                existingProfile,
                 firstName,
                 lastName,
                 email,

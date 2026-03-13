@@ -41,23 +41,56 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             Toast.makeText(holder.itemView.getContext(),
                     "Viewing details for " + n.getEventName(),
                     Toast.LENGTH_SHORT).show();
-
-            // Later, this will navigate to EventDetailsActivity
         });
 
-        //Try Again button ONLY for not selected notifications
-        if ("NOT_SELECTED".equals(n.getType())) {
+        // Handle different notification types
+        if ("SELECTED".equals(n.getType())) {
+            // Check if already accepted - NEW CODE
+            if (n.isAccepted()) {
+                // Show accepted message instead of button - NEW CODE
+                holder.acceptButton.setVisibility(View.GONE);
+                holder.acceptedMessage.setVisibility(View.VISIBLE); // NEW CODE
+                holder.tryAgainButton.setVisibility(View.GONE);
+            } else {
+                // Show ACCEPT button for SELECTED notifications (US 01.05.02)
+                holder.acceptButton.setVisibility(View.VISIBLE);
+                holder.acceptedMessage.setVisibility(View.GONE); // NEW CODE
+                holder.tryAgainButton.setVisibility(View.GONE);
+
+                holder.acceptButton.setOnClickListener(v -> {
+                    // Mark as accepted - NEW CODE
+                    n.setAccepted(true); // NEW CODE
+
+                    Toast.makeText(holder.itemView.getContext(),
+                            "Accepted invitation for " + n.getEventName() + "! You're in!",
+                            Toast.LENGTH_SHORT).show();
+
+                    // Later: This will add user to confirmed list
+                    // acceptInvitation(n.getEventId());
+
+                    // Hide button and show message after accepting - UPDATED CODE
+                    holder.acceptButton.setVisibility(View.GONE);
+                    holder.acceptedMessage.setVisibility(View.VISIBLE); // NEW CODE
+                });
+            }
+
+        } else if ("NOT_SELECTED".equals(n.getType())) {
+            // Show TRY AGAIN button for NOT_SELECTED notifications
             holder.tryAgainButton.setVisibility(View.VISIBLE);
+            holder.acceptButton.setVisibility(View.GONE);
+            holder.acceptedMessage.setVisibility(View.GONE); // NEW CODE
+
             holder.tryAgainButton.setOnClickListener(v -> {
                 Toast.makeText(holder.itemView.getContext(),
                         "Added back to waitlist for " + n.getEventName(),
                         Toast.LENGTH_SHORT).show();
-
-                v.setClickable(true);
-                // Later, this will call a method to rejoin the event
             });
+
         } else {
+            // No buttons for other types
+            holder.acceptButton.setVisibility(View.GONE);
             holder.tryAgainButton.setVisibility(View.GONE);
+            holder.acceptedMessage.setVisibility(View.GONE); // NEW CODE
         }
     }
 
@@ -89,8 +122,8 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView message, eventName, details, time;
-        Button tryAgainButton;
+        TextView message, eventName, details, time, acceptedMessage; // ADDED acceptedMessage
+        Button acceptButton, tryAgainButton;
 
         ViewHolder(View v) {
             super(v);
@@ -98,7 +131,9 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             eventName = v.findViewById(R.id.eventNameTextView);
             details = v.findViewById(R.id.detailsTextView);
             time = v.findViewById(R.id.timestampTextView);
+            acceptButton = v.findViewById(R.id.acceptButton);
             tryAgainButton = v.findViewById(R.id.tryAgainButton);
+            acceptedMessage = v.findViewById(R.id.acceptedMessageTextView); // ADDED this line
         }
     }
 }
