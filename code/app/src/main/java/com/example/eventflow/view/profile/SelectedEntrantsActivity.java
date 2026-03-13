@@ -1,38 +1,74 @@
 package com.example.eventflow.view.profile;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.eventflow.R;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 
-/**
- * Displays the list of entrants invited to the event.
- */
 public class SelectedEntrantsActivity extends AppCompatActivity {
 
-    private ArrayList<String> selectedEntrants;
+    private ListView listView;
+    private ArrayList<String> entrants;
+    private ArrayAdapter<String> adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_selected_entrants);
 
-        ListView listView = findViewById(R.id.selectedEntrantsList);
+        listView = findViewById(R.id.selectedEntrantsListView);
 
-        selectedEntrants = new ArrayList<>();
-        selectedEntrants.add("Alice - INVITED");
-        selectedEntrants.add("Bob - INVITED");
+        entrants = new ArrayList<>();
 
-        ArrayAdapter<String> adapter =
-                new ArrayAdapter<>(this,
-                        android.R.layout.simple_list_item_1,
-                        selectedEntrants);
+        adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_list_item_1,
+                entrants
+        );
 
         listView.setAdapter(adapter);
+
+        loadEntrantsFromFirebase();
+    }
+
+    private void loadEntrantsFromFirebase() {
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("profiles")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+
+                    entrants.clear();
+
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+
+                        String firstName = doc.getString("firstName");
+                        String lastName = doc.getString("lastName");
+
+                        if (firstName != null && lastName != null) {
+
+                            String fullName = firstName + " " + lastName;
+
+                            entrants.add(fullName + " - INVITED");
+                        }
+                    }
+
+                    adapter.notifyDataSetChanged();
+
+                    Log.d("FIREBASE", "Entrants loaded: " + entrants.size());
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("FIREBASE", "Error loading entrants", e);
+                });
     }
 }
