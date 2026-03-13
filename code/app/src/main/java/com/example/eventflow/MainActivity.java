@@ -3,25 +3,32 @@ package com.example.eventflow;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentTransaction;
-
 import com.example.eventflow.event.EventListFragment;
 import com.example.eventflow.view.profile.ProfileContainerFragment;
 import com.example.eventflow.view.profile.SelectedEntrantsActivity;
 
 /**
  * MainActivity
- * Main landing screen for entrant actions.
- * Hosts navigation buttons and loads fragments such as:
- * - Event list / waiting list count view
+ *
+ * Main landing screen for the application.
+ * Hosts navigation buttons and loads fragments for different user flows.
+ *
+ * Responsibilities:
+ * - Entrant flow: browse events and view waiting list counts
+ * - Organizer flow: view selected entrants and final entrants
+ * - Admin flow: browse/manage events
  * - Profile flow
- * - Notifications flow
+ * - Notifications flow (shown by default)
+ *
+ * The activity also launches certain screens via buttons while embedding
+ * fragments such as EventListFragment, ProfileContainerFragment,
+ * and NotificationsFragment inside the main fragment container.
  */
 public class MainActivity extends AppCompatActivity {
 
@@ -60,11 +67,15 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        /* Organizer – final entrants */
+        /* Organizer – final entrants (notifications feature) */
         if (finalEntrantsButton != null) {
             finalEntrantsButton.setOnClickListener(v -> {
                 Intent intent = new Intent(MainActivity.this, OrganizerFinalEntrantsActivity.class);
-                intent.putExtra("eventId", "g34Yn6wNXvYAuVcz0MA");
+
+                // Pass event information so notifications can include event details
+                intent.putExtra("eventId", "Tg34Yn6wNXvYAuvczoMA");
+                intent.putExtra("eventName", "Test Swimming Class");
+
                 startActivity(intent);
             });
         }
@@ -72,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
         /* Admin – browse/manage events */
         if (adminBrowseEventsButton != null) {
             adminBrowseEventsButton.setOnClickListener(v -> {
-                Intent intent = new Intent(MainActivity.this, WaitingListActivity.class);
+                Intent intent = new Intent(MainActivity.this, AdminBrowseEventsActivity.class);
                 startActivity(intent);
             });
         }
@@ -82,13 +93,21 @@ public class MainActivity extends AppCompatActivity {
             eventsButton.setOnClickListener(v -> showEventListFragment());
         }
 
+        /* Handle edge-to-edge window insets */
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        /* Load notifications screen by default */
+        showNotificationsFragment();
     }
 
+    /**
+     * Displays the event list fragment where entrants can browse events
+     * and view waiting list counts.
+     */
     private void showEventListFragment() {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.main_fragment_container, new EventListFragment());
@@ -96,6 +115,10 @@ public class MainActivity extends AppCompatActivity {
         transaction.commit();
     }
 
+    /**
+     * Displays the profile container fragment which hosts
+     * the profile viewing/editing flow.
+     */
     private void showProfileFragment() {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.main_fragment_container, new ProfileContainerFragment());
@@ -103,11 +126,17 @@ public class MainActivity extends AppCompatActivity {
         transaction.commit();
     }
 
+    /**
+     * Displays the notifications fragment which loads notifications
+     * from Firebase for the current user.
+     */
     private void showNotificationsFragment() {
         NotificationsFragment fragment = new NotificationsFragment();
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.main_fragment_container, fragment);
-        transaction.addToBackStack(null);
         transaction.commit();
     }
 }
+
+
+
