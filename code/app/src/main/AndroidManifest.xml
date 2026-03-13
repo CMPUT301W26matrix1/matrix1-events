@@ -20,6 +20,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".org_event.EventDetailsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".org_QR.QRDisplayActivity"
+            android:exported="false" />
     </application>
 
 </manifest>
