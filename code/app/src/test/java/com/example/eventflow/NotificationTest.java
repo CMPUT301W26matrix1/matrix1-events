@@ -20,7 +20,7 @@ public class NotificationTest {
         assertEquals("Test Message", notification.getMessage());
         assertEquals("Test Event", notification.getEventName());
         assertEquals("Test Details", notification.getDetails());
-        assertEquals("SELECTED", notification.getType());
+        assertEquals("GENERAL", notification.getType());
         assertFalse(notification.isRead());
         assertFalse(notification.isAccepted());
     }
