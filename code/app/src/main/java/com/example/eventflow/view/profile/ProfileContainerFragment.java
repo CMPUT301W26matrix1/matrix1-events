@@ -1,5 +1,6 @@
 package com.example.eventflow.view.profile;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.LayoutInflater;
@@ -66,6 +67,7 @@ public class ProfileContainerFragment extends Fragment {
         });
     }
 
+    @SuppressLint("HardwareIds")
     private String getDeviceId() {
         return Settings.Secure.getString(
                 requireContext().getContentResolver(),
@@ -73,9 +75,10 @@ public class ProfileContainerFragment extends Fragment {
         );
     }
 
-    private void showCreateProfile() {
+    public void showCreateProfile() {
         FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
         transaction.replace(R.id.profile_container, new CreateProfileFragment());
+        transaction.addToBackStack(null);
         transaction.commit();
     }
 
@@ -83,5 +86,23 @@ public class ProfileContainerFragment extends Fragment {
         FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
         transaction.replace(R.id.profile_container, ProfileViewFragment.newInstance(profile));
         transaction.commit();
+    }
+
+    public void showEditProfile(@NonNull Profile profile) {
+        FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
+        transaction.replace(R.id.profile_container, EditProfileFragment.newInstance(profile));
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
+
+    public void showEventHistory() {
+        FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
+        transaction.replace(R.id.profile_container, new EventHistoryFragment());
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
+
+    public void reloadProfile() {
+        loadInitialProfileScreen();
     }
 }

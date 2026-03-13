@@ -11,53 +11,107 @@
     app:cardElevation="2dp"
     app:cardBackgroundColor="#E0E0E0">
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:background="#E0E0E0">
+        android:layout_height="wrap_content">
 
-        <!-- Message  -->
-        <TextView
-            android:id="@+id/messageTextView"
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:paddingBottom="40dp">
+
+            <!-- Message -->
+            <TextView
+                android:id="@+id/messageTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sorry, you weren't selected!"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#2C2C2C"
+                android:layout_marginBottom="4dp"/>
+
+            <!-- Event Name -->
+            <TextView
+                android:id="@+id/eventNameTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="EVENT 2:"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#2C2C2C"
+                android:layout_marginBottom="2dp"/>
+
+            <!-- Details -->
+            <TextView
+                android:id="@+id/detailsTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Try again next time"
+                android:textSize="14sp"
+                android:textColor="#2C2C2C"
+                android:layout_marginBottom="2dp"/>
+
+            <!-- Time -->
+            <TextView
+                android:id="@+id/timestampTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="15 minutes ago"
+                android:textSize="12sp"
+                android:textColor="#616161"/>
+
+        </LinearLayout>
+
+        <!-- Try Again Button -->
+        <Button
+            android:id="@+id/tryAgainButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="You've been selected!"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="#2C2C2C"
-            android:layout_marginBottom="4dp"/>
-
-        <!-- Event Name -->
-        <TextView
-            android:id="@+id/eventNameTextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="EVENT 1:"
+            android:text="TRY AGAIN"
+            android:textColor="#6200EE"
+            android:background="@android:color/transparent"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#2C2C2C"
-            android:layout_marginBottom="2dp"/>
+            android:layout_gravity="bottom|end"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="16dp"
+            android:visibility="gone"/>
 
-        <!-- Details -->
-        <TextView
-            android:id="@+id/detailsTextView"
+
+        <Button
+            android:id="@+id/acceptButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="300 attendants"
+            android:text="ACCEPT"
+            android:textColor="#6200EE"
+            android:background="@android:color/transparent"
             android:textSize="14sp"
-            android:textColor="#2C2C2C"
-            android:layout_marginBottom="2dp"/>
+            android:textStyle="bold"
+            android:layout_gravity="bottom|end"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="90dp"
+            android:visibility="gone"/>
 
-        <!-- Time  -->
+
         <TextView
-            android:id="@+id/timestampTextView"
+            android:id="@+id/acceptedMessageTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="15 minutes ago"
-            android:textSize="12sp"
-            android:textColor="#616161"/>
+            android:text="✓ You accepted this invitation"
+            android:textColor="#4CAF50"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_gravity="bottom|end"
+            android:layout_marginBottom="16dp"
+            android:layout_marginEnd="16dp"
+            android:visibility="gone"/>
 
-    </LinearLayout>
+
+
+
+
+    </FrameLayout>
 </androidx.cardview.widget.CardView>

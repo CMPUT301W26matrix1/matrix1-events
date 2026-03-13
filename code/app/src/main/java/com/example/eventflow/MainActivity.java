@@ -1,18 +1,21 @@
 package com.example.eventflow;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentTransaction;
+import com.example.eventflow.view.profile.ProfileContainerFragment;
+import com.example.eventflow.view.profile.SelectedEntrantsActivity;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
-
+/**
+ * MainActivity
+ * Hosts the NotificationsFragment and provides navigation buttons
+ */
 public class MainActivity extends AppCompatActivity {
 
     @Override
@@ -20,50 +23,60 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        Button sendButton = findViewById(R.id.sendNotificationButton);
 
-        sendButton.setOnClickListener(v -> {
 
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-            String message = "You've been selected!";
-            String eventName = "Sample Event";
-            String details = "Check event details.";
-
-            String testUserId = "VLSSOuGA27beNDV7N3sB8lh7O1q2";
-
-            Notification notification = new Notification(message, eventName, details);
-
-            db.collection("users")
-                    .document(testUserId)
-                    .collection("notifications")
-                    .add(notification);
-        });
-        FirebaseAuth auth = FirebaseAuth.getInstance();
-
-        auth.signInWithEmailAndPassword("abc@test.com", "123456")
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        System.out.println("Login successful");
-                    } else {
-                        System.out.println("Login failed: " + task.getException());
-                    }
-                });
-
+        // Handle system bars (from left)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        // Show the NotificationsFragment
+        // Initialize buttons (from right)
+        Button waitingListButton = findViewById(R.id.viewWaitingListButton);
+        Button profileButton = findViewById(R.id.profileButton);
+        Button selectedEntrantsButton = findViewById(R.id.viewSelectedEntrantsButton);
+        Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
+
+        // Set click listeners (from right)
+        if (waitingListButton != null) {
+            waitingListButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, WaitingListActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        if (profileButton != null) {
+            profileButton.setOnClickListener(v -> {
+                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                transaction.replace(R.id.main_fragment_container, new ProfileContainerFragment());
+                transaction.addToBackStack(null);
+                transaction.commit();
+            });
+        }
+
+        if (selectedEntrantsButton != null) {
+            selectedEntrantsButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, SelectedEntrantsActivity.class);
+                startActivity(intent);
+            });
+        }
+        if (adminBrowseEventsButton != null) {
+            adminBrowseEventsButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, AdminBrowseEventsActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        // Show NotificationsFragment by default (from left)
         showNotificationsFragment();
     }
 
     private void showNotificationsFragment() {
         NotificationsFragment fragment = new NotificationsFragment();
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container, fragment);
+        transaction.replace(R.id.main_fragment_container, fragment);
         transaction.commit();
     }
 }

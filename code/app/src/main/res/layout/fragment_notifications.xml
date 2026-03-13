@@ -3,61 +3,70 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#121212">
+    android:background="#121212">  <!-- Black background -->
 
-    <!-- Header with title centered and clear all on far right edge -->
+    <!-- Header with title and clear all - NOW WHITE -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingStart="16dp"
-        android:paddingEnd="0dp"
-        android:paddingTop="16dp"
-        android:paddingBottom="16dp"
+        android:padding="16dp"
         android:background="#121212">
 
-    <TextView
-        android:id="@+id/titleTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Notifications"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="#FFFFFF"
-        android:layout_centerInParent="true"/>
+        <TextView
+            android:id="@+id/titleTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Notifications"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:layout_centerInParent="true"/>
 
+        <Button
+            android:id="@+id/clearAllButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CLEAR ALL"
+            android:textColor="#BB86FC"
+            android:background="@android:color/transparent"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"/>
+
+    </RelativeLayout>
+
+    <!-- VIEW WAITING LIST Button -->
     <Button
-        android:id="@+id/clearAllButton"
-        android:layout_width="wrap_content"
+        android:id="@+id/viewWaitingListButton"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Clear all"
-        android:textColor="#BB86FC"
-        android:backgroundTint="#3700B3"
-        android:background="@android:color/transparent"
+        android:text="VIEW WAITING LIST"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#6200EE"
         android:textSize="16sp"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"
-        android:paddingEnd="16dp"/>  <!-- Add padding inside button instead -->
-
-</RelativeLayout>
+        android:textStyle="bold"
+        android:padding="12dp"
+        android:layout_margin="16dp"/>
 
     <!-- RecyclerView for notifications -->
-        <androidx.recyclerview.widget.RecyclerView
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:padding="8dp"
-        android:visibility="gone"/>
+        android:visibility="visible"/>
 
-            <!-- Empty state (shown when no notifications) -->
+    <!-- Empty state - Black background with white text -->
     <LinearLayout
         android:id="@+id/emptyView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
         android:orientation="vertical"
-        android:visibility="visible"
-        android:background="#121212">
+        android:visibility="gone"
+        android:background="#121212">  <!-- Changed to black to match main background -->
 
         <TextView
             android:layout_width="wrap_content"
@@ -65,7 +74,7 @@
             android:text="No Notifications!"
             android:textSize="24sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"/>
+            android:textColor="#FFFFFF"/>  <!-- Changed to white text for black background -->
 
     </LinearLayout>
 

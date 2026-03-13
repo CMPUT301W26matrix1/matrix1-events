@@ -3,7 +3,9 @@ package com.example.eventflow;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.Timestamp;
@@ -29,10 +31,67 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Notification n = notifications.get(position);
 
-        holder.message.setText(n.getMessage());           // "You've been selected!"
-        holder.eventName.setText(n.getEventName() + ":"); // "EVENT 1:"
-        holder.details.setText(n.getDetails());           // "300 attendants"
-        holder.time.setText(getTimeAgo(n.getTimestamp())); // "15 minutes ago"
+        holder.message.setText(n.getMessage());
+        holder.eventName.setText(n.getEventName() + ":");
+        holder.details.setText(n.getDetails());
+        holder.time.setText(getTimeAgo(n.getTimestamp()));
+
+        // Make the entire notification clickable to view event details (for BOTH types)
+        holder.itemView.setOnClickListener(v -> {
+            Toast.makeText(holder.itemView.getContext(),
+                    "Viewing details for " + n.getEventName(),
+                    Toast.LENGTH_SHORT).show();
+        });
+
+        // Handle different notification types
+        if ("SELECTED".equals(n.getType())) {
+            // Check if already accepted - NEW CODE
+            if (n.isAccepted()) {
+                // Show accepted message instead of button - NEW CODE
+                holder.acceptButton.setVisibility(View.GONE);
+                holder.acceptedMessage.setVisibility(View.VISIBLE); // NEW CODE
+                holder.tryAgainButton.setVisibility(View.GONE);
+            } else {
+                // Show ACCEPT button for SELECTED notifications (US 01.05.02)
+                holder.acceptButton.setVisibility(View.VISIBLE);
+                holder.acceptedMessage.setVisibility(View.GONE); // NEW CODE
+                holder.tryAgainButton.setVisibility(View.GONE);
+
+                holder.acceptButton.setOnClickListener(v -> {
+                    // Mark as accepted - NEW CODE
+                    n.setAccepted(true); // NEW CODE
+
+                    Toast.makeText(holder.itemView.getContext(),
+                            "Accepted invitation for " + n.getEventName() + "! You're in!",
+                            Toast.LENGTH_SHORT).show();
+
+                    // Later: This will add user to confirmed list
+                    // acceptInvitation(n.getEventId());
+
+                    // Hide button and show message after accepting - UPDATED CODE
+                    holder.acceptButton.setVisibility(View.GONE);
+                    holder.acceptedMessage.setVisibility(View.VISIBLE); // NEW CODE
+                });
+            }
+
+        } else if ("NOT_SELECTED".equals(n.getType())) {
+            // Show TRY AGAIN button for NOT_SELECTED notifications
+            holder.tryAgainButton.setVisibility(View.VISIBLE);
+            holder.acceptButton.setVisibility(View.GONE);
+            holder.acceptedMessage.setVisibility(View.GONE); // NEW CODE
+
+            holder.tryAgainButton.setOnClickListener(v -> {
+                Toast.makeText(holder.itemView.getContext(),
+                        "Added back to waitlist for " + n.getEventName(),
+                        Toast.LENGTH_SHORT).show();
+            });
+
+        } else {
+            // No buttons for other types
+            holder.acceptButton.setVisibility(View.GONE);
+            holder.tryAgainButton.setVisibility(View.GONE);
+            holder.acceptedMessage.setVisibility(View.GONE); // NEW CODE
+        }
     }
 
     private String getTimeAgo(Timestamp timestamp) {
@@ -63,7 +122,8 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView message, eventName, details, time;
+        TextView message, eventName, details, time, acceptedMessage; // ADDED acceptedMessage
+        Button acceptButton, tryAgainButton;
 
         ViewHolder(View v) {
             super(v);
@@ -71,6 +131,9 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             eventName = v.findViewById(R.id.eventNameTextView);
             details = v.findViewById(R.id.detailsTextView);
             time = v.findViewById(R.id.timestampTextView);
+            acceptButton = v.findViewById(R.id.acceptButton);
+            tryAgainButton = v.findViewById(R.id.tryAgainButton);
+            acceptedMessage = v.findViewById(R.id.acceptedMessageTextView); // ADDED this line
         }
     }
 }

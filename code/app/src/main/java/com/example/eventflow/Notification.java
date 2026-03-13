@@ -9,26 +9,39 @@ public class Notification {
     private String details;      // Extra info"
     private Timestamp timestamp; // When it happened
     private boolean isRead;      // Whether user has seen it
-
     private String id;
     private String userId;
+    private String eventId;
+    private String notificationId;
+    private String type;
+    private boolean accepted;
 
     // Empty constructor
     public Notification() {
     }
 
-    // Constructor to create a new notification
+    // Constructor for SELECTED notifications
     public Notification(String message, String eventName, String details) {
         this.message = message;
         this.eventName = eventName;
         this.details = details;
-        this.timestamp = Timestamp.now(); // Sets time to right now
-        this.isRead = false; // New notifications start as unread
+        this.timestamp = Timestamp.now();
+        this.isRead = false;
+        this.type = "SELECTED";
+        this.accepted = false;
     }
 
-    //GETTERS AND SETTERS
+    // Constructor for NOT_SELECTED notifications
+    public Notification(String message, String eventName, String details, String type) {
+        this.message = message;
+        this.eventName = eventName;
+        this.details = details;
+        this.type = type;
+        this.timestamp = Timestamp.now();
+        this.isRead = false;
+        this.accepted = false;
+    }
 
-    // Message
     public String getMessage() {
         return message;
     }
@@ -36,7 +49,6 @@ public class Notification {
         this.message = message;
     }
 
-    // Event Name
     public String getEventName() {
         return eventName;
     }
@@ -44,7 +56,6 @@ public class Notification {
         this.eventName = eventName;
     }
 
-    // Details
     public String getDetails() {
         return details;
     }
@@ -52,7 +63,6 @@ public class Notification {
         this.details = details;
     }
 
-    // Timestamp
     public Timestamp getTimestamp() {
         return timestamp;
     }
@@ -60,12 +70,11 @@ public class Notification {
         this.timestamp = timestamp;
     }
 
-    // Read status
     public boolean isRead() {
         return isRead;
     }
     public void setRead(boolean read) {
-        isRead = read;
+        this.isRead = read;
     }
     public String getId() {
         return id;
@@ -80,5 +89,34 @@ public class Notification {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+    public String getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
+    }
+
+    public String getNotificationId() {
+        return notificationId;
+    }
+
+    public void setNotificationId(String notificationId) {
+        this.notificationId = notificationId;
+    }
+
+    public String getType() {
+        return type;
+    }
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public boolean isAccepted() {
+        return accepted;
+    }
+    public void setAccepted(boolean accepted) {
+        this.accepted = accepted;
     }
 }

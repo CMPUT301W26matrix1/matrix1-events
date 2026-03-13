@@ -1,5 +1,6 @@
 package com.example.eventflow;
 
+
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -35,8 +36,10 @@ public class NotificationsFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Fixed: removed "attachToRoot:"
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+
         View view = inflater.inflate(R.layout.fragment_notifications, container, false);
 
         recyclerView = view.findViewById(R.id.recyclerView);
@@ -79,11 +82,12 @@ public class NotificationsFragment extends Fragment {
 
                     Log.d("FIREBASE", "Found " + value.size() + " notifications");
 
+
                     notificationList.clear();
+
                     for (QueryDocumentSnapshot doc : value) {
                         Notification notif = doc.toObject(Notification.class);
                         if (notif != null) {
-                            notif.setId(doc.getId());
                             notificationList.add(notif);
                             Log.d("FIREBASE", "Added notification: " + notif.getMessage());
                         }
@@ -100,22 +104,6 @@ public class NotificationsFragment extends Fragment {
                         emptyView.setVisibility(View.GONE);
                         Log.d("FIREBASE", "Showing " + notificationList.size() + " notifications");
                     }
-                });
-    }
-    private void sendNotificationToUser(String userId, String message, String eventName, String details) {
-        Notification notification = new Notification(message, eventName, details);
-
-        db.collection("users")
-                .document(userId)
-                .collection("notifications")
-                .add(notification)
-                .addOnSuccessListener(doc -> {
-                    Log.d("FIREBASE", "Notification sent to user: " + userId);
-                    Toast.makeText(getContext(), "Notification sent", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("FIREBASE", "Failed to send notification: " + e.getMessage());
-                    Toast.makeText(getContext(), "Failed to send notification", Toast.LENGTH_SHORT).show();
                 });
     }
     private void sendNotificationToCurrentUser() {
@@ -140,7 +128,6 @@ public class NotificationsFragment extends Fragment {
     }
 
     private void clearAllNotifications() {
-        Log.d("FIREBASE", "Clearing all notifications for user: " + currentUserId);
 
         db.collection("users")
                 .document(currentUserId)
@@ -148,15 +135,18 @@ public class NotificationsFragment extends Fragment {
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     int count = queryDocumentSnapshots.size();
+
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         doc.getReference().delete();
                     }
-                    Log.d("FIREBASE", "Deleted " + count + " notifications");
-                    Toast.makeText(getContext(), "All notifications cleared", Toast.LENGTH_SHORT).show();
+
+                    Toast.makeText(getContext(),
+                            "All notifications cleared",
+                            Toast.LENGTH_SHORT).show();
                 })
-                .addOnFailureListener(e -> {
-                    Log.e("FIREBASE", "Error clearing notifications: " + e.getMessage());
-                    Toast.makeText(getContext(), "Failed to clear notifications", Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e ->
+                        Toast.makeText(getContext(),
+                                "Failed to clear notifications",
+                                Toast.LENGTH_SHORT).show());
     }
 }
