@@ -1,14 +1,18 @@
 package com.example.eventflow;
+import com.example.eventflow.event.EventListFragment;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
+
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentTransaction;
+
+import com.example.eventflow.event.EventListFragment;
 import com.example.eventflow.view.profile.ProfileContainerFragment;
 import com.example.eventflow.view.profile.SelectedEntrantsActivity;
 
@@ -25,7 +29,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
-
         finalEntrantsButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, OrganizerFinalEntrantsActivity.class);
             intent.putExtra("eventId", "Tg34Yn6wNXvYAuvczoMA");
@@ -38,13 +41,11 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        // Initialize buttons (from right)
         Button waitingListButton = findViewById(R.id.viewWaitingListButton);
         Button profileButton = findViewById(R.id.profileButton);
         Button selectedEntrantsButton = findViewById(R.id.viewSelectedEntrantsButton);
         Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
 
-        // Set click listeners (from right)
         if (waitingListButton != null) {
             waitingListButton.setOnClickListener(v -> {
                 Intent intent = new Intent(MainActivity.this, WaitingListActivity.class);
@@ -67,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+
         if (adminBrowseEventsButton != null) {
             adminBrowseEventsButton.setOnClickListener(v -> {
                 Intent intent = new Intent(MainActivity.this, AdminBrowseEventsActivity.class);
@@ -74,7 +76,17 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // Show NotificationsFragment by default (from left)
+        // Browse Events button — US 01.01.03
+        Button eventsButton = findViewById(R.id.eventsButton);
+        if (eventsButton != null) {
+            eventsButton.setOnClickListener(v -> {
+                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                transaction.replace(R.id.main_fragment_container, new EventListFragment());
+                transaction.addToBackStack(null);
+                transaction.commit();
+            });
+        }
+
         showNotificationsFragment();
     }
 
