@@ -57,12 +57,22 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp"/>
 
+    <Button
+        android:id="@+id/adminBrowseEventsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Manage Events"
+        app:layout_constraintTop_toBottomOf="@id/viewSelectedEntrantsButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
+
     <!-- Fragment Container -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/main_fragment_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/viewSelectedEntrantsButton"
+        app:layout_constraintTop_toBottomOf="@id/adminBrowseEventsButton"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginTop="16dp" />
 

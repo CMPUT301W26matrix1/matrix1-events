@@ -24,6 +24,8 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+
+
         // Handle system bars (from left)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -35,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
         Button waitingListButton = findViewById(R.id.viewWaitingListButton);
         Button profileButton = findViewById(R.id.profileButton);
         Button selectedEntrantsButton = findViewById(R.id.viewSelectedEntrantsButton);
+        Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
 
         // Set click listeners (from right)
         if (waitingListButton != null) {
@@ -56,6 +59,12 @@ public class MainActivity extends AppCompatActivity {
         if (selectedEntrantsButton != null) {
             selectedEntrantsButton.setOnClickListener(v -> {
                 Intent intent = new Intent(MainActivity.this, SelectedEntrantsActivity.class);
+                startActivity(intent);
+            });
+        }
+        if (adminBrowseEventsButton != null) {
+            adminBrowseEventsButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, AdminBrowseEventsActivity.class);
                 startActivity(intent);
             });
         }
