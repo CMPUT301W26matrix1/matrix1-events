@@ -7,17 +7,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,11 +23,8 @@ public class NotificationsFragment extends Fragment {
     private RecyclerView recyclerView;
     private View emptyView;
     private Button clearAllButton;
-    private Button tryAgainButton;
-
     private NotificationsAdapter adapter;
     private List<Notification> notificationList = new ArrayList<>();
-
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private String userId = "test_user_123";
 
@@ -45,15 +39,12 @@ public class NotificationsFragment extends Fragment {
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyView = view.findViewById(R.id.emptyView);
         clearAllButton = view.findViewById(R.id.clearAllButton);
-        tryAgainButton = view.findViewById(R.id.btn_try_again);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new NotificationsAdapter(notificationList);
         recyclerView.setAdapter(adapter);
 
         clearAllButton.setOnClickListener(v -> clearAllNotifications());
-
-        tryAgainButton.setOnClickListener(v -> rejoinWaitingList());
 
         loadNotifications();
 
@@ -89,16 +80,11 @@ public class NotificationsFragment extends Fragment {
                     adapter.notifyDataSetChanged();
 
                     if (notificationList.isEmpty()) {
-
                         recyclerView.setVisibility(View.GONE);
                         emptyView.setVisibility(View.VISIBLE);
-                        tryAgainButton.setVisibility(View.VISIBLE);
-
                     } else {
-
                         recyclerView.setVisibility(View.VISIBLE);
                         emptyView.setVisibility(View.GONE);
-                        tryAgainButton.setVisibility(View.GONE);
                     }
                 });
     }
@@ -122,29 +108,6 @@ public class NotificationsFragment extends Fragment {
                 .addOnFailureListener(e ->
                         Toast.makeText(getContext(),
                                 "Failed to clear notifications",
-                                Toast.LENGTH_SHORT).show());
-    }
-
-    private void rejoinWaitingList() {
-
-        Log.d("EVENT", "User rejoining waiting list");
-
-        db.collection("events")
-                .document("event_id") // replace with actual event id
-                .collection("waitingList")
-                .document(userId)
-                .set(new Notification(
-                        "Rejoined waiting list",
-                        "Event",
-                        "User has rejoined the waiting list"
-                ))
-                .addOnSuccessListener(aVoid ->
-                        Toast.makeText(getContext(),
-                                "You rejoined the waiting list",
-                                Toast.LENGTH_SHORT).show())
-                .addOnFailureListener(e ->
-                        Toast.makeText(getContext(),
-                                "Failed to rejoin waiting list",
                                 Toast.LENGTH_SHORT).show());
     }
 }

@@ -1,50 +1,79 @@
 package com.example.eventflow;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.FragmentTransaction;
 
-import com.example.eventflow.controller.LotteryController;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.example.eventflow.event.EventListFragment;
+import com.example.eventflow.view.profile.ProfileContainerFragment;
 
 /**
  * MainActivity
- * Displays the event details screen and allows the organizer
- * to navigate to the waiting list screen.
+ * Main landing screen for entrant actions.
+ * - Browse events and see waiting list counts
+ * - Open profile flow
+ * - Show notifications
  */
 public class MainActivity extends AppCompatActivity {
 
+    private Button viewWaitingListButton;
+    private Button profileButton;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // Button to open waiting list screen
-        Button button = findViewById(R.id.viewWaitingListButton);
-
-        button.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, WaitingListActivity.class);
-            startActivity(intent);
+        // Handle system bars (from your version)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
         });
 
-        // Example lottery logic (prototype only)
-        LotteryController lotteryController = new LotteryController();
+        // Initialize buttons (from teammate's version)
+        viewWaitingListButton = findViewById(R.id.viewWaitingListButton);
+        profileButton = findViewById(R.id.profileButton);
 
-        ArrayList<String> waitingList = new ArrayList<>();
-        waitingList.add("Alice");
-        waitingList.add("Bob");
-        waitingList.add("Charlie");
-        waitingList.add("David");
+        // Set click listeners (from teammate's version)
+        viewWaitingListButton.setOnClickListener(v -> showEventListFragment());
 
-        List<String> selected = new ArrayList<>();
-        selected.add(waitingList.get(0));
-        selected.add(waitingList.get(1));
+        if (profileButton != null) {
+            profileButton.setOnClickListener(v -> showProfileFragment());
+        }
 
-        System.out.println("Selected entrants: " + selected);
+        // Show your NotificationsFragment by default (from your version)
+        showNotificationsFragment();
+    }
+
+    // From your version
+    private void showNotificationsFragment() {
+        NotificationsFragment fragment = new NotificationsFragment();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.main_fragment_container, fragment);
+        transaction.commit();
+    }
+
+    // From teammate's version
+    private void showEventListFragment() {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.main_fragment_container, new EventListFragment());
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
+
+    // From teammate's version
+    private void showProfileFragment() {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.main_fragment_container, new ProfileContainerFragment());
+        transaction.addToBackStack(null);
+        transaction.commit();
     }
 }
