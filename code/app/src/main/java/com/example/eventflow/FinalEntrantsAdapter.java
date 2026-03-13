@@ -57,6 +57,10 @@ public class FinalEntrantsAdapter extends RecyclerView.Adapter<FinalEntrantsAdap
     public int getItemCount() {
         return entrantList.size();
     }
+    public void clearSelections() {
+        selectedPositions.clear();
+    }
+
 
     public List<Entrant> getSelectedEntrants() {
         List<Entrant> selectedEntrants = new ArrayList<>();

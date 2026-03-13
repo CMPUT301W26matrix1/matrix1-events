@@ -230,7 +230,9 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
             }
         });
 
+        adapter.clearSelections();
         adapter.notifyDataSetChanged();
+
 
         if (displayedEntrants.isEmpty()) {
             emptyMessage.setVisibility(View.VISIBLE);
@@ -246,43 +248,36 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
 
 
     private void sendNotificationsToUsers() {
+        int sentCount = 0;
 
-        db.collection("events")
-                .document(eventId)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
+        List<Entrant> selectedEntrants = adapter.getSelectedEntrants();
 
-                    int sentCount = 0;
+        if (selectedEntrants.isEmpty()) {
+            Toast.makeText(this, "Please select at least one entrant", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-                    for (Entrant entrant : displayedEntrants) {
-                        String status = entrant.getStatus() == null ? "" : entrant.getStatus().trim();
-                        String userId = entrant.getEntrantid();
+        for (Entrant entrant : selectedEntrants) {
+            String status = entrant.getStatus() == null ? "" : entrant.getStatus().trim();
+            String userId = entrant.getEntrantid();
 
-                        if (status.equalsIgnoreCase("confirmed") && userId != null && !userId.isEmpty()) {
-                            sendNotificationToUser(
-                                    userId,
-                                    "You've been selected!",
-                                    eventName != null ? eventName : "Event",
-                                    "Congratulations! You have been selected for this event.",
-                                    "SELECTED"
-                            );
-                            sentCount++;
-                        }
-                    }
+            if (status.equalsIgnoreCase("confirmed") && userId != null && !userId.isEmpty()) {
+                sendNotificationToUser(
+                        userId,
+                        "You've been selected!",
+                        eventName != null ? eventName : "Event",
+                        "Congratulations! You have been selected for this event.",
+                        "SELECTED"
+                );
+                sentCount++;
+            }
+        }
 
-                    if (sentCount > 0) {
-
-                        db.collection("events")
-                                .document(eventId)
-                                .update("notificationsSent", true,
-                                        "notificationsSentAt", FieldValue.serverTimestamp());
-
-                        Toast.makeText(this, sentCount + " notifications sent", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(this, "No confirmed entrants to notify", Toast.LENGTH_SHORT).show();
-                    }
-
-                });
+        if (sentCount > 0) {
+            Toast.makeText(this, sentCount + " notifications sent", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "No selected confirmed entrants to notify", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void sendNotificationToUser(String userId, String message, String eventName, String details, String type) {
