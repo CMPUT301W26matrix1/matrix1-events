@@ -2,6 +2,17 @@ package com.example.eventflow;
 
 import com.google.firebase.Timestamp;
 
+/**
+ * Notification
+
+ * Model class representing an in-app notification stored in Firebase Firestore.
+ * A notification includes message text, event information, timestamp,
+ * read state, and optional response state such as accepted or declined.
+
+ * - Firestore model for entrant notifications
+ * - Used by organizer notification sending and entrant notification display
+ */
+
 public class Notification {
     private String id;
     private String message;
@@ -42,10 +53,15 @@ public class Notification {
         this.id = id;
     }
 
+/**
+ * Returns the notification message.
+ **/
     public String getMessage() {
         return message;
     }
-
+/**
+ * Sets the notification message.
+ **/
     public void setMessage(String message) {
         this.message = message;
     }

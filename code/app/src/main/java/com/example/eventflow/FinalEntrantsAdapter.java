@@ -16,11 +16,28 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * FinalEntrantsAdapter
+
+ * RecyclerView adapter used to display entrants in the final entrants
+ * screen. Each row shows entrant information and includes a checkbox
+ * allowing the organizer to select entrants for notification sending.
+
+ * - Binds entrant data to RecyclerView rows
+ * - Tracks which entrants are selected
+ * - Provides the selected entrants to the activity when notifications
+ *   need to be sent
+ */
+
+
 public class FinalEntrantsAdapter extends RecyclerView.Adapter<FinalEntrantsAdapter.EntrantViewHolder> {
 
     private final List<Entrant> entrantList;
     private final Set<Integer> selectedPositions = new HashSet<>();
 
+/**
+ * Creates a new adapter for the provided entrant list.
+ */
     public FinalEntrantsAdapter(List<Entrant> entrantList) {
         this.entrantList = entrantList;
     }
@@ -53,15 +70,25 @@ public class FinalEntrantsAdapter extends RecyclerView.Adapter<FinalEntrantsAdap
         });
     }
 
+/**
+ * Returns the number of entrants currently displayed by the adapter.
+ */
+
     @Override
     public int getItemCount() {
         return entrantList.size();
     }
+
+    /**
+     * Clears all currently selected checkbox positions.
+     */
     public void clearSelections() {
         selectedPositions.clear();
     }
 
-
+/**
+ * Returns a list of entrants currently selected by checkbox.
+ **/
     public List<Entrant> getSelectedEntrants() {
         List<Entrant> selectedEntrants = new ArrayList<>();
         for (Integer pos : selectedPositions) {

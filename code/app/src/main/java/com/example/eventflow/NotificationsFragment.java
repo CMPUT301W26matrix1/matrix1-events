@@ -21,6 +21,22 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * NotificationsFragment
+
+ * Displays notifications stored in Firebase Firestore for the current user.
+ * Notifications are shown in a RecyclerView and can be cleared using the
+ * provided button.
+
+ * - Entrant-facing notifications screen
+ * - Reads notification documents from Firestore in real time
+ * - Supports clearing all notifications for the active user
+
+ * Outstanding issues:
+ * - Current user ID may fall back to a demo/test value .
+ */
+
+
 public class NotificationsFragment extends Fragment {
 
     private RecyclerView recyclerView;

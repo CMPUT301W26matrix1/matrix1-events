@@ -26,6 +26,18 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * OrganizerFinalEntrantsActivity
+ * Displays the final entrants for a selected event. The organizer can
+ * filter entrants by status, sort them by name, select confirmed entrants,
+ * and send notifications to the selected users.
+ * This activity loads entrant data from Firebase Firestore and updates
+ * the RecyclerView in real time when the entrant list changes.
+ * - Organizer interface for managing final entrants
+ * - Allows sending event notifications to confirmed entrants
+ * - Integrates Firestore data with the UI
+ **/
+
 public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
@@ -111,6 +123,10 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
         listenForEntrants();
     }
 
+    /**
+     * Configures the filter and sort spinners used to control how entrants
+     * are displayed in the RecyclerView.
+     */
     private void setupSpinners() {
         String[] statusOptions = {"Confirmed", "Waitlist", "All"};
         String[] sortOptions = {"Name A-Z", "Name Z-A"};
@@ -157,6 +173,10 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Starts a Firestore snapshot listener for entrants belonging to the
+     * selected event and updates the local entrant list when data changes.
+     */
     private void listenForEntrants() {
         entrantListener = db.collection("events")
                 .document(eventId)
@@ -193,6 +213,10 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Applies the selected status filter and sort order to the full entrant list,
+     * then refreshes the RecyclerView with the resulting displayed entrants.
+     */
     private void applyFilterAndSort() {
         displayedEntrants.clear();
 
@@ -246,7 +270,10 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
     }
 
 
-
+    /**
+     * Sends notifications to the currently selected entrants in the adapter.
+     * Only confirmed entrants with valid user IDs are notified.
+     */
     private void sendNotificationsToUsers() {
         int sentCount = 0;
 
@@ -293,7 +320,9 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
                         Log.e("FINAL_DEBUG", "Failed to send notification to user: " + userId, e));
     }
 
-
+    /**
+     * Removes the active Firestore listener when the activity is destroyed.
+     */
 
     @Override
     protected void onDestroy() {
