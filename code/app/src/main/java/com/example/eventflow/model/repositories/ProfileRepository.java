@@ -28,6 +28,10 @@ public class ProfileRepository {
         void onFailure(@NonNull Exception e);
     }
 
+    /**
+     * Save a new profile to Firestore.
+     * Used in US 01.02.01.
+     */
     public void saveProfile(@NonNull Profile profile, @NonNull SaveProfileCallback callback) {
         profilesCollection
                 .document(profile.getDeviceId())
@@ -36,6 +40,10 @@ public class ProfileRepository {
                 .addOnFailureListener(callback::onFailure);
     }
 
+    /**
+     * Update an existing profile in Firestore.
+     * Used in US 01.02.02.
+     */
     public void updateProfile(@NonNull Profile profile, @NonNull SaveProfileCallback callback) {
         profilesCollection
                 .document(profile.getDeviceId())
@@ -44,6 +52,10 @@ public class ProfileRepository {
                 .addOnFailureListener(callback::onFailure);
     }
 
+    /**
+     * Load a profile by device ID.
+     * Used when checking whether a user already has a saved profile.
+     */
     public void getProfileByDeviceId(@NonNull String deviceId, @NonNull LoadProfileCallback callback) {
         profilesCollection
                 .document(deviceId)
@@ -56,6 +68,7 @@ public class ProfileRepository {
                                        @NonNull LoadProfileCallback callback) {
         if (documentSnapshot.exists()) {
             Profile profile = documentSnapshot.toObject(Profile.class);
+
             if (profile != null) {
                 callback.onSuccess(profile);
             } else {
@@ -64,5 +77,9 @@ public class ProfileRepository {
         } else {
             callback.onNotFound();
         }
+    }
+
+    public CollectionReference getProfilesCollection() {
+        return profilesCollection;
     }
 }
