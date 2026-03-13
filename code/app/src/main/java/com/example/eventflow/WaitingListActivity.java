@@ -7,23 +7,20 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.eventflow.controller.LotteryController;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * WaitingListActivity
- *
- * Displays the waiting list for an event.
- * Organizer can press "Draw Replacement" to select
- * a replacement entrant if someone rejects the invitation.
- */
 public class WaitingListActivity extends AppCompatActivity {
 
     private LotteryController lotteryController;
 
-    private List<String> waitingList;
-    private List<String> selectedEntrants;
+    private List<String> waitingList = new ArrayList<>();
+    private List<String> selectedEntrants = new ArrayList<>();
+
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,17 +28,9 @@ public class WaitingListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_waiting_list);
 
         lotteryController = new LotteryController();
+        db = FirebaseFirestore.getInstance();
 
-        // Example waiting list
-        waitingList = new ArrayList<>();
-        waitingList.add("Alice");
-        waitingList.add("Bob");
-        waitingList.add("Charlie");
-        waitingList.add("David");
-
-        // Example selected entrant
-        selectedEntrants = new ArrayList<>();
-        selectedEntrants.add("Alice");
+        loadWaitingListFromFirebase();
 
         Button redrawButton = findViewById(R.id.redrawLotteryButton);
 
@@ -60,5 +49,32 @@ public class WaitingListActivity extends AppCompatActivity {
                         Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void loadWaitingListFromFirebase() {
+
+        db.collection("profiles")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+
+                    waitingList.clear();
+
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+
+                        String firstName = doc.getString("firstName");
+                        String lastName = doc.getString("lastName");
+
+                        if (firstName != null && lastName != null) {
+
+                            String name = firstName + " " + lastName;
+                            waitingList.add(name);
+                        }
+                    }
+
+                    if (!waitingList.isEmpty()) {
+                        selectedEntrants.add(waitingList.get(0));
+                    }
+
+                });
     }
 }

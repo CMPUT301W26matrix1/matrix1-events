@@ -2,7 +2,7 @@
 
 <!--
  Main screen layout
- Displays event title and navigation button
+ Displays event title and navigation buttons
 -->
 
 <androidx.constraintlayout.widget.ConstraintLayout
@@ -34,6 +34,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="40dp"/>
+
+    <!-- View Selected Entrants Button -->
+    <Button
+        android:id="@+id/viewSelectedEntrantsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="View Selected Entrants"
+        app:layout_constraintTop_toBottomOf="@id/viewWaitingListButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="20dp"/>
 
     <!-- Fragment Container -->
     <androidx.fragment.app.FragmentContainerView
