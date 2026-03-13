@@ -18,6 +18,14 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * Fragment that displays real-time notifications using Firestore.
+ * Shows notification list with CLEAR ALL functionality.
+ * Updates automatically when new notifications arrive.
+ * Handles empty state display when no notifications exist.
+ */
+
 public class NotificationsFragment extends Fragment {
 
     private RecyclerView recyclerView;

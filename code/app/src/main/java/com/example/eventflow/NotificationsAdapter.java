@@ -12,6 +12,13 @@ import com.google.firebase.Timestamp;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+
+/**
+ * Adapter for notification items.
+ * Handles SELECTED (ACCEPT/DECLINE buttons) and NOT_SELECTED (TRY AGAIN button) types.
+ * Updates UI based on user actions (accepted/declined status).
+ *
+ */
 public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdapter.ViewHolder> {
     private List<Notification> notifications;
 

@@ -2,6 +2,13 @@ package com.example.eventflow;
 
 import com.google.firebase.Timestamp;
 
+
+/**
+ * Notification model for Firestore.
+ * Stores message, event details, timestamp, and user action status.
+ * Supports SELECTED and NOT_SELECTED notification types.
+ *
+ */
 public class Notification {
     private String message;
     private String eventName;
@@ -66,6 +73,7 @@ public class Notification {
         return timestamp;
     }
     public void setTimestamp(Timestamp timestamp) {
+
         this.timestamp = timestamp;
     }
 
