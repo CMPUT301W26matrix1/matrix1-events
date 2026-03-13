@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -17,6 +18,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,18 +34,27 @@ public class NotificationsFragment extends Fragment {
     private View emptyView;
     private Button clearAllButton;
     private NotificationsAdapter adapter;
-    private List<Notification> notificationList = new ArrayList<>();
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private FirebaseAuth auth = FirebaseAuth.getInstance();
-    private String currentUserId;
+
+    private final List<Notification> notificationList = new ArrayList<>();
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final FirebaseAuth auth = FirebaseAuth.getInstance();
+
+    private String userId;
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             @Nullable ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
         View view = inflater.inflate(R.layout.fragment_notifications, container, false);
+
+        // Get user ID from Firebase Auth
+        if (auth.getCurrentUser() != null) {
+            userId = auth.getCurrentUser().getUid();
+        } else {
+            userId = "test_user_123"; // fallback for testing
+            Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+        }
 
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyView = view.findViewById(R.id.emptyView);
@@ -55,100 +66,79 @@ public class NotificationsFragment extends Fragment {
 
         clearAllButton.setOnClickListener(v -> clearAllNotifications());
 
-        if (auth.getCurrentUser() != null) {
-            currentUserId = auth.getCurrentUser().getUid();
-            loadNotifications();
-        } else {
-            Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
-        }
+        loadNotifications();
 
         return view;
     }
 
     private void loadNotifications() {
-        Log.d("FIREBASE", "Attempting to load notifications for user: " + currentUserId);
+        Log.d("FIREBASE", "Loading notifications for user: " + userId);
 
         db.collection("users")
-                .document(currentUserId)
+                .document(userId)
                 .collection("notifications")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .addSnapshotListener((value, error) -> {
                     if (error != null) {
-                        Log.e("FIREBASE", "Error loading notifications: " + error.getMessage());
-                        return;
-                    }
-                    if (value == null) {
-                        Log.d("FIREBASE", "Value is null");
+                        Log.e("FIREBASE", "Error loading notifications", error);
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show();
+                        }
                         return;
                     }
 
-                    Log.d("FIREBASE", "Found " + value.size() + " notifications");
+                    if (value == null) {
+                        Log.d("FIREBASE", "Notifications snapshot is null");
+                        return;
+                    }
 
                     notificationList.clear();
 
                     for (QueryDocumentSnapshot doc : value) {
-                        Notification notif = doc.toObject(Notification.class);
-                        if (notif != null) {
-                            notificationList.add(notif);
-                            Log.d("FIREBASE", "Added notification: " + notif.getMessage());
+                        Notification notification = doc.toObject(Notification.class);
+                        if (notification != null) {
+                            notification.setId(doc.getId());
+                            notificationList.add(notification);
+                            Log.d("FIREBASE", "Loaded notification: " + notification.getMessage());
                         }
                     }
 
                     adapter.notifyDataSetChanged();
-
-                    if (notificationList.isEmpty()) {
-                        recyclerView.setVisibility(View.GONE);
-                        emptyView.setVisibility(View.VISIBLE);
-                        Log.d("FIREBASE", "No notifications - showing empty view");
-                    } else {
-                        recyclerView.setVisibility(View.VISIBLE);
-                        emptyView.setVisibility(View.GONE);
-                        Log.d("FIREBASE", "Showing " + notificationList.size() + " notifications");
-                    }
+                    updateEmptyState();
                 });
     }
 
-    private void sendNotificationToCurrentUser() {
-        if (currentUserId == null) return;
-
-        Notification notification = new Notification(
-                "You've been selected!",
-                "Sample Event",
-                "Check event details."
-        );
-
-        db.collection("users")
-                .document(currentUserId)
-                .collection("notifications")
-                .add(notification)
-                .addOnSuccessListener(doc -> {
-                    Toast.makeText(getContext(), "Test notification sent", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Failed to send test notification", Toast.LENGTH_SHORT).show();
-                });
+    private void updateEmptyState() {
+        if (notificationList.isEmpty()) {
+            recyclerView.setVisibility(View.GONE);
+            emptyView.setVisibility(View.VISIBLE);
+        } else {
+            recyclerView.setVisibility(View.VISIBLE);
+            emptyView.setVisibility(View.GONE);
+        }
     }
 
     private void clearAllNotifications() {
+        Log.d("FIREBASE", "Clearing notifications for user: " + userId);
 
         db.collection("users")
-                .document(currentUserId)
+                .document(userId)
                 .collection("notifications")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    int count = queryDocumentSnapshots.size();
-
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         doc.getReference().delete();
                     }
 
-                    Toast.makeText(getContext(),
-                            "All notifications cleared",
-                            Toast.LENGTH_SHORT).show();
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "All notifications cleared", Toast.LENGTH_SHORT).show();
+                    }
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(getContext(),
-                                "Failed to clear notifications",
-                                Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    Log.e("FIREBASE", "Failed to clear notifications", e);
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Failed to clear notifications", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 }

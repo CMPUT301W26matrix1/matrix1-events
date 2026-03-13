@@ -23,7 +23,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * US 01.01.03 — Shows a list of events the entrant can browse and join
+ * Fragment responsible for browsing joinable events and exposing
+ * join/leave actions through a RecyclerView list.
+ *
+ * <p>Uses an {@link EventController} and {@link EventRepository} to load
+ * event data from Firestore and applies simple MVC-style separation
+ * (UI in this fragment, business rules in the controller, persistence
+ * in the repository).</p>
+ *
+ * <p>User stories: US 01.01.01, US 01.01.02, US 01.01.03.</p>
+ *
+ * <p><b>Outstanding issues:</b>
+ * <ul>
+ *   <li>No pagination or incremental loading for large event lists.</li>
+ *   <li>No dedicated empty-state view when there are no events.</li>
+ *   <li>No offline caching or retry strategy for transient failures.</li>
+ * </ul>
+ * </p>
  */
 public class EventListFragment extends Fragment {
 

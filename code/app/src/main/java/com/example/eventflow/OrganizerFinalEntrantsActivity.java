@@ -1,12 +1,14 @@
 package com.example.eventflow;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.AdapterView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.eventflow.model.entities.Entrant;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -29,6 +32,7 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
     private TextView emptyMessage;
     private Spinner spinnerStatusFilter;
     private Spinner spinnerSortOrder;
+    private Button sendButton;
 
     private FinalEntrantsAdapter adapter;
     private final List<Entrant> allEntrants = new ArrayList<>();
@@ -36,7 +40,9 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
     private String eventId;
+    private String eventName;
     private ListenerRegistration entrantListener;
+
 
     private String selectedStatusFilter = "Confirmed";
     private String selectedSortOrder = "Name A-Z";
@@ -48,6 +54,14 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
 
         eventId = getIntent().getStringExtra("eventId");
 
+        if (eventId == null) {
+            eventId = "Tg34Yn6wNXvYAuvczoMA"; // temporary for testing
+        }
+        eventName = getIntent().getStringExtra("eventName");
+
+        Log.d("FINAL_DEBUG", "Received eventId = " + eventId);
+        Log.d("FINAL_DEBUG", "Received eventName = " + eventName);
+
         if (eventId == null || eventId.isEmpty()) {
             Toast.makeText(this, "Missing event ID", Toast.LENGTH_SHORT).show();
             finish();
@@ -58,12 +72,40 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
         emptyMessage = findViewById(R.id.tvEmptyMessage);
         spinnerStatusFilter = findViewById(R.id.spinnerStatusFilter);
         spinnerSortOrder = findViewById(R.id.spinnerSortOrder);
+        sendButton = findViewById(R.id.sendNotificationButton);
+
+        if (recyclerView == null || emptyMessage == null || spinnerStatusFilter == null
+                || spinnerSortOrder == null || sendButton == null) {
+            Toast.makeText(this, "Layout mismatch in final entrants screen", Toast.LENGTH_LONG).show();
+            Log.e("FINAL_DEBUG", "One or more layout views are null");
+            finish();
+            return;
+        }
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new FinalEntrantsAdapter(displayedEntrants);
         recyclerView.setAdapter(adapter);
 
         db = FirebaseFirestore.getInstance();
+
+        db.collection("events")
+                .document(eventId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String fetchedName = documentSnapshot.getString("name");
+                        if (fetchedName != null && !fetchedName.isEmpty()) {
+                            eventName = fetchedName;
+                        }
+                        Log.d("FINAL_DEBUG", "Loaded event name = " + eventName);
+                    } else {
+                        Log.d("FINAL_DEBUG", "Event document does not exist for id: " + eventId);
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Log.e("FINAL_DEBUG", "Failed to fetch event document", e));
+
+        sendButton.setOnClickListener(v -> sendNotificationsToUsers());
 
         setupSpinners();
         listenForEntrants();
@@ -89,8 +131,8 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
         sortAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerSortOrder.setAdapter(sortAdapter);
 
-        spinnerStatusFilter.setSelection(0); // Confirmed default
-        spinnerSortOrder.setSelection(0);    // Name A-Z default
+        spinnerStatusFilter.setSelection(0);
+        spinnerSortOrder.setSelection(0);
 
         spinnerStatusFilter.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -120,8 +162,10 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
                 .document(eventId)
                 .collection("entrants")
                 .addSnapshotListener((value, error) -> {
+
                     if (error != null) {
                         Toast.makeText(this, "Failed to load entrants", Toast.LENGTH_SHORT).show();
+                        Log.e("FINAL_DEBUG", "Error loading entrants", error);
                         return;
                     }
 
@@ -130,8 +174,18 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
                     if (value != null) {
                         for (QueryDocumentSnapshot doc : value) {
                             Entrant entrant = doc.toObject(Entrant.class);
-                            entrant.setEntrantid(doc.getId());
-                            allEntrants.add(entrant);
+
+                            if (entrant != null) {
+                                String userId = doc.getString("userId");
+                                entrant.setEntrantid(userId);
+
+                                Log.d("FINAL_DEBUG",
+                                        "Entrant loaded: name=" + entrant.getName()
+                                                + ", status=" + entrant.getStatus()
+                                                + ", userId=" + userId);
+
+                                allEntrants.add(entrant);
+                            }
                         }
                     }
 
@@ -144,7 +198,6 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
 
         for (Entrant entrant : allEntrants) {
             String status = entrant.getStatus() == null ? "" : entrant.getStatus().trim();
-
             boolean matchesFilter = false;
 
             switch (selectedStatusFilter) {
@@ -177,14 +230,70 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
             }
         });
 
+        adapter.clearSelections();
         adapter.notifyDataSetChanged();
+
 
         if (displayedEntrants.isEmpty()) {
             emptyMessage.setVisibility(View.VISIBLE);
+            recyclerView.setVisibility(View.GONE);
         } else {
             emptyMessage.setVisibility(View.GONE);
+            recyclerView.setVisibility(View.VISIBLE);
+        }
+
+        Log.d("FINAL_DEBUG", "Displayed entrants count = " + displayedEntrants.size());
+    }
+
+
+
+    private void sendNotificationsToUsers() {
+        int sentCount = 0;
+
+        List<Entrant> selectedEntrants = adapter.getSelectedEntrants();
+
+        if (selectedEntrants.isEmpty()) {
+            Toast.makeText(this, "Please select at least one entrant", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        for (Entrant entrant : selectedEntrants) {
+            String status = entrant.getStatus() == null ? "" : entrant.getStatus().trim();
+            String userId = entrant.getEntrantid();
+
+            if (status.equalsIgnoreCase("confirmed") && userId != null && !userId.isEmpty()) {
+                sendNotificationToUser(
+                        userId,
+                        "You've been selected!",
+                        eventName != null ? eventName : "Event",
+                        "Congratulations! You have been selected for this event.",
+                        "SELECTED"
+                );
+                sentCount++;
+            }
+        }
+
+        if (sentCount > 0) {
+            Toast.makeText(this, sentCount + " notifications sent", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "No selected confirmed entrants to notify", Toast.LENGTH_SHORT).show();
         }
     }
+
+    private void sendNotificationToUser(String userId, String message, String eventName, String details, String type) {
+        Notification notification = new Notification(message, eventName, details, type);
+
+        db.collection("users")
+                .document(userId)
+                .collection("notifications")
+                .add(notification)
+                .addOnSuccessListener(documentReference ->
+                        Log.d("FINAL_DEBUG", "Notification sent to user: " + userId))
+                .addOnFailureListener(e ->
+                        Log.e("FINAL_DEBUG", "Failed to send notification to user: " + userId, e));
+    }
+
+
 
     @Override
     protected void onDestroy() {

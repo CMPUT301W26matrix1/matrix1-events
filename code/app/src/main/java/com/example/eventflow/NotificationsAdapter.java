@@ -14,11 +14,14 @@ import java.util.concurrent.TimeUnit;
 
 
 /**
- * Adapter for notification items.
- * Handles SELECTED (ACCEPT/DECLINE buttons) and NOT_SELECTED (TRY AGAIN button) types.
- * Updates UI based on user actions (accepted/declined status).
- *
- */
+* RecyclerView adapter for notification items.
+* Handles SELECTED (ACCEPT/DECLINE) and NOT_SELECTED (TRY AGAIN) notification types.
+* Manages button visibility and click events based on notification state.
+* Converts timestamps to human-readable "time ago" format.
+*
+ * Outstanding Issues: State changes not persisted to Firestore.
+*/
+
 public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdapter.ViewHolder> {
     private List<Notification> notifications;
 
@@ -41,7 +44,13 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         holder.message.setText(n.getMessage());
         holder.eventName.setText(n.getEventName() + ":");
         holder.details.setText(n.getDetails());
-        holder.time.setText(getTimeAgo(n.getTimestamp()));
+
+        // Handle timestamp
+        if (n.getTimestamp() != null) {
+            holder.time.setText(getTimeAgo(n.getTimestamp()));
+        } else {
+            holder.time.setText("Just now");
+        }
 
         // Make the entire notification clickable
         holder.itemView.setOnClickListener(v -> {
@@ -60,7 +69,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                 holder.acceptedMessage.setVisibility(View.VISIBLE);
                 holder.declinedMessage.setVisibility(View.GONE);
                 holder.tryAgainButton.setVisibility(View.GONE);
-            } else if (n.isDeclined()) {  // Check if already declined
+            } else if (n.isDeclined()) {
                 // Show declined message
                 holder.acceptButton.setVisibility(View.GONE);
                 holder.declineButton.setVisibility(View.GONE);
@@ -84,7 +93,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                             "Accepted invitation for " + n.getEventName() + "! You're in!",
                             Toast.LENGTH_SHORT).show();
 
-                    // Hide buttons, show accepted message
+                    // Update UI
                     holder.acceptButton.setVisibility(View.GONE);
                     holder.declineButton.setVisibility(View.GONE);
                     holder.acceptedMessage.setVisibility(View.VISIBLE);
@@ -100,7 +109,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                             "Declined invitation for " + n.getEventName(),
                             Toast.LENGTH_SHORT).show();
 
-                    // Hide buttons, show declined message
+                    // Update UI
                     holder.acceptButton.setVisibility(View.GONE);
                     holder.declineButton.setVisibility(View.GONE);
                     holder.acceptedMessage.setVisibility(View.GONE);
@@ -133,8 +142,6 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
     }
 
     private String getTimeAgo(Timestamp timestamp) {
-        if (timestamp == null) return "Just now";
-
         long now = System.currentTimeMillis();
         long time = timestamp.toDate().getTime();
         long diff = now - time;
