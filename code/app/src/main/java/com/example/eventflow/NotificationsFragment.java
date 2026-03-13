@@ -1,6 +1,5 @@
 package com.example.eventflow;
 
-
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -21,6 +20,12 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fragment that displays real-time notifications using Firestore.
+ * Shows notification list with CLEAR ALL functionality.
+ * Updates automatically when new notifications arrive.
+ * Handles empty state display when no notifications exist.
+ */
 public class NotificationsFragment extends Fragment {
 
     private RecyclerView recyclerView;
@@ -32,8 +37,6 @@ public class NotificationsFragment extends Fragment {
     private FirebaseAuth auth = FirebaseAuth.getInstance();
     private String currentUserId;
 
-
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -44,17 +47,16 @@ public class NotificationsFragment extends Fragment {
 
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyView = view.findViewById(R.id.emptyView);
-        clearAllButton = view.findViewById(R.id.clearAllButton); //clear all notifications
+        clearAllButton = view.findViewById(R.id.clearAllButton);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new NotificationsAdapter(notificationList);
         recyclerView.setAdapter(adapter);
 
-        // Set click listener for Clear all button
         clearAllButton.setOnClickListener(v -> clearAllNotifications());
+
         if (auth.getCurrentUser() != null) {
             currentUserId = auth.getCurrentUser().getUid();
-
             loadNotifications();
         } else {
             Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
@@ -82,7 +84,6 @@ public class NotificationsFragment extends Fragment {
 
                     Log.d("FIREBASE", "Found " + value.size() + " notifications");
 
-
                     notificationList.clear();
 
                     for (QueryDocumentSnapshot doc : value) {
@@ -106,6 +107,7 @@ public class NotificationsFragment extends Fragment {
                     }
                 });
     }
+
     private void sendNotificationToCurrentUser() {
         if (currentUserId == null) return;
 
