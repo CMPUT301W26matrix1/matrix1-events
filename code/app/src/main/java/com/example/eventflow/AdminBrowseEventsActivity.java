@@ -64,7 +64,7 @@ public class AdminBrowseEventsActivity extends AppCompatActivity {
 
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         Event event = doc.toObject(Event.class);
-                        event.setId(doc.getId());
+                        event.setEventId(doc.getId());
                         allEvents.add(event);
                     }
 
