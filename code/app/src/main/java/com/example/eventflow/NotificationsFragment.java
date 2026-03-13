@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -46,10 +47,11 @@ public class NotificationsFragment extends Fragment {
 
     private final List<Notification> notificationList = new ArrayList<>();
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final FirebaseAuth auth = FirebaseAuth.getInstance();
 
     private String userId;
     public NotificationsFragment() {
-        // Required empty public constructor
+
     }
 
     public static NotificationsFragment newInstance(String userId) {
@@ -68,9 +70,12 @@ public class NotificationsFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_notifications, container, false);
 
-        if (getArguments() != null) {
+        if (auth.getCurrentUser() != null) {
+            userId = auth.getCurrentUser().getUid();
+        } else if (getArguments() != null) {
             userId = getArguments().getString("userId");
         }
+
         if (userId == null || userId.isEmpty()) {
             userId = "1234";
         }
