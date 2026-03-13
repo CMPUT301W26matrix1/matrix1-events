@@ -15,10 +15,20 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Unit tests for Event waiting list functionality.
- * US 01.01.01 — Join waiting list
- * US 01.01.02 — Leave waiting list
- * US 01.01.03 — See list of events
+ * Unit test suite for {@link Event} waiting list behaviour and the
+ * associated user stories.
+ *
+ * <p>Covers basic invariants around registration windows, list capacity,
+ * and waiting list counts as seen by the entrant.</p>
+ *
+ * <p>User stories: US 01.01.01, US 01.01.02, US 01.01.03.</p>
+ *
+ * <p><b>Outstanding issues:</b>
+ * <ul>
+ *   <li>Does not exercise {@link com.example.eventflow.controller.EventController} directly.</li>
+ *   <li>No integration-level tests against {@code EventRepository} or Firestore.</li>
+ * </ul>
+ * </p>
  */
 public class EventControllerTest {
 

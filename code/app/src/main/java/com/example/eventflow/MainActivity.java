@@ -12,9 +12,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * MainActivity
- * Displays the event details screen and allows the organizer
- * to navigate to the waiting list screen.
+ * Entry-point activity hosting the main event screen and providing
+ * navigation into the waiting list UI.
+ *
+ * <p>Currently also contains prototype lottery logic used for manual
+ * experimentation and not wired into production flows.</p>
+ *
+ * <p><b>Outstanding issues:</b>
+ * <ul>
+ *   <li>Lottery prototype code lives in the activity instead of a dedicated test or controller.</li>
+ *   <li>Navigation to the browsing fragment is implicit via the layout only.</li>
+ * </ul>
+ * </p>
  */
 public class MainActivity extends AppCompatActivity {
 

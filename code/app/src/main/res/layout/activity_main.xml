@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Main screen layout
- Displays event title and navigation button
+  Root layout for the main screen.
+  Hosts the event title, a button to open the waiting list activity,
+  and a fragment container for browsing events.
+
+  Outstanding issues:
+  - FragmentContainerView is full-screen and may overlap header controls.
+  - No explicit state views for loading/empty/error cases.
 -->
 
 <androidx.constraintlayout.widget.ConstraintLayout
