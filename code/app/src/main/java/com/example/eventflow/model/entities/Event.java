@@ -85,6 +85,10 @@ public class Event {
     public List<String> getWaitingList() { return waitingList; }
     public void setWaitingList(List<String> waitingList) { this.waitingList = waitingList; }
 
+    public int getWaitingListCount() {
+        return waitingList != null ? waitingList.size() : 0;
+    }
+
     public boolean isRegistrationOpen() {
         Timestamp now = Timestamp.now();
         return registrationStart != null && registrationEnd != null

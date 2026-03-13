@@ -62,10 +62,12 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         if (event.getRegistrationEnd() != null) {
             Date regEnd = event.getRegistrationEnd().toDate();
             holder.tvRegistrationEnd.setText("⏰ Register by: " + dateFormat.format(regEnd));
+        } else {
+            holder.tvRegistrationEnd.setText("⏰ Register by: TBD");
         }
 
         // US 01.05.04 — Show waiting list count
-        int waitingCount = event.getWaitingList() != null ? event.getWaitingList().size() : 0;
+        int waitingCount = event.getWaitingListCount();
         int limit = event.getWaitingListLimit();
         if (limit > 0) {
             holder.tvWaitingListCount.setText("👥 " + waitingCount + " / " + limit + " on waiting list");
@@ -81,6 +83,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         if (!registrationOpen) {
             holder.btnJoinLeave.setText("Registration Closed");
             holder.btnJoinLeave.setEnabled(false);
+            holder.btnJoinLeave.setOnClickListener(null);
         } else if (alreadyJoined) {
             holder.btnJoinLeave.setText("Leave Waiting List");
             holder.btnJoinLeave.setEnabled(true);
@@ -88,6 +91,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         } else if (event.isWaitingListFull()) {
             holder.btnJoinLeave.setText("Waiting List Full");
             holder.btnJoinLeave.setEnabled(false);
+            holder.btnJoinLeave.setOnClickListener(null);
         } else {
             holder.btnJoinLeave.setText("Join Waiting List");
             holder.btnJoinLeave.setEnabled(true);

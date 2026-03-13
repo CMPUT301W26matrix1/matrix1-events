@@ -1,5 +1,4 @@
 package com.example.eventflow;
-import com.example.eventflow.event.EventListFragment;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -18,9 +17,16 @@ import com.example.eventflow.view.profile.SelectedEntrantsActivity;
 
 /**
  * MainActivity
- * Hosts the NotificationsFragment and provides navigation buttons
+ * Main landing screen for entrant actions.
+ * Hosts navigation buttons and loads fragments such as:
+ * - Event list / waiting list count view
+ * - Profile flow
+ * - Notifications flow
  */
 public class MainActivity extends AppCompatActivity {
+
+    private Button viewWaitingListButton;
+    private Button profileButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,40 +34,25 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
-        finalEntrantsButton.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, OrganizerFinalEntrantsActivity.class);
-            intent.putExtra("eventId", "Tg34Yn6wNXvYAuvczoMA");
-            startActivity(intent);
-        });
+        viewWaitingListButton = findViewById(R.id.viewWaitingListButton);
+        profileButton = findViewById(R.id.profileButton);
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
-
-        Button waitingListButton = findViewById(R.id.viewWaitingListButton);
-        Button profileButton = findViewById(R.id.profileButton);
         Button selectedEntrantsButton = findViewById(R.id.viewSelectedEntrantsButton);
         Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
+        Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
+        Button eventsButton = findViewById(R.id.eventsButton);
 
-        if (waitingListButton != null) {
-            waitingListButton.setOnClickListener(v -> {
-                Intent intent = new Intent(MainActivity.this, WaitingListActivity.class);
-                startActivity(intent);
-            });
+        /* Entrant flow — browse events and see waiting list counts */
+        if (viewWaitingListButton != null) {
+            viewWaitingListButton.setOnClickListener(v -> showEventListFragment());
         }
 
+        /* Profile navigation */
         if (profileButton != null) {
-            profileButton.setOnClickListener(v -> {
-                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                transaction.replace(R.id.main_fragment_container, new ProfileContainerFragment());
-                transaction.addToBackStack(null);
-                transaction.commit();
-            });
+            profileButton.setOnClickListener(v -> showProfileFragment());
         }
 
+        /* Organizer – selected entrants */
         if (selectedEntrantsButton != null) {
             selectedEntrantsButton.setOnClickListener(v -> {
                 Intent intent = new Intent(MainActivity.this, SelectedEntrantsActivity.class);
@@ -69,32 +60,54 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        if (adminBrowseEventsButton != null) {
-            adminBrowseEventsButton.setOnClickListener(v -> {
-                Intent intent = new Intent(MainActivity.this, AdminBrowseEventsActivity.class);
+        /* Organizer – final entrants */
+        if (finalEntrantsButton != null) {
+            finalEntrantsButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, OrganizerFinalEntrantsActivity.class);
+                intent.putExtra("eventId", "g34Yn6wNXvYAuVcz0MA");
                 startActivity(intent);
             });
         }
 
-        // Browse Events button — US 01.01.03
-        Button eventsButton = findViewById(R.id.eventsButton);
-        if (eventsButton != null) {
-            eventsButton.setOnClickListener(v -> {
-                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                transaction.replace(R.id.main_fragment_container, new EventListFragment());
-                transaction.addToBackStack(null);
-                transaction.commit();
+        /* Admin – browse/manage events */
+        if (adminBrowseEventsButton != null) {
+            adminBrowseEventsButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, WaitingListActivity.class);
+                startActivity(intent);
             });
         }
 
-        showNotificationsFragment();
+        /* Browse events button */
+        if (eventsButton != null) {
+            eventsButton.setOnClickListener(v -> showEventListFragment());
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+    }
+
+    private void showEventListFragment() {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.main_fragment_container, new EventListFragment());
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
+
+    private void showProfileFragment() {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.main_fragment_container, new ProfileContainerFragment());
+        transaction.addToBackStack(null);
+        transaction.commit();
     }
 
     private void showNotificationsFragment() {
         NotificationsFragment fragment = new NotificationsFragment();
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.main_fragment_container, fragment);
+        transaction.addToBackStack(null);
         transaction.commit();
     }
 }
-
