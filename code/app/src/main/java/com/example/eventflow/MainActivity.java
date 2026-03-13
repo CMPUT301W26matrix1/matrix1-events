@@ -51,7 +51,10 @@ public class MainActivity extends AppCompatActivity {
 
         /* Entrant flow — browse events and see waiting list counts */
         if (viewWaitingListButton != null) {
-            viewWaitingListButton.setOnClickListener(v -> showEventListFragment());
+            viewWaitingListButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, WaitingListActivity.class);
+                startActivity(intent);
+            });
         }
 
         /* Profile navigation */
