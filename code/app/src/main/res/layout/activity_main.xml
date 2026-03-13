@@ -2,6 +2,7 @@
 
 <!--
  Main screen layout
+ Displays event title and navigation buttons
  Displays event title, navigation button, and profile fragment container
 -->
 
@@ -46,6 +47,18 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp"/>
 
+    <!-- View Selected Entrants Button -->
+    <Button
+        android:id="@+id/viewSelectedEntrantsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="View Selected Entrants"
+        app:layout_constraintTop_toBottomOf="@id/viewWaitingListButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="20dp"/>
+
+    <!-- Fragment Container -->
     <!-- Fragment Container for profile flow -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/main_fragment_container"

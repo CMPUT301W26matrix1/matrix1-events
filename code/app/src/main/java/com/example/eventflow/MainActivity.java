@@ -7,6 +7,7 @@ import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentTransaction;
 
+import com.example.eventflow.view.profile.SelectedEntrantsActivity;
 import com.example.eventflow.controller.LotteryController;
 import com.example.eventflow.view.profile.ProfileContainerFragment;
 
@@ -21,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Waiting List Button
+        // Button to open waiting list screen
         Button waitingListButton = findViewById(R.id.viewWaitingListButton);
 
         waitingListButton.setOnClickListener(v -> {
@@ -29,6 +30,8 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        // Button to open selected entrants screen
+        Button selectedEntrantsButton = findViewById(R.id.viewSelectedEntrantsButton);
         // Profile Button
         Button profileButton = findViewById(R.id.profileButton);
 
@@ -43,19 +46,9 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // Example lottery logic (prototype only)
-        LotteryController lotteryController = new LotteryController();
-
-        ArrayList<String> waitingList = new ArrayList<>();
-        waitingList.add("Alice");
-        waitingList.add("Bob");
-        waitingList.add("Charlie");
-        waitingList.add("David");
-
-        List<String> selected = new ArrayList<>();
-        selected.add(waitingList.get(0));
-        selected.add(waitingList.get(1));
-
-        System.out.println("Selected entrants: " + selected);
+        selectedEntrantsButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, SelectedEntrantsActivity.class);
+            startActivity(intent);
+        });
     }
 }
