@@ -3,17 +3,20 @@ package com.example.eventflow;
 import com.google.firebase.Timestamp;
 
 public class Notification {
-    private String message;
-    private String eventName;
-    private String details;
+    // These are the pieces of information a notification needs
+    private String message;      // will show "You've been selected!"
+    private String eventName;    // The event name:"
+    private String details;      // Extra info"
+    private Timestamp timestamp; // When it happened
+    private boolean isRead;      // Whether user has seen it
+    private String id;
+    private String userId;
     private String eventId;
     private String notificationId;
-    private Timestamp timestamp;
-    private boolean isRead;
     private String type;
-    private boolean accepted;  // Tracks if user accepted invitation
+    private boolean accepted;
 
-    // Empty constructor required for Firestore
+    // Empty constructor
     public Notification() {
     }
 
@@ -23,7 +26,6 @@ public class Notification {
         this.eventName = eventName;
         this.details = details;
         this.timestamp = Timestamp.now();
-        this.eventId = eventId;
         this.isRead = false;
         this.type = "SELECTED";
         this.accepted = false;
@@ -73,6 +75,35 @@ public class Notification {
     }
     public void setRead(boolean read) {
         this.isRead = read;
+    }
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+    public String getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
+    }
+
+    public String getNotificationId() {
+        return notificationId;
+    }
+
+    public void setNotificationId(String notificationId) {
+        this.notificationId = notificationId;
     }
 
     public String getType() {
