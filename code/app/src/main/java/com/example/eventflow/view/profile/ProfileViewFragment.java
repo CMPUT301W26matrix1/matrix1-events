@@ -56,6 +56,7 @@ public class ProfileViewFragment extends Fragment {
         TextView tvPhone = view.findViewById(R.id.tvPhone);
         TextView tvDeviceId = view.findViewById(R.id.tvDeviceId);
         Button btnEditProfile = view.findViewById(R.id.btnEditProfile);
+        Button btnViewHistory = view.findViewById(R.id.btnViewHistory);
 
         Bundle args = getArguments();
         if (args != null) {
@@ -72,11 +73,21 @@ public class ProfileViewFragment extends Fragment {
             tvPhone.setText("Phone: " + (TextUtils.isEmpty(phone) ? "Not provided" : phone));
             tvDeviceId.setText("Device ID: " + deviceId);
 
-            btnEditProfile.setOnClickListener(v -> {
-                if (getParentFragment() instanceof ProfileContainerFragment) {
-                    ((ProfileContainerFragment) getParentFragment()).showEditProfile(currentProfile);
-                }
-            });
+            if (btnEditProfile != null) {
+                btnEditProfile.setOnClickListener(v -> {
+                    if (getParentFragment() instanceof ProfileContainerFragment) {
+                        ((ProfileContainerFragment) getParentFragment()).showEditProfile(currentProfile);
+                    }
+                });
+            }
+
+            if (btnViewHistory != null) {
+                btnViewHistory.setOnClickListener(v -> {
+                    if (getParentFragment() instanceof ProfileContainerFragment) {
+                        ((ProfileContainerFragment) getParentFragment()).showEventHistory();
+                    }
+                });
+            }
         }
     }
 }

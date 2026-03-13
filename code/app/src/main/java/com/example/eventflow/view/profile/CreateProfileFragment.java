@@ -1,5 +1,6 @@
 package com.example.eventflow.view.profile;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
@@ -58,6 +59,7 @@ public class CreateProfileFragment extends Fragment {
         btnSaveProfile.setOnClickListener(v -> saveProfile());
     }
 
+    @SuppressLint("HardwareIds")
     private void saveProfile() {
         String firstName = etFirstName.getText().toString().trim();
         String lastName = etLastName.getText().toString().trim();

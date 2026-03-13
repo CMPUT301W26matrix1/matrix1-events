@@ -75,9 +75,10 @@ public class ProfileContainerFragment extends Fragment {
         );
     }
 
-    private void showCreateProfile() {
+    public void showCreateProfile() {
         FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
         transaction.replace(R.id.profile_container, new CreateProfileFragment());
+        transaction.addToBackStack(null);
         transaction.commit();
     }
 
@@ -90,6 +91,18 @@ public class ProfileContainerFragment extends Fragment {
     public void showEditProfile(@NonNull Profile profile) {
         FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
         transaction.replace(R.id.profile_container, EditProfileFragment.newInstance(profile));
+        transaction.addToBackStack(null);
         transaction.commit();
+    }
+
+    public void showEventHistory() {
+        FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
+        transaction.replace(R.id.profile_container, new EventHistoryFragment());
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
+
+    public void reloadProfile() {
+        loadInitialProfileScreen();
     }
 }

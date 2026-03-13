@@ -5,17 +5,14 @@ import android.os.Bundle;
 import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.example.eventflow.controller.LotteryController;
+import com.example.eventflow.view.profile.ProfileContainerFragment;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * MainActivity
- * Displays the event details screen and allows the organizer
- * to navigate to the waiting list screen.
- */
 public class MainActivity extends AppCompatActivity {
 
     @Override
@@ -24,13 +21,27 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Button to open waiting list screen
-        Button button = findViewById(R.id.viewWaitingListButton);
+        // Waiting List Button
+        Button waitingListButton = findViewById(R.id.viewWaitingListButton);
 
-        button.setOnClickListener(v -> {
+        waitingListButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, WaitingListActivity.class);
             startActivity(intent);
         });
+
+        // Profile Button
+        Button profileButton = findViewById(R.id.profileButton);
+
+        if (profileButton != null) {
+            profileButton.setOnClickListener(v -> {
+
+                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                transaction.replace(R.id.main_fragment_container, new ProfileContainerFragment());
+                transaction.addToBackStack(null);
+                transaction.commit();
+
+            });
+        }
 
         // Example lottery logic (prototype only)
         LotteryController lotteryController = new LotteryController();
