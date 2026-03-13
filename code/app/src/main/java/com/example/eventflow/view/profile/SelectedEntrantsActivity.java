@@ -13,12 +13,20 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 
+/**
+ * Activity that displays the list of selected entrants for an event.
+ * The entrant names are retrieved from Firebase Firestore and shown in a ListView.
+ */
 public class SelectedEntrantsActivity extends AppCompatActivity {
 
     private ListView listView;
     private ArrayList<String> entrants;
     private ArrayAdapter<String> adapter;
 
+    /**
+     * Initializes the activity and sets up the ListView adapter.
+     * Also loads entrant data from Firebase.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -40,6 +48,9 @@ public class SelectedEntrantsActivity extends AppCompatActivity {
         loadEntrantsFromFirebase();
     }
 
+    /**
+     * Retrieves entrant data from Firebase Firestore and updates the ListView.
+     */
     private void loadEntrantsFromFirebase() {
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
