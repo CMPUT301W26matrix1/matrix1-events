@@ -1,7 +1,9 @@
 package com.example.eventflow;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,23 +17,24 @@ import java.util.List;
 
 public class WaitingListActivity extends AppCompatActivity {
 
-    private LotteryController lotteryController;
+    private FirebaseFirestore db;
+
+    private TextView waitingListText;
 
     private List<String> waitingList = new ArrayList<>();
     private List<String> selectedEntrants = new ArrayList<>();
 
-    private FirebaseFirestore db;
+    private LotteryController lotteryController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_waiting_list);
 
-        lotteryController = new LotteryController();
         db = FirebaseFirestore.getInstance();
+        lotteryController = new LotteryController();
 
-        loadWaitingListFromFirebase();
-
+        waitingListText = findViewById(R.id.waitingListText);
         Button redrawButton = findViewById(R.id.redrawLotteryButton);
 
         redrawButton.setOnClickListener(v -> {
@@ -40,15 +43,20 @@ public class WaitingListActivity extends AppCompatActivity {
                     lotteryController.drawReplacement(waitingList, selectedEntrants);
 
             if (replacement != null) {
+
                 Toast.makeText(this,
                         replacement + " selected as replacement",
                         Toast.LENGTH_SHORT).show();
+
             } else {
+
                 Toast.makeText(this,
                         "No replacement available",
                         Toast.LENGTH_SHORT).show();
             }
         });
+
+        loadWaitingListFromFirebase();
     }
 
     private void loadWaitingListFromFirebase() {
@@ -71,10 +79,18 @@ public class WaitingListActivity extends AppCompatActivity {
                         }
                     }
 
-                    if (!waitingList.isEmpty()) {
-                        selectedEntrants.add(waitingList.get(0));
-                    }
-
+                    displayWaitingList();
                 });
+    }
+
+    private void displayWaitingList() {
+
+        StringBuilder listText = new StringBuilder();
+
+        for (String name : waitingList) {
+            listText.append(name).append("\n");
+        }
+
+        waitingListText.setText(listText.toString());
     }
 }
