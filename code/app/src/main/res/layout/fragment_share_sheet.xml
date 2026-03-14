@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/white"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="20dp"
+        android:background="#E0E0E0" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Share with friends"
+        android:textColor="#1D1B20"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:columnCount="4"
+        android:rowCount="2">
+
+        <LinearLayout android:layout_width="0dp" android:layout_columnWeight="1" android:gravity="center" android:orientation="vertical" android:padding="8dp">
+            <ImageView android:layout_width="50dp" android:layout_height="50dp" android:src="@android:drawable/ic_menu_edit" android:background="@android:color/darker_gray" android:padding="10dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Copy Link" android:textSize="12sp" android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="0dp" android:layout_columnWeight="1" android:gravity="center" android:orientation="vertical" android:padding="8dp">
+            <ImageView android:layout_width="50dp" android:layout_height="50dp" android:src="@android:drawable/ic_menu_send" android:background="#25D366" android:padding="10dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="WhatsApp" android:textSize="12sp" android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="0dp" android:layout_columnWeight="1" android:gravity="center" android:orientation="vertical" android:padding="8dp">
+            <ImageView android:layout_width="50dp" android:layout_height="50dp" android:src="@android:drawable/ic_menu_share" android:background="#1877F2" android:padding="10dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Facebook" android:textSize="12sp" android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="0dp" android:layout_columnWeight="1" android:gravity="center" android:orientation="vertical" android:padding="8dp">
+            <ImageView android:layout_width="50dp" android:layout_height="50dp" android:src="@android:drawable/ic_menu_view" android:background="#A033FF" android:padding="10dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Messenger" android:textSize="12sp" android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="0dp" android:layout_columnWeight="1" android:gravity="center" android:orientation="vertical" android:padding="8dp">
+            <ImageView android:layout_width="50dp" android:layout_height="50dp" android:src="@android:drawable/ic_menu_info_details" android:background="#1DA1F2" android:padding="10dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Twitter" android:textSize="12sp" android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="0dp" android:layout_columnWeight="1" android:gravity="center" android:orientation="vertical" android:padding="8dp">
+            <ImageView android:layout_width="50dp" android:layout_height="50dp" android:src="@android:drawable/ic_menu_camera" android:background="#E1306C" android:padding="10dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Instagram" android:textSize="12sp" android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/item_qr_scan"
+            android:layout_width="0dp"
+            android:layout_columnWeight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true">
+            <ImageView android:layout_width="50dp" android:layout_height="50dp" android:src="@android:drawable/ic_popup_sync" android:padding="10dp" android:background="#F5F5F5"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="QR Scan" android:textSize="12sp" android:textStyle="bold" android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="0dp" android:layout_columnWeight="1" android:gravity="center" android:orientation="vertical" android:padding="8dp">
+            <ImageView android:layout_width="50dp" android:layout_height="50dp" android:src="@android:drawable/stat_notify_chat" android:background="#34C759" android:padding="10dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Message" android:textSize="12sp" android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
+    </GridLayout>
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btn_share_cancel"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="32dp"
+        android:background="#F2F2F2"
+        android:text="CANCEL"
+        android:textColor="#1D1B20"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+</LinearLayout>

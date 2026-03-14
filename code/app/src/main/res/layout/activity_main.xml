@@ -88,6 +88,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp"/>
 
+    <!-- Create events by org -->
+    <Button
+        android:id="@+id/btn_create_event_org"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Create Event (Org)"
+        app:layout_constraintTop_toBottomOf="@id/eventsButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
+
     <!-- Fragment Container -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/main_fragment_container"
@@ -98,5 +109,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp" />
+
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

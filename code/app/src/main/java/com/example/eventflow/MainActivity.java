@@ -10,6 +10,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentTransaction;
 import com.example.eventflow.event.EventListFragment;
+import com.example.eventflow.org_event.OrgEventFragment;
 import com.example.eventflow.view.profile.ProfileContainerFragment;
 import com.example.eventflow.view.profile.SelectedEntrantsActivity;
 
@@ -48,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
         Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
         Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
         Button eventsButton = findViewById(R.id.eventsButton);
+        Button createEventOrgButton = findViewById(R.id.btn_create_event_org);
 
         /* Entrant flow — browse events and see waiting list counts */
         if (viewWaitingListButton != null) {
@@ -60,6 +62,14 @@ public class MainActivity extends AppCompatActivity {
         /* Profile navigation */
         if (profileButton != null) {
             profileButton.setOnClickListener(v -> showProfileFragment());
+        }
+
+        /* Organizer - create event */
+        if (createEventOrgButton != null) {
+            createEventOrgButton.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, com.example.eventflow.org_event.OrgEventActivity.class);
+                startActivity(intent);
+            });
         }
 
         /* Organizer – selected entrants */
@@ -96,6 +106,7 @@ public class MainActivity extends AppCompatActivity {
             eventsButton.setOnClickListener(v -> showEventListFragment());
         }
 
+
         /* Handle edge-to-edge window insets */
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -111,6 +122,7 @@ public class MainActivity extends AppCompatActivity {
      * Displays the event list fragment where entrants can browse events
      * and view waiting list counts.
      */
+
     private void showEventListFragment() {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.main_fragment_container, new EventListFragment());
@@ -140,6 +152,7 @@ public class MainActivity extends AppCompatActivity {
         transaction.commit();
     }
 }
+
 
 
 

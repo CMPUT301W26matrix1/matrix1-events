@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center">
+
+    <CheckBox
+        android:id="@+id/cb_limit_attendees"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Limit Attendees"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:buttonTint="#7B61FF"
+        android:layout_marginBottom="4dp" />
+
+    <EditText
+        android:id="@+id/et_max_attendees"
+        android:layout_width="100dp"
+        android:layout_height="35dp"
+        android:layout_marginBottom="8dp"
+        android:background="#121212"
+        android:textColor="#FFFFFF"
+        android:inputType="number"
+        android:gravity="center"
+        android:hint="Limit"
+        android:textColorHint="#555555"
+        android:enabled="false"
+        android:alpha="0.5" /> </LinearLayout>
