@@ -31,7 +31,6 @@
             </intent-filter>
 
         </activity>
-<<<<<<< HEAD
         <activity
             android:name=".org_event.EventDetailsActivity"
             android:exported="false" />
@@ -39,9 +38,7 @@
         <activity
             android:name=".org_QR.QRDisplayActivity"
             android:exported="false" />
-=======
 
->>>>>>> main
     </application>
 
 </manifest>

@@ -33,7 +33,6 @@ android {
 }
 
 dependencies {
-<<<<<<< HEAD
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
@@ -42,7 +41,7 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     implementation("com.google.zxing:core:3.5.3")
-=======
+
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.activity:activity:1.8.0")
@@ -60,5 +59,4 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.5.2")
     androidTestImplementation("androidx.test:rules:1.5.0")
     androidTestImplementation("androidx.test:core:1.5.0")
->>>>>>> main
 }
