@@ -1,14 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<<<<<<< HEAD
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/main"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#1E1E1E">
-
-    <include layout="@layout/fragment_event_header" />
-=======
 
 <!--
  Main screen layout
@@ -98,6 +88,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp"/>
 
+    <!-- Create events by org -->
+    <Button
+        android:id="@+id/btn_create_event_org"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Create Event (Org)"
+        app:layout_constraintTop_toBottomOf="@id/eventsButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
+
     <!-- Fragment Container -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/main_fragment_container"
@@ -108,67 +109,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp" />
->>>>>>> main
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fillViewport="true">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingTop="16dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingHorizontal="16dp"
-                android:layout_marginBottom="16dp"
-                android:baselineAligned="false">
 
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center">
-
-                    <include layout="@layout/fragment_event_image" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center">
-
-                    <include layout="@layout/fragment_attendance_limit" />
-
-                    <Button
-                        android:id="@+id/btn_upload_qr"
-                        android:layout_width="wrap_content"
-                        android:layout_height="35dp"
-                        android:layout_marginTop="12dp"
-                        android:paddingHorizontal="12dp"
-                        android:backgroundTint="#3B82F6"
-                        android:textColor="#FFFFFF"
-                        android:textSize="10sp"
-                        android:textAllCaps="false"
-                        android:text="Upload Existing QR"/>
-
-                </LinearLayout>
-            </LinearLayout>
-
-            <include layout="@layout/fragment_event_inputs" />
-
-        </LinearLayout>
-    </ScrollView>
-
-    <include layout="@layout/fragment_event_bottom" />
-
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

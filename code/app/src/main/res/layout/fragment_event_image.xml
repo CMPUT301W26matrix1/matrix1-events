@@ -27,7 +27,8 @@
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
                 android:background="#FFFFFF"
-                android:src="@android:drawable/ic_menu_gallery"/> </androidx.cardview.widget.CardView>
+                android:src="@android:drawable/ic_menu_gallery"/>
+        </androidx.cardview.widget.CardView>
 
         <Button
             android:id="@+id/btn_edit_image"
@@ -40,15 +41,4 @@
             android:text="Edit Image"/>
     </LinearLayout>
 
-<<<<<<< HEAD
-=======
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center">
-    </LinearLayout>
-
->>>>>>> main
 </LinearLayout>

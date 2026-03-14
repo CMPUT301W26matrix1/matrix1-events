@@ -54,4 +54,8 @@ public class EventFormManager {
         String newEventId = UUID.randomUUID().toString();
         return new Event(newEventId, name, location, date, description, limitValue);
     }
+
+    public static boolean isDataValid(String name, String location, String date) {
+        return !name.isEmpty() && !location.isEmpty() && !date.isEmpty();
+    }
 }

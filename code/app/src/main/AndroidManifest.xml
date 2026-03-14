@@ -20,6 +20,12 @@
         <activity android:name=".view.profile.SelectedEntrantsActivity" />
         <activity android:name=".EventDetailActivity" />
 
+        <!-- Create Event Organizer screen -->
+        <activity
+            android:name=".org_event.OrgEventActivity"
+            android:label="Create Event" />
+
+
         <!-- Main Screen -->
         <activity
             android:name=".MainActivity"
