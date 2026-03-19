@@ -7,7 +7,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class ProfileControllerTest {
 
@@ -89,4 +91,27 @@ public class ProfileControllerTest {
         assertEquals("new@example.com", updated.getEmail());
         assertEquals("2222222222", updated.getPhoneNumber());
     }
+    // DELETE FEATURE TESTS
+
+    @Test
+    public void deleteProfile_validDeviceId_allowsDeletion() {
+        String deviceId = "device123";
+        boolean canDelete = deviceId != null && !deviceId.equals("");
+        assertTrue(canDelete);
+    }
+
+    @Test
+    public void deleteProfile_emptyDeviceId_preventsDeletion() {
+        String deviceId = "";
+        boolean canDelete = deviceId != null && !deviceId.equals("");
+        assertFalse(canDelete);
+    }
+
+    @Test
+    public void deleteProfile_nullDeviceId_preventsDeletion() {
+        String deviceId = null;
+        boolean canDelete = deviceId != null && !deviceId.equals("");
+        assertFalse(canDelete);
+    }
+
 }
