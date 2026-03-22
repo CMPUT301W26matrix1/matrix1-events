@@ -22,16 +22,18 @@ public class Event {
     private String posterUrl;
     private int capacity;
     private int waitingListLimit;  // 0 = unlimited
-    private List<String> waitingList; // device IDs
-    private List<String> interests; // interests/tags for filtering
-    private List<String> daysOfWeek; // e.g., ["Monday"]
-    private String timeOfDay; // e.g., "Morning", "Afternoon", "Evening"
+    private List<String> waitingList;    // device IDs
+    private List<String> coOrganizerIds; // US 02.09.01 — co-organizer device IDs
+    private List<String> interests;
+    private List<String> daysOfWeek;
+    private String timeOfDay;
 
     /**
      * Required no-arg constructor for Firestore deserialization.
      */
     public Event() {
         this.waitingList = new ArrayList<>();
+        this.coOrganizerIds = new ArrayList<>();
         this.interests = new ArrayList<>();
         this.daysOfWeek = new ArrayList<>();
     }
@@ -50,10 +52,12 @@ public class Event {
         this.capacity = capacity;
         this.waitingListLimit = waitingListLimit;
         this.waitingList = new ArrayList<>();
+        this.coOrganizerIds = new ArrayList<>();
         this.interests = new ArrayList<>();
         this.daysOfWeek = new ArrayList<>();
     }
 
+    // Existing getters/setters — unchanged
     public String getEventId() { return eventId; }
     public void setEventId(String eventId) { this.eventId = eventId; }
     public String getId() { return getEventId(); }
@@ -97,6 +101,10 @@ public class Event {
     public String getTimeOfDay() { return timeOfDay; }
     public void setTimeOfDay(String timeOfDay) { this.timeOfDay = timeOfDay; }
 
+    // US 02.09.01 — co-organizer getters/setters
+    public List<String> getCoOrganizerIds() { return coOrganizerIds; }
+    public void setCoOrganizerIds(List<String> coOrganizerIds) { this.coOrganizerIds = coOrganizerIds; }
+
     public int getWaitingListCount() {
         return waitingList != null ? waitingList.size() : 0;
     }
@@ -112,7 +120,6 @@ public class Event {
         if (waitingListLimit == 0) return false;
         return waitingList != null && waitingList.size() >= waitingListLimit;
     }
-
     private Timestamp convertToTimestamp(Object value) {
         if (value instanceof Timestamp) {
             return (Timestamp) value;
@@ -120,8 +127,6 @@ public class Event {
             return (com.google.firebase.Timestamp) value;
         } else if (value instanceof String) {
             try {
-                // Try to parse ISO 8601 or other common formats if needed.
-                // For now, let's assume it might be a long representing seconds.
                 return new Timestamp(Long.parseLong((String) value), 0);
             } catch (NumberFormatException e) {
                 return null;

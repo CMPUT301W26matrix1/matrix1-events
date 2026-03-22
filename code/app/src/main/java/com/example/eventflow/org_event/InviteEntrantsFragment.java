@@ -20,14 +20,16 @@ import com.example.eventflow.R;
 import com.example.eventflow.model.entities.Profile;
 import com.example.eventflow.model.repositories.EventRepository;
 import com.example.eventflow.model.repositories.ProfileRepository;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * US 02.01.03 — Organizer can invite specific entrants to a private event's waiting list
- * by searching via name, phone number, or email.
+ * US 02.01.03 — Invite entrants to private event waiting list
+ * US 02.09.01 — Assign co-organizer (blocks them from joining entrant pool)
  */
 public class InviteEntrantsFragment extends Fragment {
 
@@ -43,6 +45,7 @@ public class InviteEntrantsFragment extends Fragment {
 
     private ProfileRepository profileRepository;
     private EventRepository eventRepository;
+    private FirebaseFirestore db;
     private String eventId;
 
     public static InviteEntrantsFragment newInstance(String eventId) {
@@ -64,14 +67,19 @@ public class InviteEntrantsFragment extends Fragment {
         }
 
         profileRepository = new ProfileRepository();
-        eventRepository = new EventRepository();
+        eventRepository   = new EventRepository();
+        db                = FirebaseFirestore.getInstance();
 
-        etSearch  = view.findViewById(R.id.et_search_entrant);
-        rvResults = view.findViewById(R.id.rv_search_results);
+        etSearch    = view.findViewById(R.id.et_search_entrant);
+        rvResults   = view.findViewById(R.id.rv_search_results);
         tvNoResults = view.findViewById(R.id.tv_no_results);
 
-        // Setup RecyclerView
-        adapter = new InviteEntrantsAdapter(filteredProfiles, profile -> inviteEntrant(profile));
+        // Setup RecyclerView with both invite and co-organizer callbacks
+        adapter = new InviteEntrantsAdapter(
+                filteredProfiles,
+                profile -> inviteEntrant(profile),           // US 02.01.03
+                profile -> assignCoOrganizer(profile)        // US 02.09.01
+        );
         rvResults.setLayoutManager(new LinearLayoutManager(getContext()));
         rvResults.setAdapter(adapter);
 
@@ -82,10 +90,8 @@ public class InviteEntrantsFragment extends Fragment {
                     .getSupportFragmentManager().popBackStack());
         }
 
-        // Load all profiles from Firebase
         loadAllProfiles();
 
-        // Search as user types
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -97,17 +103,18 @@ public class InviteEntrantsFragment extends Fragment {
         return view;
     }
 
-    /**
-     * Load all profiles from Firestore into memory for searching.
-     */
     private void loadAllProfiles() {
         profileRepository.getProfilesCollection()
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     allProfiles.clear();
                     for (QueryDocumentSnapshot doc : querySnapshot) {
-                        Profile profile = doc.toObject(Profile.class);
-                        allProfiles.add(profile);
+                        try {
+                            Profile profile = doc.toObject(Profile.class);
+                            allProfiles.add(profile);
+                        } catch (Exception e) {
+                            // skip malformed profiles
+                        }
                     }
                     filterProfiles(etSearch.getText().toString().trim());
                 })
@@ -115,14 +122,10 @@ public class InviteEntrantsFragment extends Fragment {
                         Toast.makeText(getContext(), "Failed to load profiles.", Toast.LENGTH_SHORT).show());
     }
 
-    /**
-     * Filter profiles by name, email, or phone number.
-     */
     private void filterProfiles(String query) {
         filteredProfiles.clear();
 
         if (query.isEmpty()) {
-            // Show all profiles when search is empty
             filteredProfiles.addAll(allProfiles);
         } else {
             String lower = query.toLowerCase();
@@ -145,7 +148,7 @@ public class InviteEntrantsFragment extends Fragment {
     }
 
     /**
-     * Invite an entrant to the event's waiting list.
+     * US 02.01.03 — Invite entrant to waiting list
      */
     private void inviteEntrant(Profile profile) {
         if (eventId == null) {
@@ -161,7 +164,6 @@ public class InviteEntrantsFragment extends Fragment {
                                 profile.getFullName() + " invited successfully!",
                                 Toast.LENGTH_SHORT).show();
                     }
-
                     @Override
                     public void onFailure(Exception e) {
                         Toast.makeText(getContext(),
@@ -169,5 +171,29 @@ public class InviteEntrantsFragment extends Fragment {
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    /**
+     * US 02.09.01 — Assign entrant as co-organizer.
+     * Adds deviceId to coOrganizerIds array in Firestore.
+     * Co-organizer cannot join the entrant pool for this event.
+     */
+    private void assignCoOrganizer(Profile profile) {
+        if (eventId == null) {
+            Toast.makeText(getContext(), "No event selected.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        db.collection("events")
+                .document(eventId)
+                .update("coOrganizerIds", FieldValue.arrayUnion(profile.getDeviceId()))
+                .addOnSuccessListener(aVoid ->
+                        Toast.makeText(getContext(),
+                                profile.getFullName() + " assigned as co-organizer!",
+                                Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e ->
+                        Toast.makeText(getContext(),
+                                "Failed to assign co-organizer: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show());
     }
 }

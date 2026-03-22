@@ -35,19 +35,10 @@ public class EventController {
      */
     public List<Event> applySearchAndFilters(List<Event> events, String keyword, Profile profile, EventFilterOptions explicitFilters) {
         List<Event> results = new ArrayList<>(events);
-
-        // 1. Keyword search
         if (keyword != null && !keyword.trim().isEmpty()) {
             results = searchEvents(results, keyword);
         }
-
-        // 2. Profile-based matching (optional, maybe we only use it if no explicit filters are set?)
-        // Let's assume explicit filters OVERRIDE profile filters if they are set, 
-        // OR they are combined. Given "narrow my search", combining them makes sense.
-        // But usually, manual filters are what users want to "narrow".
-        
         results = filterEvents(results, explicitFilters);
-
         return results;
     }
 
@@ -57,8 +48,8 @@ public class EventController {
         List<Event> filtered = new ArrayList<>();
         for (Event event : events) {
             if ((event.getName() != null && event.getName().toLowerCase().contains(searchLower)) ||
-                (event.getDescription() != null && event.getDescription().toLowerCase().contains(searchLower)) ||
-                (event.getInterests() != null && event.getInterests().stream().anyMatch(i -> i.toLowerCase().contains(searchLower)))) {
+                    (event.getDescription() != null && event.getDescription().toLowerCase().contains(searchLower)) ||
+                    (event.getInterests() != null && event.getInterests().stream().anyMatch(i -> i.toLowerCase().contains(searchLower)))) {
                 filtered.add(event);
             }
         }
@@ -129,6 +120,11 @@ public class EventController {
             callback.onFailure(new Exception("Already on the waiting list."));
             return;
         }
+        // US 02.09.01 — block co-organizers from joining entrant pool
+        if (event.getCoOrganizerIds() != null && event.getCoOrganizerIds().contains(deviceId)) {
+            callback.onFailure(new Exception("Co-organizers cannot join the entrant pool."));
+            return;
+        }
         eventRepository.joinWaitingList(event.getEventId(), deviceId, callback);
     }
 
@@ -138,5 +134,10 @@ public class EventController {
 
     public boolean isOnWaitingList(Event event) {
         return event.getWaitingList() != null && event.getWaitingList().contains(deviceId);
+    }
+
+    // US 02.09.01 — check if current device is a co-organizer
+    public boolean isCoOrganizer(Event event) {
+        return event.getCoOrganizerIds() != null && event.getCoOrganizerIds().contains(deviceId);
     }
 }

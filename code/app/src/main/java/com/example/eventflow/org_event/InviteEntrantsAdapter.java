@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * US 02.01.03 — Adapter for displaying entrant search results
- * and allowing organizer to invite them to a private event.
+ * US 02.09.01 — Added co-organizer assignment button
  */
 public class InviteEntrantsAdapter extends RecyclerView.Adapter<InviteEntrantsAdapter.ViewHolder> {
 
@@ -24,12 +24,20 @@ public class InviteEntrantsAdapter extends RecyclerView.Adapter<InviteEntrantsAd
         void onInvite(Profile profile);
     }
 
-    private final List<Profile> profiles;
-    private final OnInviteClickListener listener;
+    public interface OnCoOrganizerClickListener {
+        void onAssignCoOrganizer(Profile profile);
+    }
 
-    public InviteEntrantsAdapter(List<Profile> profiles, OnInviteClickListener listener) {
+    private final List<Profile> profiles;
+    private final OnInviteClickListener inviteListener;
+    private final OnCoOrganizerClickListener coOrganizerListener;
+
+    public InviteEntrantsAdapter(List<Profile> profiles,
+                                 OnInviteClickListener inviteListener,
+                                 OnCoOrganizerClickListener coOrganizerListener) {
         this.profiles = profiles;
-        this.listener = listener;
+        this.inviteListener = inviteListener;
+        this.coOrganizerListener = coOrganizerListener;
     }
 
     @NonNull
@@ -48,7 +56,10 @@ public class InviteEntrantsAdapter extends RecyclerView.Adapter<InviteEntrantsAd
         holder.tvEmail.setText(profile.getEmail() != null ? profile.getEmail() : "");
         holder.tvPhone.setText(profile.getPhoneNumber() != null ? profile.getPhoneNumber() : "");
 
-        holder.btnInvite.setOnClickListener(v -> listener.onInvite(profile));
+        holder.btnInvite.setOnClickListener(v -> inviteListener.onInvite(profile));
+
+        // US 02.09.01 — co-organizer button
+        holder.btnCoOrganizer.setOnClickListener(v -> coOrganizerListener.onAssignCoOrganizer(profile));
     }
 
     @Override
@@ -58,14 +69,15 @@ public class InviteEntrantsAdapter extends RecyclerView.Adapter<InviteEntrantsAd
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvEmail, tvPhone;
-        Button btnInvite;
+        Button btnInvite, btnCoOrganizer;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
-            tvName   = itemView.findViewById(R.id.tv_entrant_name);
-            tvEmail  = itemView.findViewById(R.id.tv_entrant_email);
-            tvPhone  = itemView.findViewById(R.id.tv_entrant_phone);
-            btnInvite = itemView.findViewById(R.id.btn_invite);
+            tvName         = itemView.findViewById(R.id.tv_entrant_name);
+            tvEmail        = itemView.findViewById(R.id.tv_entrant_email);
+            tvPhone        = itemView.findViewById(R.id.tv_entrant_phone);
+            btnInvite      = itemView.findViewById(R.id.btn_invite);
+            btnCoOrganizer = itemView.findViewById(R.id.btn_co_organizer); // US 02.09.01
         }
     }
 }
