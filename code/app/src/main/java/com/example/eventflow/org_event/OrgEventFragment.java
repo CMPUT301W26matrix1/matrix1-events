@@ -14,6 +14,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.example.eventflow.R;
 import com.example.eventflow.org_QR.QRGenerator;
@@ -24,11 +25,14 @@ public class OrgEventFragment extends Fragment {
     // UI Elements
     private EditText etName, etLocation, etDate, etDescription, etLimit;
     private CheckBox cbLimit;
-    private CheckBox cbPrivate; // US 02.01.02 — private event checkbox
+    private CheckBox cbPrivate; // US 02.01.02
     private ImageView ivEventPoster;
 
     private View btnAddEvent, btnBack;
     private Button btnUpdate, btnDelete;
+    private Button btnInviteEntrants; // US 02.01.03
+
+    private String createdEventId; // stored after event is created
 
     @Nullable
     @Override
@@ -36,17 +40,17 @@ public class OrgEventFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_org_event, container, false);
 
-        // Initialize UI Components
-        etName        = view.findViewById(R.id.et_event_name);
-        etLocation    = view.findViewById(R.id.et_event_location);
-        etDate        = view.findViewById(R.id.et_event_date);
-        etDescription = view.findViewById(R.id.et_event_description);
-        cbLimit       = view.findViewById(R.id.cb_limit_attendees);
-        etLimit       = view.findViewById(R.id.et_max_attendees);
-        ivEventPoster = view.findViewById(R.id.iv_event_poster);
-        cbPrivate     = view.findViewById(R.id.cb_private_event); // US 02.01.02
+        // Initialize UI
+        etName           = view.findViewById(R.id.et_event_name);
+        etLocation       = view.findViewById(R.id.et_event_location);
+        etDate           = view.findViewById(R.id.et_event_date);
+        etDescription    = view.findViewById(R.id.et_event_description);
+        cbLimit          = view.findViewById(R.id.cb_limit_attendees);
+        etLimit          = view.findViewById(R.id.et_max_attendees);
+        ivEventPoster    = view.findViewById(R.id.iv_event_poster);
+        cbPrivate        = view.findViewById(R.id.cb_private_event);  // US 02.01.02
+        btnInviteEntrants = view.findViewById(R.id.btn_invite_entrants); // US 02.01.03
 
-        // Initialize Buttons
         btnAddEvent = view.findViewById(R.id.btn_header_action);
         btnBack     = view.findViewById(R.id.btn_header_back);
         btnUpdate   = view.findViewById(R.id.btn_update_event);
@@ -54,6 +58,13 @@ public class OrgEventFragment extends Fragment {
 
         // Setup Logic
         AttendanceLimit.setupLimitToggle(cbLimit, etLimit);
+
+        // US 02.01.03 — show Invite button only when Private is checked
+        if (cbPrivate != null && btnInviteEntrants != null) {
+            btnInviteEntrants.setVisibility(View.GONE); // hidden by default
+            cbPrivate.setOnCheckedChangeListener((buttonView, isChecked) ->
+                    btnInviteEntrants.setVisibility(isChecked ? View.VISIBLE : View.GONE));
+        }
 
         // Click Listeners
         if (btnAddEvent != null) {
@@ -73,17 +84,35 @@ public class OrgEventFragment extends Fragment {
         }
 
         if (btnDelete != null) {
-            btnDelete.setOnClickListener(v -> {
-                new android.app.AlertDialog.Builder(getContext())
-                        .setTitle("Delete Event")
-                        .setMessage("Are you sure you want to delete the event?")
-                        .setCancelable(false)
-                        .setPositiveButton("Yes", (dialog, which) -> {
-                            Toast.makeText(getContext(), "Event Deleted", Toast.LENGTH_SHORT).show();
-                            getParentFragmentManager().popBackStack();
-                        })
-                        .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
-                        .show();
+            btnDelete.setOnClickListener(v ->
+                    new android.app.AlertDialog.Builder(getContext())
+                            .setTitle("Delete Event")
+                            .setMessage("Are you sure you want to delete the event?")
+                            .setCancelable(false)
+                            .setPositiveButton("Yes", (dialog, which) -> {
+                                Toast.makeText(getContext(), "Event Deleted", Toast.LENGTH_SHORT).show();
+                                getParentFragmentManager().popBackStack();
+                            })
+                            .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
+                            .show());
+        }
+
+        // US 02.01.03 — Invite button opens InviteEntrantsFragment
+        if (btnInviteEntrants != null) {
+            btnInviteEntrants.setOnClickListener(v -> {
+                if (createdEventId == null) {
+                    Toast.makeText(getContext(),
+                            "Please create the event first before inviting entrants.",
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                InviteEntrantsFragment inviteFragment =
+                        InviteEntrantsFragment.newInstance(createdEventId);
+                FragmentTransaction transaction = requireActivity()
+                        .getSupportFragmentManager().beginTransaction();
+                transaction.replace(((ViewGroup) requireView().getParent()).getId(), inviteFragment);
+                transaction.addToBackStack(null);
+                transaction.commit();
             });
         }
 
@@ -91,8 +120,8 @@ public class OrgEventFragment extends Fragment {
     }
 
     /**
-     * Logic for Adding/Creating Event
-     * US 02.01.02 — passes cbPrivate to EventFormManager
+     * US 02.01.02 — private events skip QR
+     * US 02.01.03 — stores eventId so Invite button works
      */
     private void handleAddEvent() {
         Event newEvent = EventFormManager.validateAndCreateEvent(
@@ -102,12 +131,13 @@ public class OrgEventFragment extends Fragment {
 
         if (newEvent == null) return;
 
-        // US 02.01.02 — private events skip QR and go straight to confirmation
+        createdEventId = newEvent.getEventId(); // store for invite button
+
         if (newEvent.isPrivate()) {
             Toast.makeText(getContext(),
-                    "Private event created — no QR code generated.", Toast.LENGTH_LONG).show();
-            getParentFragmentManager().popBackStack();
-            return;
+                    "Private event created! You can now invite entrants.",
+                    Toast.LENGTH_LONG).show();
+            return; // stay on screen so organizer can use Invite button
         }
 
         Intent intent = new Intent(getActivity(), EventDetailsActivity.class);
@@ -116,14 +146,10 @@ public class OrgEventFragment extends Fragment {
         intent.putExtra("EVENT_DESC", etDescription.getText().toString().trim());
         intent.putExtra("QR_DATA", newEvent.getQRDataString());
         intent.putExtra("IS_PRIVATE", newEvent.isPrivate());
-
         startActivity(intent);
         Toast.makeText(getContext(), "Review your event details!", Toast.LENGTH_SHORT).show();
     }
 
-    /**
-     * Logic for Updating Event & Refreshing QR
-     */
     private void handleUpdateEvent() {
         Event updatedEvent = EventFormManager.validateAndCreateEvent(
                 getContext(), etName, etLocation, etDate, etDescription,
@@ -132,7 +158,6 @@ public class OrgEventFragment extends Fragment {
 
         if (updatedEvent == null) return;
 
-        // US 02.01.02 — no QR for private events
         if (updatedEvent.isPrivate()) {
             Toast.makeText(getContext(),
                     "Private event updated — no QR code.", Toast.LENGTH_SHORT).show();
@@ -140,7 +165,6 @@ public class OrgEventFragment extends Fragment {
         }
 
         Bitmap generatedQR = QRGenerator.generateQRCode(updatedEvent.getQRDataString());
-
         if (generatedQR != null) {
             ivEventPoster.setImageBitmap(generatedQR);
             Toast.makeText(getContext(), "Event Updated Successfully!", Toast.LENGTH_LONG).show();

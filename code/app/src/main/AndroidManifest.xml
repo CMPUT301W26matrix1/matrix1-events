@@ -50,6 +50,7 @@
         <activity
             android:name=".org_QR.QRDisplayActivity"
             android:exported="false" />
+        <activity android:name=".org_event.InviteEntrantsActivity" />
 
     </application>
 
