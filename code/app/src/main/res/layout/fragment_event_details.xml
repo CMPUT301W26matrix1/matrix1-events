@@ -184,6 +184,26 @@
                     android:textColor="#BBBBBB"
                     android:textSize="14sp" />
 
+                <!-- Lottery Guidelines Section -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="Lottery Guidelines"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_lottery_guidelines"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:lineSpacingExtra="4sp"
+                    android:text="Entrants are selected randomly from the waiting list once the registration period ends. If a selected participant declines or is disqualified, a new entrant will be randomly drawn from the remaining waiting list until all spots are filled."
+                    android:textColor="#BBBBBB"
+                    android:textSize="14sp" />
+
                 <Button
                     android:id="@+id/btn_join_now"
                     android:layout_width="match_parent"

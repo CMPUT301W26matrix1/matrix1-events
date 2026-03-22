@@ -26,6 +26,13 @@ public class EventController {
         eventRepository.getAllEvents(callback);
     }
 
+    public void loadEventById(String eventId, EventRepository.EventCallback callback) {
+        eventRepository.getEventById(eventId, callback);
+    }
+
+    /**
+     * Filters a list of events based on keyword, profile, and explicit filter options.
+     */
     public List<Event> applySearchAndFilters(List<Event> events, String keyword, Profile profile, EventFilterOptions explicitFilters) {
         List<Event> results = new ArrayList<>(events);
         if (keyword != null && !keyword.trim().isEmpty()) {

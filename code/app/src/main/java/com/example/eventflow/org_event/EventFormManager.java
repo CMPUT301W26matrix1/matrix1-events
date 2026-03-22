@@ -32,7 +32,7 @@ public class EventFormManager {
         String regStart = etRegStart != null ? etRegStart.getText().toString().trim() : "";
         String regEnd = etRegEnd != null ? etRegEnd.getText().toString().trim() : "";
 
-        if (name.isEmpty() || location.isEmpty() || date.isEmpty()) {
+        if (!isDataValid(name, location, date)) {
             Toast.makeText(context, "Please fill in the Name, Location, and Date.", Toast.LENGTH_SHORT).show();
             return null;
         }
@@ -61,6 +61,15 @@ public class EventFormManager {
         String newEventId = UUID.randomUUID().toString();
 
         return new Event(newEventId, name, location, date, description, limitValue, isPrivate, regStart, regEnd, posterUrl);
+    }
+
+    /**
+     * Helper to check if basic event data is valid.
+     */
+    public static boolean isDataValid(String name, String location, String date) {
+        return name != null && !name.trim().isEmpty() &&
+                location != null && !location.trim().isEmpty() &&
+                date != null && !date.trim().isEmpty();
     }
 
     /**

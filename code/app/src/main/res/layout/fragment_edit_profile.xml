@@ -3,14 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212">
+    android:background="#121717">
 
     <!-- Header -->
     <RelativeLayout
         android:id="@+id/rl_edit_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:padding="20dp">
 
         <ImageButton
             android:id="@+id/btnEditBack"
@@ -26,7 +26,7 @@
             android:layout_centerInParent="true"
             android:text="Edit Profile"
             android:textColor="#FFFFFF"
-            android:textSize="20sp"
+            android:textSize="22sp"
             android:textStyle="bold" />
     </RelativeLayout>
 
@@ -40,7 +40,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="24dp"
+            android:paddingHorizontal="32dp"
             android:paddingBottom="40dp">
 
             <!-- Avatar Section -->
@@ -48,7 +48,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginTop="20dp">
+                android:layout_marginTop="10dp">
 
                 <androidx.cardview.widget.CardView
                     android:id="@+id/cv_edit_avatar"
@@ -66,18 +66,18 @@
                 </androidx.cardview.widget.CardView>
 
                 <androidx.cardview.widget.CardView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:layout_alignBottom="@id/cv_edit_avatar"
                     android:layout_alignEnd="@id/cv_edit_avatar"
-                    android:layout_marginBottom="8dp"
-                    android:layout_marginEnd="8dp"
-                    app:cardBackgroundColor="#1F2A44"
-                    app:cardCornerRadius="16dp">
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginEnd="6dp"
+                    app:cardBackgroundColor="#1A1F36"
+                    app:cardCornerRadius="18dp">
 
                     <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
                         android:layout_gravity="center"
                         android:src="@android:drawable/ic_menu_camera"
                         app:tint="#FFFFFF" />
@@ -91,149 +91,96 @@
                 android:layout_marginTop="32dp"
                 android:text="Name"
                 android:textColor="#FFFFFF"
-                android:textSize="14sp"
+                android:textSize="16sp"
                 android:textStyle="bold" />
 
             <EditText
-                android:id="@+id/etEditFirstName"
+                android:id="@+id/etEditName"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:layout_height="52dp"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_profile_input"
-                android:hint="First Name"
                 android:paddingHorizontal="16dp"
                 android:textColor="#FFFFFF"
-                android:textColorHint="#555555"
-                android:textSize="14sp" />
-
-            <EditText
-                android:id="@+id/etEditLastName"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_profile_input"
-                android:hint="Last Name"
-                android:paddingHorizontal="16dp"
-                android:textColor="#FFFFFF"
-                android:textColorHint="#555555"
-                android:textSize="14sp" />
+                android:textSize="16sp" />
 
             <!-- Email Field -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="20dp"
                 android:text="Email"
                 android:textColor="#FFFFFF"
-                android:textSize="14sp"
+                android:textSize="16sp"
                 android:textStyle="bold" />
 
             <EditText
                 android:id="@+id/etEditEmail"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:layout_height="52dp"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_profile_input"
-                android:hint="Email Address"
                 android:inputType="textEmailAddress"
                 android:paddingHorizontal="16dp"
                 android:textColor="#FFFFFF"
-                android:textColorHint="#555555"
-                android:textSize="14sp" />
+                android:textSize="16sp" />
 
-            <!-- Phone -->
+            <!-- Password Field -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Phone Number"
+                android:layout_marginTop="20dp"
+                android:text="Password"
                 android:textColor="#FFFFFF"
-                android:textSize="14sp"
+                android:textSize="16sp"
                 android:textStyle="bold" />
 
             <EditText
-                android:id="@+id/etEditPhoneNumber"
+                android:id="@+id/etEditPassword"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:layout_height="52dp"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_profile_input"
-                android:hint="Phone Number"
-                android:inputType="phone"
+                android:inputType="textPassword"
                 android:paddingHorizontal="16dp"
                 android:textColor="#FFFFFF"
-                android:textColorHint="#555555"
-                android:textSize="14sp" />
+                android:textSize="16sp" />
 
-            <!-- Interests -->
+            <!-- Date of Birth Field -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Interests"
+                android:layout_marginTop="20dp"
+                android:text="Date of Birth"
                 android:textColor="#FFFFFF"
-                android:textSize="14sp"
+                android:textSize="16sp"
                 android:textStyle="bold" />
 
-            <EditText
-                android:id="@+id/etEditInterests"
+            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:layout_height="52dp"
                 android:layout_marginTop="8dp"
-                android:background="@drawable/bg_profile_input"
-                android:hint="e.g. Sports, Music"
-                android:paddingHorizontal="16dp"
-                android:textColor="#FFFFFF"
-                android:textColorHint="#555555"
-                android:textSize="14sp" />
+                android:background="@drawable/bg_profile_input">
 
-            <!-- Availability Days -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="Availability Days"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                <EditText
+                    android:id="@+id/etEditDOB"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@android:color/transparent"
+                    android:focusable="false"
+                    android:paddingHorizontal="16dp"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
 
-            <GridLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:columnCount="2">
-
-                <CheckBox android:id="@+id/cbMonday" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Monday" android:textColor="#FFFFFF" />
-                <CheckBox android:id="@+id/cbTuesday" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Tuesday" android:textColor="#FFFFFF" />
-                <CheckBox android:id="@+id/cbWednesday" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Wednesday" android:textColor="#FFFFFF" />
-                <CheckBox android:id="@+id/cbThursday" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Thursday" android:textColor="#FFFFFF" />
-                <CheckBox android:id="@+id/cbFriday" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Friday" android:textColor="#FFFFFF" />
-                <CheckBox android:id="@+id/cbSaturday" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Saturday" android:textColor="#FFFFFF" />
-                <CheckBox android:id="@+id/cbSunday" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sunday" android:textColor="#FFFFFF" />
-
-            </GridLayout>
-
-            <!-- Time of Day -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="Preferred Time"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-            <RadioGroup
-                android:id="@+id/rgTimeOfDay"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal">
-
-                <RadioButton android:id="@+id/rbMorning" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Morning" android:textColor="#FFFFFF" />
-                <RadioButton android:id="@+id/rbAfternoon" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Afternoon" android:textColor="#FFFFFF" />
-                <RadioButton android:id="@+id/rbEvening" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Evening" android:textColor="#FFFFFF" />
-            </RadioGroup>
-
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="16dp"
+                    android:src="@android:drawable/arrow_down_float"
+                    app:tint="#FFFFFF" />
+            </RelativeLayout>
 
             <!-- Geo-location Switch -->
             <RelativeLayout
@@ -246,30 +193,27 @@
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
                     android:text="Disable Geo-location Tracking"
-                    android:textColor="#888888"
-                    android:textSize="13sp" />
+                    android:textColor="#666666"
+                    android:textSize="15sp" />
 
                 <Switch
                     android:id="@+id/switchEditGeoTracking"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
-                    android:checked="true"
-                    android:thumbTint="#4D5DFA"
-                    android:trackTint="#A0A0FF" />
+                    android:checked="true" />
             </RelativeLayout>
 
             <Button
                 android:id="@+id/btnUpdateProfile"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginTop="32dp"
+                android:layout_height="56dp"
+                android:layout_marginTop="40dp"
                 android:background="@drawable/bg_profile_button"
-                android:backgroundTint="#2D2D6A"
                 android:text="Save Changes"
                 android:textAllCaps="false"
                 android:textColor="#FFFFFF"
-                android:textSize="16sp"
+                android:textSize="18sp"
                 android:textStyle="bold" />
 
         </LinearLayout>

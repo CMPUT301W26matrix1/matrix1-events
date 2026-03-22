@@ -13,6 +13,7 @@ public class Profile {
     private String lastName;
     private String email;
     private String phoneNumber;
+    private String dateOfBirth; // Added DOB field
     private List<String> interests;
     private List<String> availableDays; // e.g., ["Monday", "Wednesday"]
     private String availableTimeOfDay; // e.g., "Morning", "Afternoon", "Evening"
@@ -47,6 +48,8 @@ public class Profile {
     public void setEmail(String email) { this.email = email; }
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    public String getDateOfBirth() { return dateOfBirth; }
+    public void setDateOfBirth(String dateOfBirth) { this.dateOfBirth = dateOfBirth; }
     public List<String> getInterests() { return interests; }
     public void setInterests(List<String> interests) { this.interests = interests; }
     public List<String> getAvailableDays() { return availableDays; }
@@ -57,12 +60,11 @@ public class Profile {
     public String getFullName() {
         return firstName + " " + lastName;
     }
-    //  NEW GETTER
+    
     public boolean isNotificationsEnabled() {
         return notificationsEnabled;
     }
 
-    //  NEW SETTER
     public void setNotificationsEnabled(boolean notificationsEnabled) {
         this.notificationsEnabled = notificationsEnabled;
     }

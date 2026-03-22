@@ -1,5 +1,6 @@
 package com.example.eventflow.event;
 
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +10,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.eventflow.EventDetailActivity;
 import com.example.eventflow.R;
 import com.example.eventflow.model.entities.Event;
 
@@ -63,31 +65,37 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = events.get(position);
 
-        holder.tvEventName.setText(event.getName());
-        holder.tvEventDescription.setText(event.getDescription());
-        holder.tvEventLocation.setText("📍 " + event.getLocation());
+        if (holder.tvEventName != null) holder.tvEventName.setText(event.getName());
+        if (holder.tvEventDescription != null) holder.tvEventDescription.setText(event.getDescription());
+        if (holder.tvEventLocation != null) holder.tvEventLocation.setText("📍 " + event.getLocation());
 
-        if (event.getEventDate() != null) {
-            Date date = event.getEventDate().toDate();
-            holder.tvEventDate.setText("📅 " + dateFormat.format(date));
-        } else {
-            holder.tvEventDate.setText("📅 Date TBD");
+        if (holder.tvEventDate != null) {
+            if (event.getEventDate() != null) {
+                Date date = event.getEventDate().toDate();
+                holder.tvEventDate.setText("📅 " + dateFormat.format(date));
+            } else {
+                holder.tvEventDate.setText("📅 Date TBD");
+            }
         }
 
-        if (event.getRegistrationEnd() != null) {
-            Date regEnd = event.getRegistrationEnd().toDate();
-            holder.tvRegistrationEnd.setText("⏰ Register by: " + dateFormat.format(regEnd));
-        } else {
-            holder.tvRegistrationEnd.setText("⏰ Register by: TBD");
+        if (holder.tvRegistrationEnd != null) {
+            if (event.getRegistrationEnd() != null) {
+                Date regEnd = event.getRegistrationEnd().toDate();
+                holder.tvRegistrationEnd.setText("⏰ Register by: " + dateFormat.format(regEnd));
+            } else {
+                holder.tvRegistrationEnd.setText("⏰ Register by: TBD");
+            }
         }
 
         // US 01.05.04 — Show waiting list count
-        int waitingCount = event.getWaitingListCount();
-        int limit = event.getWaitingListLimit();
-        if (limit > 0) {
-            holder.tvWaitingListCount.setText("👥 " + waitingCount + " / " + limit + " on waiting list");
-        } else {
-            holder.tvWaitingListCount.setText("👥 " + waitingCount + " on waiting list");
+        if (holder.tvWaitingListCount != null) {
+            int waitingCount = event.getWaitingListCount();
+            int limit = event.getWaitingListLimit();
+            if (limit > 0) {
+                holder.tvWaitingListCount.setText("👥 " + waitingCount + " / " + limit + " on waiting list");
+            } else {
+                holder.tvWaitingListCount.setText("👥 " + waitingCount + " on waiting list");
+            }
         }
 
         boolean alreadyJoined = event.getWaitingList() != null
@@ -95,23 +103,31 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         boolean registrationOpen = event.isRegistrationOpen();
 
         // Toggle button state
-        if (!registrationOpen) {
-            holder.btnJoinLeave.setText("Registration Closed");
-            holder.btnJoinLeave.setEnabled(false);
-            holder.btnJoinLeave.setOnClickListener(null);
-        } else if (alreadyJoined) {
-            holder.btnJoinLeave.setText("Leave Waiting List");
-            holder.btnJoinLeave.setEnabled(true);
-            holder.btnJoinLeave.setOnClickListener(v -> listener.onLeaveWaitingList(event));
-        } else if (event.isWaitingListFull()) {
-            holder.btnJoinLeave.setText("Waiting List Full");
-            holder.btnJoinLeave.setEnabled(false);
-            holder.btnJoinLeave.setOnClickListener(null);
-        } else {
-            holder.btnJoinLeave.setText("Join Waiting List");
-            holder.btnJoinLeave.setEnabled(true);
-            holder.btnJoinLeave.setOnClickListener(v -> listener.onJoinWaitingList(event));
+        if (holder.btnJoinLeave != null) {
+            if (!registrationOpen) {
+                holder.btnJoinLeave.setText("Registration Closed");
+                holder.btnJoinLeave.setEnabled(false);
+                holder.btnJoinLeave.setOnClickListener(null);
+            } else if (alreadyJoined) {
+                holder.btnJoinLeave.setText("Leave Waiting List");
+                holder.btnJoinLeave.setEnabled(true);
+                holder.btnJoinLeave.setOnClickListener(v -> listener.onLeaveWaitingList(event));
+            } else if (event.isWaitingListFull()) {
+                holder.btnJoinLeave.setText("Waiting List Full");
+                holder.btnJoinLeave.setEnabled(false);
+                holder.btnJoinLeave.setOnClickListener(null);
+            } else {
+                holder.btnJoinLeave.setText("Join Waiting List");
+                holder.btnJoinLeave.setEnabled(true);
+                holder.btnJoinLeave.setOnClickListener(v -> listener.onJoinWaitingList(event));
+            }
         }
+
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), EventDetailActivity.class);
+            intent.putExtra("eventId", event.getEventId());
+            v.getContext().startActivity(intent);
+        });
     }
 
     @Override
@@ -122,7 +138,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     static class EventViewHolder extends RecyclerView.ViewHolder {
         TextView tvEventName, tvEventDescription, tvEventLocation,
                 tvEventDate, tvRegistrationEnd, tvWaitingListCount;
-        Button btnJoinLeave;
+        Button btnJoinLeave, deleteEventButton;
 
         EventViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -133,6 +149,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             tvRegistrationEnd  = itemView.findViewById(R.id.tvRegistrationEnd);
             tvWaitingListCount = itemView.findViewById(R.id.tvWaitingListCount);
             btnJoinLeave       = itemView.findViewById(R.id.btnJoinLeave);
+            deleteEventButton  = itemView.findViewById(R.id.deleteEventButton);
         }
     }
 }

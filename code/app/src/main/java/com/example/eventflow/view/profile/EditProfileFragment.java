@@ -1,6 +1,6 @@
 package com.example.eventflow.view.profile;
 
-import android.annotation.SuppressLint;
+import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
@@ -8,10 +8,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -23,15 +21,12 @@ import com.example.eventflow.controller.ProfileController;
 import com.example.eventflow.model.entities.Profile;
 import com.example.eventflow.model.repositories.ProfileRepository;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Calendar;
 
 public class EditProfileFragment extends Fragment {
 
-    private EditText etFirstName, etLastName, etEmail, etPhoneNumber, etInterests;
-    private CheckBox cbMon, cbTue, cbWed, cbThu, cbFri, cbSat, cbSun;
-    private RadioGroup rgTimeOfDay;
+    private EditText etName, etEmail, etPassword, etDOB;
+    private Switch switchGeoTracking;
     private Button btnUpdateProfile;
 
     private ProfileController profileController;
@@ -42,14 +37,11 @@ public class EditProfileFragment extends Fragment {
 
     public static EditProfileFragment newInstance(@NonNull Profile profile) {
         EditProfileFragment fragment = new EditProfileFragment();
-        // We could pass more args, but simpler to load from repo if needed or use these for initial pop.
         Bundle args = new Bundle();
         args.putString("firstName", profile.getFirstName());
         args.putString("lastName", profile.getLastName());
         args.putString("email", profile.getEmail());
-        args.putString("phone", profile.getPhoneNumber());
-        // For simplicity in this demo, we'll just re-fetch or assume caller provides it.
-        // Actually, let's just use the repo to get the full profile in onViewCreated if we want full sync.
+        args.putString("dob", profile.getDateOfBirth());
         fragment.setArguments(args);
         return fragment;
     }
@@ -64,21 +56,11 @@ public class EditProfileFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        etFirstName = view.findViewById(R.id.etEditFirstName);
-        etLastName = view.findViewById(R.id.etEditLastName);
+        etName = view.findViewById(R.id.etEditName);
         etEmail = view.findViewById(R.id.etEditEmail);
-        etPhoneNumber = view.findViewById(R.id.etEditPhoneNumber);
-        etInterests = view.findViewById(R.id.etEditInterests);
-        
-        cbMon = view.findViewById(R.id.cbMonday);
-        cbTue = view.findViewById(R.id.cbTuesday);
-        cbWed = view.findViewById(R.id.cbWednesday);
-        cbThu = view.findViewById(R.id.cbThursday);
-        cbFri = view.findViewById(R.id.cbFriday);
-        cbSat = view.findViewById(R.id.cbSaturday);
-        cbSun = view.findViewById(R.id.cbSunday);
-        
-        rgTimeOfDay = view.findViewById(R.id.rgTimeOfDay);
+        etPassword = view.findViewById(R.id.etEditPassword);
+        etDOB = view.findViewById(R.id.etEditDOB);
+        switchGeoTracking = view.findViewById(R.id.switchEditGeoTracking);
         btnUpdateProfile = view.findViewById(R.id.btnUpdateProfile);
 
         profileController = new ProfileController();
@@ -87,6 +69,8 @@ public class EditProfileFragment extends Fragment {
         deviceId = Settings.Secure.getString(requireContext().getContentResolver(), Settings.Secure.ANDROID_ID);
 
         loadCurrentProfile();
+
+        etDOB.setOnClickListener(v -> showDatePickerDialog());
 
         btnUpdateProfile.setOnClickListener(v -> updateProfile());
         
@@ -97,39 +81,43 @@ public class EditProfileFragment extends Fragment {
         });
     }
 
+    private void showDatePickerDialog() {
+        final Calendar c = Calendar.getInstance();
+        int year = c.get(Calendar.YEAR);
+        int month = c.get(Calendar.MONTH);
+        int day = c.get(Calendar.DAY_OF_MONTH);
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(),
+                (view, year1, monthOfYear, dayOfMonth) -> {
+                    String date = dayOfMonth + "/" + (monthOfYear + 1) + "/" + year1;
+                    etDOB.setText(date);
+                }, year, month, day);
+
+        Calendar minDate = Calendar.getInstance();
+        minDate.set(1900, 0, 1);
+        datePickerDialog.getDatePicker().setMinDate(minDate.getTimeInMillis());
+
+        Calendar maxDate = Calendar.getInstance();
+        maxDate.set(2026, 11, 31);
+        datePickerDialog.getDatePicker().setMaxDate(maxDate.getTimeInMillis());
+
+        datePickerDialog.show();
+    }
+
     private void loadCurrentProfile() {
         profileRepository.getProfileByDeviceId(deviceId, new ProfileRepository.LoadProfileCallback() {
             @Override
             public void onSuccess(@NonNull Profile profile) {
-                etFirstName.setText(profile.getFirstName());
-                etLastName.setText(profile.getLastName());
+                String fullName = profile.getFirstName() + (TextUtils.isEmpty(profile.getLastName()) ? "" : " " + profile.getLastName());
+                etName.setText(fullName);
                 etEmail.setText(profile.getEmail());
-                etPhoneNumber.setText(profile.getPhoneNumber());
-                
-                if (profile.getInterests() != null) {
-                    etInterests.setText(TextUtils.join(", ", profile.getInterests()));
+                if (profile.getDateOfBirth() != null) {
+                    etDOB.setText(profile.getDateOfBirth());
                 }
-                
-                if (profile.getAvailableDays() != null) {
-                    List<String> days = profile.getAvailableDays();
-                    cbMon.setChecked(days.contains("Monday"));
-                    cbTue.setChecked(days.contains("Tuesday"));
-                    cbWed.setChecked(days.contains("Wednesday"));
-                    cbThu.setChecked(days.contains("Thursday"));
-                    cbFri.setChecked(days.contains("Friday"));
-                    cbSat.setChecked(days.contains("Saturday"));
-                    cbSun.setChecked(days.contains("Sunday"));
-                }
-                
-                String time = profile.getAvailableTimeOfDay();
-                if ("Morning".equals(time)) rgTimeOfDay.check(R.id.rbMorning);
-                else if ("Afternoon".equals(time)) rgTimeOfDay.check(R.id.rbAfternoon);
-                else if ("Evening".equals(time)) rgTimeOfDay.check(R.id.rbEvening);
             }
 
             @Override
             public void onNotFound() {
-                // Should not happen if we are editing
             }
 
             @Override
@@ -140,11 +128,17 @@ public class EditProfileFragment extends Fragment {
     }
 
     private void updateProfile() {
-        String firstName = etFirstName.getText().toString().trim();
-        String lastName = etLastName.getText().toString().trim();
+        String name = etName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
-        String phoneNumber = etPhoneNumber.getText().toString().trim();
-        String interestsStr = etInterests.getText().toString().trim();
+        String dob = etDOB.getText().toString().trim();
+
+        String firstName = name;
+        String lastName = "";
+        if (name.contains(" ")) {
+            int lastSpace = name.lastIndexOf(" ");
+            firstName = name.substring(0, lastSpace);
+            lastName = name.substring(lastSpace + 1);
+        }
 
         String validationError = profileController.validateProfileInput(firstName, lastName, email);
         if (!TextUtils.isEmpty(validationError)) {
@@ -152,30 +146,8 @@ public class EditProfileFragment extends Fragment {
             return;
         }
 
-        List<String> interests = new ArrayList<>();
-        if (!interestsStr.isEmpty()) {
-            for (String s : interestsStr.split(",")) {
-                interests.add(s.trim());
-            }
-        }
-
-        List<String> days = new ArrayList<>();
-        if (cbMon.isChecked()) days.add("Monday");
-        if (cbTue.isChecked()) days.add("Tuesday");
-        if (cbWed.isChecked()) days.add("Wednesday");
-        if (cbThu.isChecked()) days.add("Thursday");
-        if (cbFri.isChecked()) days.add("Friday");
-        if (cbSat.isChecked()) days.add("Saturday");
-        if (cbSun.isChecked()) days.add("Sunday");
-
-        String timeOfDay = "";
-        int checkedId = rgTimeOfDay.getCheckedRadioButtonId();
-        if (checkedId == R.id.rbMorning) timeOfDay = "Morning";
-        else if (checkedId == R.id.rbAfternoon) timeOfDay = "Afternoon";
-        else if (checkedId == R.id.rbEvening) timeOfDay = "Evening";
-
-        Profile updatedProfile = new Profile(deviceId, firstName, lastName, email, phoneNumber);
-        profileController.updateProfile(updatedProfile, firstName, lastName, email, phoneNumber, interests, days, timeOfDay);
+        Profile updatedProfile = new Profile(deviceId, firstName, lastName, email, "");
+        updatedProfile.setDateOfBirth(dob);
 
         profileRepository.updateProfile(updatedProfile, new ProfileRepository.SaveProfileCallback() {
             @Override
