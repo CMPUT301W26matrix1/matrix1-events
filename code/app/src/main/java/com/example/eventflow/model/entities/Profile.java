@@ -38,6 +38,8 @@ public class Profile {
     private String email;
     private String phoneNumber;
 
+    private boolean notificationsEnabled = true;
+
     /**
      * Default constructor required for Firebase Firestore deserialization.
      */
@@ -161,5 +163,14 @@ public class Profile {
      */
     public String getFullName() {
         return firstName + " " + lastName;
+    }
+    //  NEW GETTER
+    public boolean isNotificationsEnabled() {
+        return notificationsEnabled;
+    }
+
+    //  NEW SETTER
+    public void setNotificationsEnabled(boolean notificationsEnabled) {
+        this.notificationsEnabled = notificationsEnabled;
     }
 }

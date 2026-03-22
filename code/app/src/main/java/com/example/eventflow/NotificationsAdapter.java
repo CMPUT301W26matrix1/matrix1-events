@@ -131,7 +131,38 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                         Toast.LENGTH_SHORT).show();
             });
 
-        } else {
+        }
+        //  NEW BLOCK ADDED (PRIVATE INVITE)
+        else if (Notification.TYPE_PRIVATE_INVITE.equals(n.getType())) {
+
+            holder.acceptButton.setVisibility(View.VISIBLE);
+            holder.declineButton.setVisibility(View.GONE);
+            holder.tryAgainButton.setVisibility(View.GONE);
+            holder.acceptedMessage.setVisibility(View.GONE);
+            holder.declinedMessage.setVisibility(View.GONE);
+
+            holder.acceptButton.setOnClickListener(v -> {
+
+                com.example.eventflow.controller.LotteryController controller =
+                        new com.example.eventflow.controller.LotteryController();
+
+                controller.acceptPrivateInvite(
+                        com.google.firebase.auth.FirebaseAuth.getInstance().getUid(),
+                        n.getEventId()
+                );
+
+                n.setAccepted(true);
+
+                Toast.makeText(holder.itemView.getContext(),
+                        "Joined waiting list for " + n.getEventName(),
+                        Toast.LENGTH_SHORT).show();
+
+                holder.acceptButton.setVisibility(View.GONE);
+                holder.acceptedMessage.setVisibility(View.VISIBLE);
+            });
+        }
+
+        else {
             // No buttons
             holder.acceptButton.setVisibility(View.GONE);
             holder.declineButton.setVisibility(View.GONE);

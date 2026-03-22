@@ -5,6 +5,8 @@ import com.example.eventflow.model.entities.Profile;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 public class ProfileTest {
 
@@ -53,5 +55,23 @@ public class ProfileTest {
         );
 
         assertEquals("Taufeeq Raji", profile.getFullName());
+    }
+    @Test
+    public void notificationsDefaultTrue() {
+        Profile profile = new Profile();
+        assertTrue(profile.isNotificationsEnabled());
+    }
+    @Test
+    public void notificationsCanBeDisabled() {
+        Profile profile = new Profile();
+        profile.setNotificationsEnabled(false);
+        assertFalse(profile.isNotificationsEnabled());
+    }
+    @Test
+    public void notificationsCanBeEnabledAgain() {
+        Profile profile = new Profile();
+        profile.setNotificationsEnabled(false);
+        profile.setNotificationsEnabled(true);
+        assertTrue(profile.isNotificationsEnabled());
     }
 }
