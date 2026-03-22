@@ -10,6 +10,24 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+
+        <activity
+            android:name=".SplashActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true" />
+
+        <activity android:name=".NotificationsActivity" />
+        <activity android:name=".BrowseEventsActivity" />
+        <activity android:name=".ProfileActivity" />
+
         <activity
             android:name=".OrganizerFinalEntrantsActivity"
             android:exported="false" />
@@ -25,18 +43,6 @@
             android:name=".org_event.OrgEventActivity"
             android:label="Create Event" />
 
-
-        <!-- Main Screen -->
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
-
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-
-        </activity>
         <activity
             android:name=".org_event.EventDetailsActivity"
             android:exported="false" />

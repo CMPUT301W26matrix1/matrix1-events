@@ -11,8 +11,6 @@ public class EventFormManager {
 
     /**
      * Reads all inputs, checks for mistakes, and returns a clean Event object.
-     * If the user forgot something, it returns null and shows a warning.
-     * US 02.01.02 — now reads isPrivate checkbox.
      */
     public static Event validateAndCreateEvent(
             Context context,
@@ -22,12 +20,17 @@ public class EventFormManager {
             EditText etDescription,
             CheckBox cbLimit,
             EditText etLimit,
-            CheckBox cbPrivate) {  // NEW — private event checkbox
+            CheckBox cbPrivate,
+            EditText etRegStart,
+            EditText etRegEnd,
+            String posterUrl) {
 
         String name = etName.getText().toString().trim();
         String location = etLocation.getText().toString().trim();
         String date = etDate.getText().toString().trim();
         String description = etDescription.getText().toString().trim();
+        String regStart = etRegStart != null ? etRegStart.getText().toString().trim() : "";
+        String regEnd = etRegEnd != null ? etRegEnd.getText().toString().trim() : "";
 
         if (name.isEmpty() || location.isEmpty() || date.isEmpty()) {
             Toast.makeText(context, "Please fill in the Name, Location, and Date.", Toast.LENGTH_SHORT).show();
@@ -35,32 +38,47 @@ public class EventFormManager {
         }
 
         Integer limitValue = null;
-
         if (cbLimit.isChecked()) {
             String limitStr = etLimit.getText().toString().trim();
-
             if (limitStr.isEmpty()) {
                 etLimit.setError("Please type a number");
                 etLimit.requestFocus();
                 return null;
             }
-
-            limitValue = Integer.parseInt(limitStr);
-
+            try {
+                limitValue = Integer.parseInt(limitStr);
+            } catch (NumberFormatException e) {
+                etLimit.setError("Invalid number");
+                return null;
+            }
             if (limitValue <= 0) {
                 etLimit.setError("Limit must be at least 1");
                 return null;
             }
         }
 
-        // US 02.01.02 — read private checkbox
         boolean isPrivate = cbPrivate != null && cbPrivate.isChecked();
-
         String newEventId = UUID.randomUUID().toString();
-        return new Event(newEventId, name, location, date, description, limitValue, isPrivate);
+
+        return new Event(newEventId, name, location, date, description, limitValue, isPrivate, regStart, regEnd, posterUrl);
     }
 
-    // Overload to keep teammates' calls working without cbPrivate
+    /**
+     * Overload for 8 arguments (with private checkbox)
+     */
+    public static Event validateAndCreateEvent(
+            Context context,
+            EditText etName,
+            EditText etLocation,
+            EditText etDate,
+            EditText etDescription,
+            CheckBox cbLimit,
+            EditText etLimit,
+            CheckBox cbPrivate) {
+        return validateAndCreateEvent(context, etName, etLocation, etDate, etDescription, cbLimit, etLimit, cbPrivate, null, null, null);
+    }
+
+    // Overload for backward compatibility (7 arguments)
     public static Event validateAndCreateEvent(
             Context context,
             EditText etName,
@@ -69,11 +87,6 @@ public class EventFormManager {
             EditText etDescription,
             CheckBox cbLimit,
             EditText etLimit) {
-        return validateAndCreateEvent(
-                context, etName, etLocation, etDate, etDescription, cbLimit, etLimit, null);
-    }
-
-    public static boolean isDataValid(String name, String location, String date) {
-        return !name.isEmpty() && !location.isEmpty() && !date.isEmpty();
+        return validateAndCreateEvent(context, etName, etLocation, etDate, etDescription, cbLimit, etLimit, null, null, null, null);
     }
 }

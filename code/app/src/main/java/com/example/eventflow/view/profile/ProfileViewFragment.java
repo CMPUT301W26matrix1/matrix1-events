@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -60,7 +61,7 @@ public class ProfileViewFragment extends Fragment {
         TextView tvPhone = view.findViewById(R.id.tvPhone);
         TextView tvDeviceId = view.findViewById(R.id.tvDeviceId);
 
-        Button btnEditProfile = view.findViewById(R.id.btnEditProfile);
+        ImageButton btnEditProfile = view.findViewById(R.id.btnEditProfile);
         Button btnViewHistory = view.findViewById(R.id.btnViewHistory);
         Button btnDeleteProfile = view.findViewById(R.id.btnDeleteProfile);
 

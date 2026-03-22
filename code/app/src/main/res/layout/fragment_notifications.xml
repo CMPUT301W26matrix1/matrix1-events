@@ -1,69 +1,122 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#121212">  <!-- Black background -->
+    android:background="#121212">
 
-    <!-- Header with title and clear all - NOW WHITE -->
+    <!-- Header -->
     <RelativeLayout
+        android:id="@+id/rl_notifications_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp"
-        android:background="#121212">
+        android:padding="16dp">
+
+        <ImageButton
+            android:id="@+id/btn_notifications_back"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_previous"
+            app:tint="#FFFFFF" />
 
         <TextView
-            android:id="@+id/titleTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
             android:text="Notifications"
-            android:textSize="24sp"
-            android:textStyle="bold"
             android:textColor="#FFFFFF"
-            android:layout_centerInParent="true"/>
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
-        <Button
+        <TextView
             android:id="@+id/clearAllButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="CLEAR ALL"
-            android:textColor="#BB86FC"
-            android:background="@android:color/transparent"
-            android:textSize="14sp"
-            android:textStyle="bold"
             android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"/>
-
+            android:layout_centerVertical="true"
+            android:text="Clear all"
+            android:textColor="#4D5DFA"
+            android:textSize="14sp"
+            android:textStyle="bold" />
     </RelativeLayout>
 
     <!-- RecyclerView for notifications -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:padding="8dp"
+        android:layout_height="match_parent"
+        android:layout_below="@id/rl_notifications_header"
+        android:paddingHorizontal="16dp"
+        android:clipToPadding="false"
         android:visibility="visible"/>
 
-    <!-- Empty state - Black background with white text -->
+    <!-- Empty state -->
     <LinearLayout
         android:id="@+id/emptyView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_below="@id/rl_notifications_header"
         android:gravity="center"
         android:orientation="vertical"
-        android:visibility="gone"
-        android:background="#121212">  <!-- Changed to black to match main background -->
+        android:visibility="gone">
+
+        <RelativeLayout
+            android:layout_width="160dp"
+            android:layout_height="160dp"
+            android:gravity="center">
+
+            <!-- Bell Icon Placeholder -->
+            <ImageView
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:src="@android:drawable/ic_popup_reminder"
+                app:tint="#FFFFFF" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginEnd="10dp"
+                android:layout_marginBottom="30dp"
+                app:cardBackgroundColor="#4D5DFA"
+                app:cardCornerRadius="14dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="0"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold"/>
+            </androidx.cardview.widget.CardView>
+        </RelativeLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
             android:text="No Notifications!"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF"/>  <!-- Changed to white text for black background -->
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold"/>
 
     </LinearLayout>
 
+    <!-- Bottom Nav Bar (Placeholder) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:background="#121212"
+        android:gravity="center"
+        android:orientation="horizontal">
+        <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:src="@android:drawable/ic_menu_compass" app:tint="#4D5DFA"/>
+        <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:src="@android:drawable/ic_menu_today" app:tint="#888888"/>
+        <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:src="@android:drawable/ic_menu_search" app:tint="#888888"/>
+        <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:src="@android:drawable/ic_dialog_map" app:tint="#888888"/>
+        <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:src="@android:drawable/ic_menu_myplaces" app:tint="#888888"/>
+    </LinearLayout>
 
-</LinearLayout>
+</RelativeLayout>

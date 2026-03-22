@@ -5,7 +5,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -24,15 +24,15 @@ import java.util.List;
 
 /**
  * NotificationsFragment
-
+ *
  * Displays notifications stored in Firebase Firestore for the current user.
  * Notifications are shown in a RecyclerView and can be cleared using the
  * provided button.
-
+ *
  * - Entrant-facing notifications screen
  * - Reads notification documents from Firestore in real time
  * - Supports clearing all notifications for the active user
-
+ *
  * Outstanding issues:
  * - Current user ID may fall back to a demo/test value .
  */
@@ -42,7 +42,7 @@ public class NotificationsFragment extends Fragment {
 
     private RecyclerView recyclerView;
     private View emptyView;
-    private Button clearAllButton;
+    private TextView clearAllButton;
     private NotificationsAdapter adapter;
 
     private final List<Notification> notificationList = new ArrayList<>();

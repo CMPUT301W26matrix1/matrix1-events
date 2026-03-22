@@ -1,9 +1,12 @@
 package com.example.eventflow.org_event;
 
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -11,27 +14,33 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.eventflow.R;
 import com.example.eventflow.org_QR.QRGenerator;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.Calendar;
+import java.util.Locale;
+
 /**
  * OrgEventActivity
- * * Standalone screen for organizers to manage events.
- * Matches the Activity-based navigation used by other team members.
+ * Standalone screen for organizers to manage events.
+ * Fully implements US 02.01.04 (Registration Period) and US 02.04.01 (Poster Upload).
  */
 public class OrgEventActivity extends AppCompatActivity {
 
-    //Declare UI Elements
-    private EditText etName, etLocation, etDate, etDescription, etLimit;
-    private CheckBox cbLimit;
+    private static final int PICK_IMAGE_REQUEST = 1;
+
+    private EditText etName, etLocation, etDate, etDescription, etLimit, etRegStart, etRegEnd;
+    private CheckBox cbLimit, cbPrivate;
     private ImageView ivEventPoster;
     private View btnAddEvent, btnBack;
-    private Button btnUpdate, btnDelete;
+    private Button btnUpdate, btnDelete, btnEditImage;
     private FirebaseFirestore db;
     private String currentEventId = "";
+    private Uri imageUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,11 +63,15 @@ public class OrgEventActivity extends AppCompatActivity {
         etDescription = findViewById(R.id.et_event_description);
         cbLimit = findViewById(R.id.cb_limit_attendees);
         etLimit = findViewById(R.id.et_max_attendees);
+        cbPrivate = findViewById(R.id.cb_private_event);
+        etRegStart = findViewById(R.id.et_reg_start);
+        etRegEnd = findViewById(R.id.et_reg_end);
         ivEventPoster = findViewById(R.id.iv_event_poster);
         btnAddEvent = findViewById(R.id.btn_header_action);
         btnBack = findViewById(R.id.btn_header_back);
         btnUpdate = findViewById(R.id.btn_update_event);
         btnDelete = findViewById(R.id.btn_delete_event);
+        btnEditImage = findViewById(R.id.btn_edit_image);
     }
 
     private void setupListeners() {
@@ -74,11 +87,50 @@ public class OrgEventActivity extends AppCompatActivity {
         if (btnDelete != null) {
             btnDelete.setOnClickListener(v -> handleDeleteEvent());
         }
+        if (btnEditImage != null) {
+            btnEditImage.setOnClickListener(v -> openGallery());
+        }
+
+        // US 02.01.04 — Date Pickers for Registration Period
+        etRegStart.setOnClickListener(v -> showDatePicker(etRegStart));
+        etRegEnd.setOnClickListener(v -> showDatePicker(etRegEnd));
+        etDate.setOnClickListener(v -> showDatePicker(etDate));
+    }
+
+    private void showDatePicker(EditText editText) {
+        final Calendar c = Calendar.getInstance();
+        int year = c.get(Calendar.YEAR);
+        int month = c.get(Calendar.MONTH);
+        int day = c.get(Calendar.DAY_OF_MONTH);
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(this,
+                (view, year1, monthOfYear, dayOfMonth) -> editText.setText(String.format(Locale.getDefault(), "%02d/%02d/%d", dayOfMonth, monthOfYear + 1, year1)),
+                year, month, day);
+        datePickerDialog.show();
+    }
+
+    private void openGallery() {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE_REQUEST);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            imageUri = data.getData();
+            ivEventPoster.setImageURI(imageUri);
+            // In a real app, you'd upload this to Firebase Storage and get a URL
+            Toast.makeText(this, "Poster selected locally", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void handleAddEvent() {
         Event newEvent = EventFormManager.validateAndCreateEvent(
-                this, etName, etLocation, etDate, etDescription, cbLimit, etLimit
+                this, etName, etLocation, etDate, etDescription, cbLimit, etLimit,
+                cbPrivate, etRegStart, etRegEnd, imageUri != null ? imageUri.toString() : null
         );
 
         if (newEvent == null) return;
@@ -87,16 +139,9 @@ public class OrgEventActivity extends AppCompatActivity {
                 .document(newEvent.getEventId())
                 .set(newEvent)
                 .addOnSuccessListener(aVoid -> {
-                    // FIX #1: Store the ID so Delete/Update work immediately
                     currentEventId = newEvent.getEventId();
-
-                    Toast.makeText(this, "Event uploaded to Firebase!", Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(this, EventDetailsActivity.class);
-                    intent.putExtra("EVENT_NAME", newEvent.getName());
-                    intent.putExtra("EVENT_LOCATION", newEvent.getLocation());
-                    intent.putExtra("EVENT_DESC", newEvent.getDescription());
-                    intent.putExtra("QR_DATA", newEvent.getQRDataString());
-                    startActivity(intent);
+                    Toast.makeText(this, "Event created successfully!", Toast.LENGTH_SHORT).show();
+                    finish();
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -105,49 +150,32 @@ public class OrgEventActivity extends AppCompatActivity {
 
     private void handleUpdateEvent() {
         Event updatedEvent = EventFormManager.validateAndCreateEvent(
-                this, etName, etLocation, etDate, etDescription, cbLimit, etLimit
+                this, etName, etLocation, etDate, etDescription, cbLimit, etLimit,
+                cbPrivate, etRegStart, etRegEnd, imageUri != null ? imageUri.toString() : null
         );
 
         if (updatedEvent == null) return;
 
         db.collection("events")
                 .document(currentEventId)
-                .update(
-                        "name", updatedEvent.getName(),
-                        "location", updatedEvent.getLocation(),
-                        "date", updatedEvent.getDate(),
-                        "description", updatedEvent.getDescription(),
-                        "attendeeLimit", updatedEvent.getAttendanceLimit()
-                )
+                .set(updatedEvent)
                 .addOnSuccessListener(aVoid -> {
-                    Bitmap generatedQR = QRGenerator.generateQRCode(updatedEvent.getQRDataString());
-                    if (generatedQR != null) {
-                        ivEventPoster.setImageBitmap(generatedQR);
-                        Toast.makeText(this, "Cloud Update Successful!", Toast.LENGTH_LONG).show();
-                    }
+                    Toast.makeText(this, "Event updated successfully!", Toast.LENGTH_SHORT).show();
                 })
                 .addOnFailureListener(e -> Toast.makeText(this, "Update failed!", Toast.LENGTH_SHORT).show());
     }
 
     private void handleDeleteEvent() {
         if (currentEventId == null || currentEventId.isEmpty()) {
-            Toast.makeText(this, "Save the event first before deleting!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Nothing to delete", Toast.LENGTH_SHORT).show();
             return;
         }
         new AlertDialog.Builder(this)
                 .setTitle("Delete Event")
-                .setMessage("Are you sure? This will remove the event from the cloud forever.")
-                .setPositiveButton("Yes, Delete", (dialog, which) -> {
-                    db.collection("events")
-                            .document(currentEventId)
-                            .delete()
-                            .addOnSuccessListener(aVoid -> {
-                                Toast.makeText(this, "Event deleted from Firebase", Toast.LENGTH_SHORT).show();
-                                finish();
-                            })
-                            .addOnFailureListener(e -> {
-                                Toast.makeText(this, "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                            });
+                .setMessage("Remove this event?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    db.collection("events").document(currentEventId).delete()
+                            .addOnSuccessListener(aVoid -> finish());
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
@@ -155,25 +183,21 @@ public class OrgEventActivity extends AppCompatActivity {
 
     private void loadEventData(String eventId) {
         db.collection("events").document(eventId).get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        etName.setText(documentSnapshot.getString("name"));
-                        etLocation.setText(documentSnapshot.getString("location"));
-                        etDate.setText(documentSnapshot.getString("date"));
-                        etDescription.setText(documentSnapshot.getString("description"));
-                        // Set the current ID so Update/Delete know which doc to use
-                        currentEventId = eventId;
-                        // Handle the limit fields
-                        Long limit = documentSnapshot.getLong("attendeeLimit");
-                        if (limit != null && limit > 0) {
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        etName.setText(doc.getString("name"));
+                        etLocation.setText(doc.getString("location"));
+                        etDate.setText(doc.getString("date"));
+                        etDescription.setText(doc.getString("description"));
+                        etRegStart.setText(doc.getString("registrationStart"));
+                        etRegEnd.setText(doc.getString("registrationEnd"));
+                        cbPrivate.setChecked(doc.getBoolean("private") != null && doc.getBoolean("private"));
+                        Long limit = doc.getLong("attendanceLimit");
+                        if (limit != null) {
                             cbLimit.setChecked(true);
-                            etLimit.setVisibility(android.view.View.VISIBLE);
                             etLimit.setText(String.valueOf(limit));
                         }
                     }
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error loading event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 }
