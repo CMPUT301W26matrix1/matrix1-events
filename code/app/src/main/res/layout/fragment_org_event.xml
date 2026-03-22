@@ -59,6 +59,17 @@
 
                     <include layout="@layout/fragment_attendance_limit" />
 
+                    <!-- US 02.01.02 — Private Event Checkbox -->
+                    <CheckBox
+                        android:id="@+id/cb_private_event"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Private Event"
+                        android:textColor="#FFFFFF"
+                        android:buttonTint="#3B82F6"
+                        android:textSize="13sp"/>
+
                     <Button
                         android:id="@+id/btn_upload_qr"
                         android:layout_width="wrap_content"
@@ -68,6 +79,7 @@
                         android:text="Upload Existing QR"
                         android:textAllCaps="false"
                         android:textSize="10sp"/>
+
                 </LinearLayout>
             </LinearLayout>
 
