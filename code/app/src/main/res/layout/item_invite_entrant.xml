@@ -50,15 +50,35 @@
 
         </LinearLayout>
 
-        <!-- Invite Button -->
-        <Button
-            android:id="@+id/btn_invite"
+        <!-- Buttons -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Invite"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#3B82F6"
-            android:textSize="13sp"/>
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <!-- Invite Button -->
+            <Button
+                android:id="@+id/btn_invite"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Invite"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#3B82F6"
+                android:textSize="11sp"
+                android:layout_marginBottom="4dp"/>
+
+            <!-- US 02.09.01 — Co-organizer Button -->
+            <Button
+                android:id="@+id/btn_co_organizer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Co-organizer"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#8B5CF6"
+                android:textSize="11sp"/>
+
+        </LinearLayout>
 
     </LinearLayout>
 

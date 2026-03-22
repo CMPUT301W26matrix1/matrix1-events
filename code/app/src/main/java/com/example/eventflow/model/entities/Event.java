@@ -21,16 +21,18 @@ public class Event {
     private String posterUrl;
     private int capacity;
     private int waitingListLimit;  // 0 = unlimited
-    private List<String> waitingList; // device IDs
-    private List<String> interests; // interests/tags for filtering
-    private List<String> daysOfWeek; // e.g., ["Monday"]
-    private String timeOfDay; // e.g., "Morning", "Afternoon", "Evening"
+    private List<String> waitingList;    // device IDs
+    private List<String> coOrganizerIds; // US 02.09.01 — co-organizer device IDs
+    private List<String> interests;
+    private List<String> daysOfWeek;
+    private String timeOfDay;
 
     /**
      * Required no-arg constructor for Firestore deserialization.
      */
     public Event() {
         this.waitingList = new ArrayList<>();
+        this.coOrganizerIds = new ArrayList<>();
         this.interests = new ArrayList<>();
         this.daysOfWeek = new ArrayList<>();
     }
@@ -49,10 +51,12 @@ public class Event {
         this.capacity = capacity;
         this.waitingListLimit = waitingListLimit;
         this.waitingList = new ArrayList<>();
+        this.coOrganizerIds = new ArrayList<>();
         this.interests = new ArrayList<>();
         this.daysOfWeek = new ArrayList<>();
     }
 
+    // Existing getters/setters — unchanged
     public String getEventId() { return eventId; }
     public void setEventId(String eventId) { this.eventId = eventId; }
     public String getId() { return getEventId(); }
@@ -85,6 +89,10 @@ public class Event {
     public void setDaysOfWeek(List<String> daysOfWeek) { this.daysOfWeek = daysOfWeek; }
     public String getTimeOfDay() { return timeOfDay; }
     public void setTimeOfDay(String timeOfDay) { this.timeOfDay = timeOfDay; }
+
+    // US 02.09.01 — co-organizer getters/setters
+    public List<String> getCoOrganizerIds() { return coOrganizerIds; }
+    public void setCoOrganizerIds(List<String> coOrganizerIds) { this.coOrganizerIds = coOrganizerIds; }
 
     public int getWaitingListCount() {
         return waitingList != null ? waitingList.size() : 0;
