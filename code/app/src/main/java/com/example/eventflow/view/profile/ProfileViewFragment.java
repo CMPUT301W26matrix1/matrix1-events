@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -64,6 +65,11 @@ public class ProfileViewFragment extends Fragment {
         Button btnViewHistory = view.findViewById(R.id.btnViewHistory);
         Button btnDeleteProfile = view.findViewById(R.id.btnDeleteProfile);
 
+        Switch notificationSwitch = view.findViewById(R.id.switch_notifications);
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+
         Bundle args = getArguments();
         if (args != null) {
 
@@ -79,6 +85,39 @@ public class ProfileViewFragment extends Fragment {
             tvEmail.setText("Email: " + email);
             tvPhone.setText("Phone: " + (TextUtils.isEmpty(phone) ? "Not provided" : phone));
             tvDeviceId.setText("Device ID: " + deviceId);
+
+            // ✅ LOAD notification preference
+            db.collection("profiles")
+                    .whereEqualTo("deviceId", deviceId)
+                    .get()
+                    .addOnSuccessListener(querySnapshot -> {
+                        if (!querySnapshot.isEmpty()) {
+                            Boolean enabled = querySnapshot.getDocuments()
+                                    .get(0)
+                                    .getBoolean("notificationsEnabled");
+
+                            if (enabled == null) enabled = true;
+
+                            notificationSwitch.setChecked(enabled);
+                        }
+                    });
+
+            // ✅ UPDATE notification preference
+            notificationSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+
+                db.collection("profiles")
+                        .whereEqualTo("deviceId", deviceId)
+                        .get()
+                        .addOnSuccessListener(querySnapshot -> {
+
+                            if (!querySnapshot.isEmpty()) {
+                                querySnapshot.getDocuments()
+                                        .get(0)
+                                        .getReference()
+                                        .update("notificationsEnabled", isChecked);
+                            }
+                        });
+            });
 
             // Edit Profile
             if (btnEditProfile != null) {
