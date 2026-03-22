@@ -17,6 +17,8 @@ public class Profile {
     private List<String> availableDays; // e.g., ["Monday", "Wednesday"]
     private String availableTimeOfDay; // e.g., "Morning", "Afternoon", "Evening"
 
+    private boolean notificationsEnabled = true;
+
     /**
      * Default constructor required for Firebase Firestore deserialization.
      */
@@ -54,5 +56,14 @@ public class Profile {
 
     public String getFullName() {
         return firstName + " " + lastName;
+    }
+    //  NEW GETTER
+    public boolean isNotificationsEnabled() {
+        return notificationsEnabled;
+    }
+
+    //  NEW SETTER
+    public void setNotificationsEnabled(boolean notificationsEnabled) {
+        this.notificationsEnabled = notificationsEnabled;
     }
 }

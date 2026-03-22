@@ -16,7 +16,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.eventflow.model.entities.Entrant;
-import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -308,16 +307,38 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
     }
 
     private void sendNotificationToUser(String userId, String message, String eventName, String details, String type) {
+
         Notification notification = new Notification(message, eventName, details, type);
 
-        db.collection("users")
-                .document(userId)
-                .collection("notifications")
-                .add(notification)
-                .addOnSuccessListener(documentReference ->
-                        Log.d("FINAL_DEBUG", "Notification sent to user: " + userId))
-                .addOnFailureListener(e ->
-                        Log.e("FINAL_DEBUG", "Failed to send notification to user: " + userId, e));
+        db.collection("profiles")
+                .whereEqualTo("deviceId", userId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+
+                    if (!querySnapshot.isEmpty()) {
+
+                        Boolean enabled = querySnapshot.getDocuments()
+                                .get(0)
+                                .getBoolean("notificationsEnabled");
+
+
+                        if (enabled == null || enabled) {
+
+
+                            db.collection("users")
+                                    .document(userId)
+                                    .collection("notifications")
+                                    .add(notification)
+                                    .addOnSuccessListener(documentReference ->
+                                            Log.d("FINAL_DEBUG", "Notification sent to user: " + userId))
+                                    .addOnFailureListener(e ->
+                                            Log.e("FINAL_DEBUG", "Failed to send notification to user: " + userId, e));
+
+                        } else {
+                            Log.d("FINAL_DEBUG", "User opted out of notifications: " + userId);
+                        }
+                    }
+                });
     }
 
     /**

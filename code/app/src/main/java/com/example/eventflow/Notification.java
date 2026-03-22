@@ -19,12 +19,17 @@ public class Notification {
     private String eventName;
     private String details;
     private String type;
+    private String eventId;
     private Timestamp timestamp;
     private boolean isRead;
 
     // teammate's adapter needs these
     private boolean accepted;
     private boolean declined;
+
+    //notification type constant
+    public static final String TYPE_PRIVATE_INVITE = "PRIVATE_INVITE";
+
 
     public Notification() {
         // required for Firestore
@@ -44,6 +49,18 @@ public class Notification {
         this.accepted = false;
         this.declined = false;
     }
+    // additional constructor for private invite
+    public Notification(String message, String eventName, String details, String type, String eventId) {
+        this.message = message;
+        this.eventName = eventName;
+        this.details = details;
+        this.type = type;
+        this.eventId = eventId;
+        this.timestamp = Timestamp.now();
+        this.isRead = false;
+        this.accepted = false;
+        this.declined = false;
+    }
 
     public String getId() {
         return id;
@@ -53,15 +70,15 @@ public class Notification {
         this.id = id;
     }
 
-/**
- * Returns the notification message.
- **/
+    /**
+     * Returns the notification message.
+     **/
     public String getMessage() {
         return message;
     }
-/**
- * Sets the notification message.
- **/
+    /**
+     * Sets the notification message.
+     **/
     public void setMessage(String message) {
         this.message = message;
     }
@@ -88,6 +105,13 @@ public class Notification {
 
     public void setType(String type) {
         this.type = type;
+    }
+    public String getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
     }
 
     public Timestamp getTimestamp() {

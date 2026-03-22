@@ -66,4 +66,17 @@ public class NotificationTest {
         notification.setType("NOT_SELECTED");
         assertEquals("NOT_SELECTED", notification.getType());
     }
+    @Test
+    public void testTimestampIsSet() {
+        assertNotNull(notification.getTimestamp());
+    }
+    @Test
+    public void testSetDeclined() {
+        notification.setDeclined(true);
+        assertTrue(notification.isDeclined());
+    }
+    @Test
+    public void testDeclinedDefaultFalse() {
+        assertFalse(notification.isDeclined());
+    }
 }
