@@ -15,6 +15,18 @@
         android:maxLines="1"
         android:imeOptions="actionSearch" />
 
+    <!-- US 03.09.01 — Admin can create events as organizer -->
+    <Button
+        android:id="@+id/btnAdminCreateEvent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="+ Create New Event"
+        android:backgroundTint="#4D5DFA"
+        android:textColor="#FFFFFF"
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginBottom="8dp"
+        android:textAllCaps="false"/>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/eventsRecyclerView"
         android:layout_width="match_parent"
