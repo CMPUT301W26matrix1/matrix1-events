@@ -12,6 +12,7 @@ public class EventFormManager {
     /**
      * Reads all inputs, checks for mistakes, and returns a clean Event object.
      * If the user forgot something, it returns null and shows a warning.
+     * US 02.01.02 — now reads isPrivate checkbox.
      */
     public static Event validateAndCreateEvent(
             Context context,
@@ -20,7 +21,8 @@ public class EventFormManager {
             EditText etDate,
             EditText etDescription,
             CheckBox cbLimit,
-            EditText etLimit) {
+            EditText etLimit,
+            CheckBox cbPrivate) {  // NEW — private event checkbox
 
         String name = etName.getText().toString().trim();
         String location = etLocation.getText().toString().trim();
@@ -51,8 +53,24 @@ public class EventFormManager {
             }
         }
 
+        // US 02.01.02 — read private checkbox
+        boolean isPrivate = cbPrivate != null && cbPrivate.isChecked();
+
         String newEventId = UUID.randomUUID().toString();
-        return new Event(newEventId, name, location, date, description, limitValue);
+        return new Event(newEventId, name, location, date, description, limitValue, isPrivate);
+    }
+
+    // Overload to keep teammates' calls working without cbPrivate
+    public static Event validateAndCreateEvent(
+            Context context,
+            EditText etName,
+            EditText etLocation,
+            EditText etDate,
+            EditText etDescription,
+            CheckBox cbLimit,
+            EditText etLimit) {
+        return validateAndCreateEvent(
+                context, etName, etLocation, etDate, etDescription, cbLimit, etLimit, null);
     }
 
     public static boolean isDataValid(String name, String location, String date) {

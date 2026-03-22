@@ -9,7 +9,6 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -18,50 +17,45 @@ import androidx.fragment.app.Fragment;
 
 import com.example.eventflow.R;
 import com.example.eventflow.org_QR.QRGenerator;
-import com.example.eventflow.org_event.AttendanceLimit;
-import com.example.eventflow.org_event.Event;
-import com.example.eventflow.org_event.EventDetailsActivity;
-import com.example.eventflow.org_event.EventFormManager;
 import android.content.Intent;
 
 public class OrgEventFragment extends Fragment {
 
-    // 1. Declare UI Elements
+    // UI Elements
     private EditText etName, etLocation, etDate, etDescription, etLimit;
     private CheckBox cbLimit;
+    private CheckBox cbPrivate; // US 02.01.02 — private event checkbox
     private ImageView ivEventPoster;
 
-    // We use View or TextView for the header action because your XML uses <TextView>
     private View btnAddEvent, btnBack;
     private Button btnUpdate, btnDelete;
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Connect to your arranged "sandwich" XML
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_org_event, container, false);
 
-        // 2. Initialize UI Components
-        etName = view.findViewById(R.id.et_event_name);
-        etLocation = view.findViewById(R.id.et_event_location);
-        etDate = view.findViewById(R.id.et_event_date);
+        // Initialize UI Components
+        etName        = view.findViewById(R.id.et_event_name);
+        etLocation    = view.findViewById(R.id.et_event_location);
+        etDate        = view.findViewById(R.id.et_event_date);
         etDescription = view.findViewById(R.id.et_event_description);
-        cbLimit = view.findViewById(R.id.cb_limit_attendees);
-        etLimit = view.findViewById(R.id.et_max_attendees);
+        cbLimit       = view.findViewById(R.id.cb_limit_attendees);
+        etLimit       = view.findViewById(R.id.et_max_attendees);
         ivEventPoster = view.findViewById(R.id.iv_event_poster);
+        cbPrivate     = view.findViewById(R.id.cb_private_event); // US 02.01.02
 
-        // 3. Initialize Buttons (Using IDs from fragment_event_header.xml)
+        // Initialize Buttons
         btnAddEvent = view.findViewById(R.id.btn_header_action);
-        btnBack = view.findViewById(R.id.btn_header_back);
+        btnBack     = view.findViewById(R.id.btn_header_back);
+        btnUpdate   = view.findViewById(R.id.btn_update_event);
+        btnDelete   = view.findViewById(R.id.btn_delete_event);
 
-        // Using IDs from fragment_event_bottom.xml or your main inputs
-        btnUpdate = view.findViewById(R.id.btn_update_event);
-        btnDelete = view.findViewById(R.id.btn_delete_event);
-
-        // 4. Setup Logic
+        // Setup Logic
         AttendanceLimit.setupLimitToggle(cbLimit, etLimit);
 
-        // 5. Set Click Listeners
+        // Click Listeners
         if (btnAddEvent != null) {
             btnAddEvent.setOnClickListener(v -> handleAddEvent());
         }
@@ -98,19 +92,30 @@ public class OrgEventFragment extends Fragment {
 
     /**
      * Logic for Adding/Creating Event
+     * US 02.01.02 — passes cbPrivate to EventFormManager
      */
     private void handleAddEvent() {
         Event newEvent = EventFormManager.validateAndCreateEvent(
-                getContext(), etName, etLocation, etDate, etDescription, cbLimit, etLimit
+                getContext(), etName, etLocation, etDate, etDescription,
+                cbLimit, etLimit, cbPrivate
         );
 
         if (newEvent == null) return;
+
+        // US 02.01.02 — private events skip QR and go straight to confirmation
+        if (newEvent.isPrivate()) {
+            Toast.makeText(getContext(),
+                    "Private event created — no QR code generated.", Toast.LENGTH_LONG).show();
+            getParentFragmentManager().popBackStack();
+            return;
+        }
 
         Intent intent = new Intent(getActivity(), EventDetailsActivity.class);
         intent.putExtra("EVENT_NAME", newEvent.getName());
         intent.putExtra("EVENT_LOCATION", etLocation.getText().toString().trim());
         intent.putExtra("EVENT_DESC", etDescription.getText().toString().trim());
         intent.putExtra("QR_DATA", newEvent.getQRDataString());
+        intent.putExtra("IS_PRIVATE", newEvent.isPrivate());
 
         startActivity(intent);
         Toast.makeText(getContext(), "Review your event details!", Toast.LENGTH_SHORT).show();
@@ -121,10 +126,18 @@ public class OrgEventFragment extends Fragment {
      */
     private void handleUpdateEvent() {
         Event updatedEvent = EventFormManager.validateAndCreateEvent(
-                getContext(), etName, etLocation, etDate, etDescription, cbLimit, etLimit
+                getContext(), etName, etLocation, etDate, etDescription,
+                cbLimit, etLimit, cbPrivate
         );
 
         if (updatedEvent == null) return;
+
+        // US 02.01.02 — no QR for private events
+        if (updatedEvent.isPrivate()) {
+            Toast.makeText(getContext(),
+                    "Private event updated — no QR code.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         Bitmap generatedQR = QRGenerator.generateQRCode(updatedEvent.getQRDataString());
 
