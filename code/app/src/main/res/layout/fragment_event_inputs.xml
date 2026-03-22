@@ -37,7 +37,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Event Location-Date"
+        android:text="Event Location"
         android:textColor="#888888"
         android:textSize="12sp"
         android:layout_marginBottom="6dp" />
@@ -47,7 +47,7 @@
         android:layout_height="wrap_content"
         app:cardBackgroundColor="#121212"
         app:cardCornerRadius="10dp"
-        android:layout_marginBottom="8dp">
+        android:layout_marginBottom="16dp">
 
         <EditText
             android:id="@+id/et_event_location"
@@ -60,6 +60,73 @@
             android:textColorHint="#888888"
             android:singleLine="true" />
     </androidx.cardview.widget.CardView>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Registration Period (Start - End)"
+        android:textColor="#888888"
+        android:textSize="12sp"
+        android:layout_marginBottom="6dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            app:cardBackgroundColor="#121212"
+            app:cardCornerRadius="10dp"
+            android:layout_marginEnd="4dp">
+
+            <EditText
+                android:id="@+id/et_reg_start"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@null"
+                android:hint="Start Date"
+                android:paddingHorizontal="16dp"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#888888"
+                android:singleLine="true"
+                android:focusable="false"
+                android:clickable="true" />
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            app:cardBackgroundColor="#121212"
+            app:cardCornerRadius="10dp"
+            android:layout_marginStart="4dp">
+
+            <EditText
+                android:id="@+id/et_reg_end"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@null"
+                android:hint="End Date"
+                android:paddingHorizontal="16dp"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#888888"
+                android:singleLine="true"
+                android:focusable="false"
+                android:clickable="true" />
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Event Date"
+        android:textColor="#888888"
+        android:textSize="12sp"
+        android:layout_marginBottom="6dp" />
 
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
@@ -100,7 +167,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@null"
-            android:gravity="center"
+            android:gravity="top|start"
             android:hint="Add description"
             android:padding="16dp"
             android:textColor="#FFFFFF"
