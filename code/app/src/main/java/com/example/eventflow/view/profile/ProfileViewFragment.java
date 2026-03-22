@@ -9,12 +9,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.eventflow.MainActivity;
@@ -61,11 +61,11 @@ public class ProfileViewFragment extends Fragment {
         TextView tvPhone = view.findViewById(R.id.tvPhone);
         TextView tvDeviceId = view.findViewById(R.id.tvDeviceId);
 
-        ImageButton btnEditProfile = view.findViewById(R.id.btnEditProfile);
+        Button btnEditProfile = view.findViewById(R.id.btnEditProfile);
         Button btnViewHistory = view.findViewById(R.id.btnViewHistory);
         Button btnDeleteProfile = view.findViewById(R.id.btnDeleteProfile);
 
-        Switch notificationSwitch = view.findViewById(R.id.switch_notifications);
+        SwitchCompat notificationSwitch = view.findViewById(R.id.switch_notifications);
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
