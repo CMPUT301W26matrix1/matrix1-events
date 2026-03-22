@@ -70,6 +70,19 @@
                         android:buttonTint="#3B82F6"
                         android:textSize="13sp"/>
 
+                    <!-- US 02.01.03 — Invite Entrants Button (hidden until Private is checked) -->
+                    <Button
+                        android:id="@+id/btn_invite_entrants"
+                        android:layout_width="wrap_content"
+                        android:layout_height="35dp"
+                        android:layout_marginTop="8dp"
+                        android:backgroundTint="#10B981"
+                        android:text="Invite Entrants"
+                        android:textAllCaps="false"
+                        android:textColor="#FFFFFF"
+                        android:textSize="10sp"
+                        android:visibility="gone"/>
+
                     <Button
                         android:id="@+id/btn_upload_qr"
                         android:layout_width="wrap_content"
