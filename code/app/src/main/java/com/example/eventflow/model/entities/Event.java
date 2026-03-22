@@ -1,6 +1,7 @@
 package com.example.eventflow.model.entities;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.PropertyName;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,12 +64,22 @@ public class Event {
     public void setDescription(String description) { this.description = description; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
+    
+    @PropertyName("eventDate")
     public Timestamp getEventDate() { return eventDate; }
-    public void setEventDate(Timestamp eventDate) { this.eventDate = eventDate; }
+    @PropertyName("eventDate")
+    public void setEventDate(Object eventDate) { this.eventDate = convertToTimestamp(eventDate); }
+    
+    @PropertyName("registrationStart")
     public Timestamp getRegistrationStart() { return registrationStart; }
-    public void setRegistrationStart(Timestamp registrationStart) { this.registrationStart = registrationStart; }
+    @PropertyName("registrationStart")
+    public void setRegistrationStart(Object registrationStart) { this.registrationStart = convertToTimestamp(registrationStart); }
+    
+    @PropertyName("registrationEnd")
     public Timestamp getRegistrationEnd() { return registrationEnd; }
-    public void setRegistrationEnd(Timestamp registrationEnd) { this.registrationEnd = registrationEnd; }
+    @PropertyName("registrationEnd")
+    public void setRegistrationEnd(Object registrationEnd) { this.registrationEnd = convertToTimestamp(registrationEnd); }
+    
     public String getOrganizerId() { return organizerId; }
     public void setOrganizerId(String organizerId) { this.organizerId = organizerId; }
     public String getPosterUrl() { return posterUrl; }
@@ -100,5 +111,22 @@ public class Event {
     public boolean isWaitingListFull() {
         if (waitingListLimit == 0) return false;
         return waitingList != null && waitingList.size() >= waitingListLimit;
+    }
+
+    private Timestamp convertToTimestamp(Object value) {
+        if (value instanceof Timestamp) {
+            return (Timestamp) value;
+        } else if (value instanceof com.google.firebase.Timestamp) {
+            return (com.google.firebase.Timestamp) value;
+        } else if (value instanceof String) {
+            try {
+                // Try to parse ISO 8601 or other common formats if needed.
+                // For now, let's assume it might be a long representing seconds.
+                return new Timestamp(Long.parseLong((String) value), 0);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
     }
 }

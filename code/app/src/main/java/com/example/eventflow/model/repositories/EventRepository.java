@@ -55,6 +55,14 @@ public class EventRepository {
     }
 
     /**
+     * Callback used when loading a single {@link Event}.
+     */
+    public interface EventCallback {
+        void onSuccess(Event event);
+        void onFailure(Exception e);
+    }
+
+    /**
      * Callback for simple success/failure actions (join/leave).
      */
     public interface ActionCallback {
@@ -89,6 +97,32 @@ public class EventRepository {
                         events.add(event);
                     }
                     callback.onSuccess(events);
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    /**
+     * Fetches a single event by its ID.
+     *
+     * @param eventId  ID of the event to fetch
+     * @param callback callback to receive the result or an error
+     */
+    public void getEventById(String eventId, EventCallback callback) {
+        db.collection(EVENTS_COLLECTION)
+                .document(eventId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        Event event = documentSnapshot.toObject(Event.class);
+                        if (event != null) {
+                            event.setEventId(documentSnapshot.getId());
+                            callback.onSuccess(event);
+                        } else {
+                            callback.onFailure(new Exception("Failed to parse event."));
+                        }
+                    } else {
+                        callback.onFailure(new Exception("Event not found."));
+                    }
                 })
                 .addOnFailureListener(callback::onFailure);
     }

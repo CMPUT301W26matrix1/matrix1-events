@@ -14,7 +14,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.eventflow.MainActivity;
@@ -29,6 +28,7 @@ public class ProfileViewFragment extends Fragment {
     private static final String ARG_LAST_NAME = "lastName";
     private static final String ARG_EMAIL = "email";
     private static final String ARG_PHONE = "phone";
+    private static final String ARG_DOB = "dob";
 
     public ProfileViewFragment() {}
 
@@ -40,6 +40,7 @@ public class ProfileViewFragment extends Fragment {
         args.putString(ARG_LAST_NAME, profile.getLastName());
         args.putString(ARG_EMAIL, profile.getEmail());
         args.putString(ARG_PHONE, profile.getPhoneNumber());
+        args.putString(ARG_DOB, profile.getDateOfBirth());
         fragment.setArguments(args);
         return fragment;
     }
@@ -57,94 +58,57 @@ public class ProfileViewFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         TextView tvFullName = view.findViewById(R.id.tvFullName);
+        TextView tvUsername = view.findViewById(R.id.tvUsername);
         TextView tvEmail = view.findViewById(R.id.tvEmail);
-        TextView tvPhone = view.findViewById(R.id.tvPhone);
-        TextView tvDeviceId = view.findViewById(R.id.tvDeviceId);
+        TextView tvDOB = view.findViewById(R.id.tvDOB);
 
-        Button btnEditProfile = view.findViewById(R.id.btnEditProfile);
-        Button btnViewHistory = view.findViewById(R.id.btnViewHistory);
+        View cvEditProfile = view.findViewById(R.id.cv_edit_profile);
         Button btnDeleteProfile = view.findViewById(R.id.btnDeleteProfile);
-
-        SwitchCompat notificationSwitch = view.findViewById(R.id.switch_notifications);
-
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
+        Button btnSignOut = view.findViewById(R.id.btnSignOut);
 
         Bundle args = getArguments();
         if (args != null) {
-
             String deviceId = args.getString(ARG_DEVICE_ID, "");
             String firstName = args.getString(ARG_FIRST_NAME, "");
             String lastName = args.getString(ARG_LAST_NAME, "");
             String email = args.getString(ARG_EMAIL, "");
             String phone = args.getString(ARG_PHONE, "");
+            String dob = args.getString(ARG_DOB, "");
 
             Profile currentProfile = new Profile(deviceId, firstName, lastName, email, phone);
+            currentProfile.setDateOfBirth(dob);
 
-            tvFullName.setText("Name: " + firstName + " " + lastName);
-            tvEmail.setText("Email: " + email);
-            tvPhone.setText("Phone: " + (TextUtils.isEmpty(phone) ? "Not provided" : phone));
-            tvDeviceId.setText("Device ID: " + deviceId);
+            tvFullName.setText(firstName + " " + lastName);
+            tvUsername.setText("@" + (firstName + lastName).toLowerCase().replace(" ", ""));
+            tvEmail.setText(email);
+            tvDOB.setText("Date of Birth: " + (TextUtils.isEmpty(dob) ? "Not set" : dob));
 
-            // ✅ LOAD notification preference
-            db.collection("profiles")
-                    .whereEqualTo("deviceId", deviceId)
-                    .get()
-                    .addOnSuccessListener(querySnapshot -> {
-                        if (!querySnapshot.isEmpty()) {
-                            Boolean enabled = querySnapshot.getDocuments()
-                                    .get(0)
-                                    .getBoolean("notificationsEnabled");
-
-                            if (enabled == null) enabled = true;
-
-                            notificationSwitch.setChecked(enabled);
-                        }
-                    });
-
-            // ✅ UPDATE notification preference
-            notificationSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-
-                db.collection("profiles")
-                        .whereEqualTo("deviceId", deviceId)
-                        .get()
-                        .addOnSuccessListener(querySnapshot -> {
-
-                            if (!querySnapshot.isEmpty()) {
-                                querySnapshot.getDocuments()
-                                        .get(0)
-                                        .getReference()
-                                        .update("notificationsEnabled", isChecked);
-                            }
-                        });
-            });
-
-            // Edit Profile
-            if (btnEditProfile != null) {
-                btnEditProfile.setOnClickListener(v -> {
+            if (cvEditProfile != null) {
+                cvEditProfile.setOnClickListener(v -> {
                     if (getParentFragment() instanceof ProfileContainerFragment) {
                         ((ProfileContainerFragment) getParentFragment()).showEditProfile(currentProfile);
                     }
                 });
             }
 
-            // View History
-            if (btnViewHistory != null) {
-                btnViewHistory.setOnClickListener(v -> {
-                    if (getParentFragment() instanceof ProfileContainerFragment) {
-                        ((ProfileContainerFragment) getParentFragment()).showEventHistory();
-                    }
-                });
-            }
-
-            //  DELETE PROFILE BUTTON
             if (btnDeleteProfile != null) {
                 btnDeleteProfile.setOnClickListener(v -> showDeleteConfirmation(deviceId));
             }
+
+            if (btnSignOut != null) {
+                btnSignOut.setOnClickListener(v -> {
+                    clearUserData();
+                    Intent intent = new Intent(getActivity(), MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                });
+            }
+            
+            view.findViewById(R.id.btnBack).setOnClickListener(v -> {
+            });
         }
     }
 
-    // Confirmation Dialog
     private void showDeleteConfirmation(String deviceId) {
         new AlertDialog.Builder(getContext())
                 .setTitle("Delete Profile")
@@ -154,29 +118,19 @@ public class ProfileViewFragment extends Fragment {
                 .show();
     }
 
-    // Delete Profile from Firestore
     private void deleteProfile(String deviceId) {
-
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
         db.collection("profiles")
                 .whereEqualTo("deviceId", deviceId)
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
-
                     if (!querySnapshot.isEmpty()) {
-
-                        // Get first matching document and delete it
                         querySnapshot.getDocuments().get(0).getReference().delete();
-
                         Toast.makeText(getContext(), "Profile deleted", Toast.LENGTH_SHORT).show();
-
                         clearUserData();
-
                         Intent intent = new Intent(getActivity(), MainActivity.class);
                         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                         startActivity(intent);
-
                     } else {
                         Toast.makeText(getContext(), "Profile not found", Toast.LENGTH_SHORT).show();
                     }
@@ -186,7 +140,6 @@ public class ProfileViewFragment extends Fragment {
                 });
     }
 
-    // Clear local data (logout)
     private void clearUserData() {
         SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", getContext().MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
