@@ -6,6 +6,10 @@ import com.example.eventflow.model.entities.Profile;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -77,12 +81,19 @@ public class ProfileControllerTest {
                 "1111111111"
         );
 
+        List<String> interests = Arrays.asList("Music", "Sports");
+        List<String> availableDays = Arrays.asList("Monday", "Friday");
+        String availableTime = "Evening";
+
         Profile updated = profileController.updateProfile(
                 profile,
                 "New",
                 "Name",
                 "new@example.com",
-                "2222222222"
+                "2222222222",
+                interests,
+                availableDays,
+                availableTime
         );
 
         assertEquals("device123", updated.getDeviceId());
@@ -90,6 +101,9 @@ public class ProfileControllerTest {
         assertEquals("Name", updated.getLastName());
         assertEquals("new@example.com", updated.getEmail());
         assertEquals("2222222222", updated.getPhoneNumber());
+        assertEquals(interests, updated.getInterests());
+        assertEquals(availableDays, updated.getAvailableDays());
+        assertEquals(availableTime, updated.getAvailableTimeOfDay());
     }
     // DELETE FEATURE TESTS
 

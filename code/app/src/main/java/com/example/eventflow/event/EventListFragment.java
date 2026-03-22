@@ -66,6 +66,16 @@ public class EventListFragment extends Fragment {
         progressBar = view.findViewById(R.id.progressBar);
         etSearchEvents = view.findViewById(R.id.etSearchEvents);
 
+        // Handle Back Button
+        View btnBack = view.findViewById(R.id.btn_search_back);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                if (getActivity() != null) {
+                    getActivity().finish();
+                }
+            });
+        }
+
         eventAdapter = new EventAdapter(displayedEvents, new EventAdapter.EventActionListener() {
             @Override
             public void onJoinWaitingList(Event event) {
@@ -111,18 +121,20 @@ public class EventListFragment extends Fragment {
     }
 
     private void setupSearch() {
-        etSearchEvents.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        if (etSearchEvents != null) {
+            etSearchEvents.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                applyFiltersAndSearch();
-            }
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    applyFiltersAndSearch();
+                }
 
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
     }
 
     @Override
@@ -132,7 +144,7 @@ public class EventListFragment extends Fragment {
     }
 
     private void loadProfileAndEvents() {
-        progressBar.setVisibility(View.VISIBLE);
+        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
         profileRepository.getProfileByDeviceId(deviceId, new ProfileRepository.LoadProfileCallback() {
             @Override
             public void onSuccess(@NonNull Profile profile) {
@@ -158,7 +170,7 @@ public class EventListFragment extends Fragment {
         eventController.loadAllEvents(new EventRepository.EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
-                progressBar.setVisibility(View.GONE);
+                if (progressBar != null) progressBar.setVisibility(View.GONE);
                 allEvents.clear();
                 allEvents.addAll(events);
                 applyFiltersAndSearch();
@@ -166,16 +178,18 @@ public class EventListFragment extends Fragment {
 
             @Override
             public void onFailure(Exception e) {
-                progressBar.setVisibility(View.GONE);
-                Toast.makeText(getContext(),
-                        "Error loading events: " + e.getMessage(),
-                        Toast.LENGTH_LONG).show();
+                if (progressBar != null) progressBar.setVisibility(View.GONE);
+                if (getContext() != null) {
+                    Toast.makeText(getContext(),
+                            "Error loading events: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
 
     private void applyFiltersAndSearch() {
-        String query = etSearchEvents.getText().toString();
+        String query = etSearchEvents != null ? etSearchEvents.getText().toString() : "";
         
         // 1. Filter by profile preferences (interests/availability)
         List<Event> filteredByProfile = eventController.filterEventsByProfile(allEvents, currentProfile);
@@ -185,6 +199,8 @@ public class EventListFragment extends Fragment {
         
         displayedEvents.clear();
         displayedEvents.addAll(searchResults);
-        eventAdapter.notifyDataSetChanged();
+        if (eventAdapter != null) {
+            eventAdapter.notifyDataSetChanged();
+        }
     }
 }

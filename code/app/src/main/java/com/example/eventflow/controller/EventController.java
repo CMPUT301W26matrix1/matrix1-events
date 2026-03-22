@@ -26,6 +26,10 @@ public class EventController {
         eventRepository.getAllEvents(callback);
     }
 
+    public void loadEventById(String eventId, EventRepository.EventCallback callback) {
+        eventRepository.getEventById(eventId, callback);
+    }
+
     /**
      * Filters a list of events based on keyword, profile, and explicit filter options.
      */
