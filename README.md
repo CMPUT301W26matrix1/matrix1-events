@@ -1,4 +1,4 @@
-# Event Flow
+# 🎟️ Event Flow
 
 ## Description
 
@@ -6,7 +6,7 @@ This is the repository for the group project for team `matrix1` in CMPUT 301 at 
 
 The project, an Android app, is an event lottery system that allows users to join a waitlist for events and be selected by lottery to join. Organizers can create and manage events for others to sign up.
 
-See the project [Wiki]([https://example.com](https://github.com/CMPUT301W26matrix1/matrix1-events/wiki)) for more information.
+See the project [Wiki](https://example.com](https://github.com/CMPUT301W26matrix1/matrix1-events/wiki)) for more information.
 
 ## Technologies
 
