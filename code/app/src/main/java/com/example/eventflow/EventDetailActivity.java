@@ -16,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -40,13 +41,15 @@ import com.example.eventflow.EntrantLocationMapActivity;
 
 public class EventDetailActivity extends AppCompatActivity {
 
+    private boolean isOrganizer;
+
     private EventController eventController;
     private String eventId;
     private Event currentEvent;
     private Button btnJoinNow;
     private Button btnViewMap;  // ADDED for map
 
-    // Comment section (from right)
+    // Comment section
     private EditText etCommentInput;
     private Button btnPostComment;
     private RecyclerView rvComments;
@@ -67,25 +70,39 @@ public class EventDetailActivity extends AppCompatActivity {
         // Initialize location client
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
-        // Comment section setup (from right)
         db = FirebaseFirestore.getInstance();
 
-        etCommentInput = findViewById(R.id.etCommentInput);
-        btnPostComment = findViewById(R.id.btnPostComment);
-        rvComments = findViewById(R.id.rvComments);
-
-        commentAdapter = new CommentAdapter(commentList);
-        rvComments.setLayoutManager(new LinearLayoutManager(this));
-        rvComments.setAdapter(commentAdapter);
-        rvComments.setNestedScrollingEnabled(false);
-
         eventId = getIntent().getStringExtra("eventId");
+        String userRole = getIntent().getStringExtra("userRole");
+        isOrganizer = "organizer".equals(userRole);
 
         if (eventId == null || eventId.isEmpty()) {
             Toast.makeText(this, "Event ID missing", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
+
+        etCommentInput = findViewById(R.id.etCommentInput);
+        btnPostComment = findViewById(R.id.btnPostComment);
+        rvComments = findViewById(R.id.rvComments);
+
+        if (isOrganizer) {
+            etCommentInput.setVisibility(View.GONE);
+            btnPostComment.setVisibility(View.GONE);
+        } else {
+            etCommentInput.setVisibility(View.VISIBLE);
+            btnPostComment.setVisibility(View.VISIBLE);
+        }
+
+        commentAdapter = new CommentAdapter(
+                commentList,
+                comment -> showDeleteConfirmation(comment),
+                isOrganizer
+        );
+
+        rvComments.setLayoutManager(new LinearLayoutManager(this));
+        rvComments.setAdapter(commentAdapter);
+        rvComments.setNestedScrollingEnabled(false);
 
         loadComments();
 
@@ -102,14 +119,13 @@ public class EventDetailActivity extends AppCompatActivity {
         TextView locationText = findViewById(R.id.tv_event_location);
         TextView descriptionText = findViewById(R.id.tv_detail_description);
         btnJoinNow = findViewById(R.id.btn_join_now);
-        btnViewMap = findViewById(R.id.btn_view_entrant_map);  // ADDED for map (from left)
+        btnViewMap = findViewById(R.id.btn_view_entrant_map);
         ImageView backButton = findViewById(R.id.btn_detail_back);
 
         loadEventDetails(nameText, locationText, descriptionText);
 
         backButton.setOnClickListener(v -> finish());
 
-        // View Map button click listener
         if (btnViewMap != null) {
             btnViewMap.setOnClickListener(v -> {
                 Intent intent = new Intent(EventDetailActivity.this, EntrantLocationMapActivity.class);
@@ -122,7 +138,6 @@ public class EventDetailActivity extends AppCompatActivity {
         }
     }
 
-    // Comment methods
     private void postComment() {
         String commentText = etCommentInput.getText().toString().trim();
 
@@ -174,6 +189,7 @@ public class EventDetailActivity extends AppCompatActivity {
                         for (DocumentSnapshot doc : value.getDocuments()) {
                             Comment comment = doc.toObject(Comment.class);
                             if (comment != null) {
+                                comment.setCommentId(doc.getId());
                                 commentList.add(comment);
                             }
                         }
@@ -181,6 +197,32 @@ public class EventDetailActivity extends AppCompatActivity {
 
                     commentAdapter.notifyDataSetChanged();
                 });
+    }
+
+    private void showDeleteConfirmation(Comment comment) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Comment")
+                .setMessage("Are you sure you want to delete this comment?")
+                .setPositiveButton("Yes", (dialog, which) -> deleteComment(comment))
+                .setNegativeButton("No", null)
+                .show();
+    }
+
+    private void deleteComment(Comment comment) {
+        if (comment.getCommentId() == null || comment.getCommentId().isEmpty()) {
+            Toast.makeText(this, "Comment ID missing", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        db.collection("events")
+                .document(eventId)
+                .collection("comments")
+                .document(comment.getCommentId())
+                .delete()
+                .addOnSuccessListener(unused ->
+                        Toast.makeText(this, "Comment deleted", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to delete comment", Toast.LENGTH_SHORT).show());
     }
 
     private void loadEventDetails(TextView nameText, TextView locationText, TextView descriptionText) {

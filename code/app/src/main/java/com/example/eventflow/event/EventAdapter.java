@@ -125,7 +125,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(v.getContext(), EventDetailActivity.class);
-            intent.putExtra("eventId", event.getEventId());
+            intent.putExtra("eventId", event.getId());
+            intent.putExtra("userRole", "entrant");
             v.getContext().startActivity(intent);
         });
     }

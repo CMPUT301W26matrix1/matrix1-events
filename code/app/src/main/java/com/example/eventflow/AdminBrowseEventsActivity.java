@@ -31,6 +31,7 @@ public class AdminBrowseEventsActivity extends AppCompatActivity {
     private final List<Event> allEvents = new ArrayList<>();
     private final List<Event> filteredEvents = new ArrayList<>();
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,7 +41,7 @@ public class AdminBrowseEventsActivity extends AppCompatActivity {
         EditText searchBar = findViewById(R.id.searchBar);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new EventAdapter(filteredEvents);
+        adapter = new EventAdapter(filteredEvents, "organizer");
         recyclerView.setAdapter(adapter);
 
         loadEvents();

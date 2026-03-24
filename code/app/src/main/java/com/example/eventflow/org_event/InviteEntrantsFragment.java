@@ -182,7 +182,7 @@ public class InviteEntrantsFragment extends Fragment {
             return;
         }
 
-
+        // CREATE NOTIFICATION
         Notification notification = new Notification(
                 "You’ve been invited to a private event",
                 "Private Event",
@@ -191,12 +191,15 @@ public class InviteEntrantsFragment extends Fragment {
                 eventId
         );
 
-
-        //  USE DEVICE ID
+        // USE DEVICE ID
         String userId = profile.getDeviceId();
         notification.setUserId(userId);
 
+        notification.setRead(false);
+        notification.setAccepted(false);
+        notification.setDeclined(false);
 
+        // SAVE TO FIRESTORE
         db.collection("users")
                 .document(userId)
                 .collection("notifications")

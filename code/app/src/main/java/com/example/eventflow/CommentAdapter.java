@@ -3,6 +3,7 @@ package com.example.eventflow;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -16,10 +17,20 @@ import java.util.Locale;
 
 public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentViewHolder> {
 
-    private final List<Comment> comments;
+    public interface OnDeleteClickListener {
+        void onDeleteClick(Comment comment);
+    }
 
-    public CommentAdapter(List<Comment> comments) {
+    private final List<Comment> comments;
+    private final OnDeleteClickListener deleteClickListener;
+    private final boolean showDeleteButton;
+
+    public CommentAdapter(List<Comment> comments,
+                          OnDeleteClickListener deleteClickListener,
+                          boolean showDeleteButton) {
         this.comments = comments;
+        this.deleteClickListener = deleteClickListener;
+        this.showDeleteButton = showDeleteButton;
     }
 
     @NonNull
@@ -42,6 +53,18 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
         } else {
             holder.tvCommentTime.setText("");
         }
+
+        if (showDeleteButton) {
+            holder.btnDeleteComment.setVisibility(View.VISIBLE);
+            holder.btnDeleteComment.setOnClickListener(v -> {
+                if (deleteClickListener != null) {
+                    deleteClickListener.onDeleteClick(comment);
+                }
+            });
+        } else {
+            holder.btnDeleteComment.setVisibility(View.GONE);
+            holder.btnDeleteComment.setOnClickListener(null);
+        }
     }
 
     @Override
@@ -51,12 +74,14 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
 
     static class CommentViewHolder extends RecyclerView.ViewHolder {
         TextView tvCommentUser, tvCommentText, tvCommentTime;
+        Button btnDeleteComment;
 
         public CommentViewHolder(@NonNull View itemView) {
             super(itemView);
             tvCommentUser = itemView.findViewById(R.id.tvCommentUser);
             tvCommentText = itemView.findViewById(R.id.tvCommentText);
             tvCommentTime = itemView.findViewById(R.id.tvCommentTime);
+            btnDeleteComment = itemView.findViewById(R.id.btnDeleteComment);
         }
     }
 }
