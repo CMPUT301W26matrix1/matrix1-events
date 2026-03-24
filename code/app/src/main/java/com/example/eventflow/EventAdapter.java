@@ -16,6 +16,7 @@ import com.example.eventflow.model.entities.Event;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,10 +26,12 @@ import java.util.List;
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
 
     private final List<Event> events;
+    private final String userRole;
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-    public EventAdapter(List<Event> events) {
+    public EventAdapter(List<Event> events, String userRole) {
         this.events = events;
+        this.userRole = userRole;
     }
 
     public static class EventViewHolder extends RecyclerView.ViewHolder {
@@ -37,9 +40,9 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
-            name          = itemView.findViewById(R.id.tvEventName);
-            location      = itemView.findViewById(R.id.tvEventLocation);
-            deleteButton  = itemView.findViewById(R.id.deleteEventButton);
+            name = itemView.findViewById(R.id.tvEventName);
+            location = itemView.findViewById(R.id.tvEventLocation);
+            deleteButton = itemView.findViewById(R.id.deleteEventButton);
             joinLeaveButton = itemView.findViewById(R.id.btnJoinLeave);
         }
     }
@@ -59,13 +62,11 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         holder.name.setText(event.getName());
         holder.location.setText(event.getLocation());
 
-        // Get device ID for join/leave
         String deviceId = Settings.Secure.getString(
                 holder.itemView.getContext().getContentResolver(),
                 Settings.Secure.ANDROID_ID
         );
 
-        // US 03.09.01 — Set JOIN/LEAVE button state
         boolean isJoined = event.getWaitingList() != null
                 && event.getWaitingList().contains(deviceId);
         holder.joinLeaveButton.setText(isJoined ? "Leave" : "Join");
@@ -75,12 +76,13 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
                     && event.getWaitingList().contains(deviceId);
 
             if (currentlyJoined) {
-                // Leave waiting list
                 db.collection("events")
                         .document(event.getId())
                         .update("waitingList", FieldValue.arrayRemove(deviceId))
                         .addOnSuccessListener(aVoid -> {
-                            event.getWaitingList().remove(deviceId);
+                            if (event.getWaitingList() != null) {
+                                event.getWaitingList().remove(deviceId);
+                            }
                             holder.joinLeaveButton.setText("Join");
                             Toast.makeText(v.getContext(),
                                     "Left waiting list.", Toast.LENGTH_SHORT).show();
@@ -89,14 +91,14 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
                                 Toast.makeText(v.getContext(),
                                         "Failed to leave.", Toast.LENGTH_SHORT).show());
             } else {
-                // Join waiting list
                 db.collection("events")
                         .document(event.getId())
                         .update("waitingList", FieldValue.arrayUnion(deviceId))
                         .addOnSuccessListener(aVoid -> {
-                            if (event.getWaitingList() != null) {
-                                event.getWaitingList().add(deviceId);
+                            if (event.getWaitingList() == null) {
+                                event.setWaitingList(new ArrayList<>());
                             }
+                            event.getWaitingList().add(deviceId);
                             holder.joinLeaveButton.setText("Leave");
                             Toast.makeText(v.getContext(),
                                     "Joined waiting list!", Toast.LENGTH_SHORT).show();
@@ -107,7 +109,14 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             }
         });
 
-        // Delete button
+        if ("organizer".equals(userRole)) {
+            holder.deleteButton.setVisibility(View.VISIBLE);
+            holder.joinLeaveButton.setVisibility(View.GONE);
+        } else {
+            holder.deleteButton.setVisibility(View.GONE);
+            holder.joinLeaveButton.setVisibility(View.VISIBLE);
+        }
+
         holder.deleteButton.setOnClickListener(v -> {
             db.collection("events")
                     .document(event.getId())
@@ -126,12 +135,10 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
                                     "Failed to delete event", Toast.LENGTH_SHORT).show());
         });
 
-        // Click event row to see details
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(v.getContext(), EventDetailActivity.class);
-            intent.putExtra("eventName", event.getName());
-            intent.putExtra("eventLocation", event.getLocation());
-            intent.putExtra("eventDescription", event.getDescription());
+            intent.putExtra("eventId", event.getId());
+            intent.putExtra("userRole", userRole);
             v.getContext().startActivity(intent);
         });
     }
