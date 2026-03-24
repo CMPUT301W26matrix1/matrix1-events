@@ -28,6 +28,12 @@ public class Event {
     private List<String> daysOfWeek;
     private String timeOfDay;
 
+    // Geolocation fields (US 02.01.05)
+    private boolean geolocationRequired;
+    private double locationLatitude;
+    private double locationLongitude;
+    private double locationRadius;
+
     /**
      * Required no-arg constructor for Firestore deserialization.
      */
@@ -36,6 +42,12 @@ public class Event {
         this.coOrganizerIds = new ArrayList<>();
         this.interests = new ArrayList<>();
         this.daysOfWeek = new ArrayList<>();
+
+        // Default geolocation values
+        this.geolocationRequired = false;
+        this.locationLatitude = 0;
+        this.locationLongitude = 0;
+        this.locationRadius = 500;
     }
 
     public Event(String eventId, String name, String description, String location,
@@ -55,6 +67,12 @@ public class Event {
         this.coOrganizerIds = new ArrayList<>();
         this.interests = new ArrayList<>();
         this.daysOfWeek = new ArrayList<>();
+
+        // Default geolocation values
+        this.geolocationRequired = false;
+        this.locationLatitude = 0;
+        this.locationLongitude = 0;
+        this.locationRadius = 500;
     }
 
     // Existing getters/setters — unchanged
@@ -68,22 +86,22 @@ public class Event {
     public void setDescription(String description) { this.description = description; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
-    
+
     @PropertyName("eventDate")
     public Timestamp getEventDate() { return eventDate; }
     @PropertyName("eventDate")
     public void setEventDate(Object eventDate) { this.eventDate = convertToTimestamp(eventDate); }
-    
+
     @PropertyName("registrationStart")
     public Timestamp getRegistrationStart() { return registrationStart; }
     @PropertyName("registrationStart")
     public void setRegistrationStart(Object registrationStart) { this.registrationStart = convertToTimestamp(registrationStart); }
-    
+
     @PropertyName("registrationEnd")
     public Timestamp getRegistrationEnd() { return registrationEnd; }
     @PropertyName("registrationEnd")
     public void setRegistrationEnd(Object registrationEnd) { this.registrationEnd = convertToTimestamp(registrationEnd); }
-    
+
     public String getOrganizerId() { return organizerId; }
     public void setOrganizerId(String organizerId) { this.organizerId = organizerId; }
     public String getPosterUrl() { return posterUrl; }
@@ -105,6 +123,26 @@ public class Event {
     public List<String> getCoOrganizerIds() { return coOrganizerIds; }
     public void setCoOrganizerIds(List<String> coOrganizerIds) { this.coOrganizerIds = coOrganizerIds; }
 
+    // Geolocation getters (US 02.01.05)
+    public boolean isGeolocationRequired() { return geolocationRequired; }
+    public double getLocationLatitude() { return locationLatitude; }
+    public double getLocationLongitude() { return locationLongitude; }
+    public double getLocationRadius() { return locationRadius; }
+
+    // Geolocation setters (US 02.01.05)
+    public void setGeolocationRequired(boolean geolocationRequired) {
+        this.geolocationRequired = geolocationRequired;
+    }
+    public void setLocationLatitude(double locationLatitude) {
+        this.locationLatitude = locationLatitude;
+    }
+    public void setLocationLongitude(double locationLongitude) {
+        this.locationLongitude = locationLongitude;
+    }
+    public void setLocationRadius(double locationRadius) {
+        this.locationRadius = locationRadius;
+    }
+
     public int getWaitingListCount() {
         return waitingList != null ? waitingList.size() : 0;
     }
@@ -120,6 +158,7 @@ public class Event {
         if (waitingListLimit == 0) return false;
         return waitingList != null && waitingList.size() >= waitingListLimit;
     }
+
     private Timestamp convertToTimestamp(Object value) {
         if (value instanceof Timestamp) {
             return (Timestamp) value;

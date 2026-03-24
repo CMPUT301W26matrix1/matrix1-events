@@ -64,10 +64,15 @@
 
         <activity android:name=".org_event.InviteEntrantsActivity" />
 
-        <!-- NEW: Map Activity for viewing entrant locations -->
+        <!-- Map Activity for viewing entrant locations -->
         <activity
             android:name=".EntrantLocationMapActivity"
             android:label="Entrant Locations" />
+
+        <!--Location Picker Activity for setting event location -->
+        <activity
+            android:name=".LocationPickerActivity"
+            android:label="Pick Location" />
 
     </application>
 

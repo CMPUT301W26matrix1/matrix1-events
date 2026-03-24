@@ -1,4 +1,5 @@
 package com.example.eventflow.org_event;
+
 import com.google.firebase.firestore.PropertyName;
 
 import java.util.Date;
@@ -14,6 +15,8 @@ public class Event {
     private String registrationStart; // US 02.01.04
     private String registrationEnd;   // US 02.01.04
     private String posterUrl;         // US 02.04.01
+
+    // NO geolocation fields here - this is just for organizer form
 
     public Event(String eventId, String name, String location, String date,
                  String description, Integer attendanceLimit, boolean isPrivate,
@@ -56,7 +59,6 @@ public class Event {
     public void setPosterUrl(String posterUrl) { this.posterUrl = posterUrl; }
 
     public String getQRDataString() {
-        // US 02.01.02 — private events do not generate a QR code
         if (isPrivate) return null;
         return "eventflow://details?id=" + eventId;
     }
