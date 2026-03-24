@@ -1,6 +1,7 @@
 package com.example.eventflow;
 
 import android.app.Dialog;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -23,22 +24,21 @@ public class EventDetailActivity extends AppCompatActivity {
     private String eventId;
     private Event currentEvent;
     private Button btnJoinNow;
+    private Button btnViewMap;  // ADDED for map
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_details);
 
-        String deviceId = Settings.Secure.getString(
-                getContentResolver(),
-                Settings.Secure.ANDROID_ID
-        );
+        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
         eventController = new EventController(deviceId);
 
         TextView nameText = findViewById(R.id.tv_detail_name);
         TextView locationText = findViewById(R.id.tv_event_location);
         TextView descriptionText = findViewById(R.id.tv_detail_description);
         btnJoinNow = findViewById(R.id.btn_join_now);
+        btnViewMap = findViewById(R.id.btn_view_entrant_map);  // ADDED for map
         ImageView backButton = findViewById(R.id.btn_detail_back);
 
         eventId = getIntent().getStringExtra("eventId");
@@ -51,6 +51,18 @@ public class EventDetailActivity extends AppCompatActivity {
         loadEventDetails(nameText, locationText, descriptionText);
 
         backButton.setOnClickListener(v -> finish());
+
+        // ADDED for map - View Map button click listener
+        if (btnViewMap != null) {
+            btnViewMap.setOnClickListener(v -> {
+                Intent intent = new Intent(EventDetailActivity.this, EntrantLocationMapActivity.class);
+                intent.putExtra("eventId", eventId);
+                if (currentEvent != null) {
+                    intent.putExtra("eventName", currentEvent.getName());
+                }
+                startActivity(intent);
+            });
+        }
     }
 
     private void loadEventDetails(TextView nameText, TextView locationText, TextView descriptionText) {

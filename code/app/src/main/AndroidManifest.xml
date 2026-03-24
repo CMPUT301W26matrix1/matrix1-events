@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Internet permission (existing) -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Add these for location and maps -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -10,6 +15,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+
+        <!-- Add Google Maps API Key -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="YOUR_GOOGLE_MAPS_API_KEY" />
 
         <activity
             android:name=".SplashActivity"
@@ -31,6 +41,7 @@
         <activity
             android:name=".OrganizerFinalEntrantsActivity"
             android:exported="false" />
+
         <!-- Waiting List Screen -->
         <activity android:name=".WaitingListActivity" />
 
@@ -50,7 +61,13 @@
         <activity
             android:name=".org_QR.QRDisplayActivity"
             android:exported="false" />
+
         <activity android:name=".org_event.InviteEntrantsActivity" />
+
+        <!-- NEW: Map Activity for viewing entrant locations -->
+        <activity
+            android:name=".EntrantLocationMapActivity"
+            android:label="Entrant Locations" />
 
     </application>
 

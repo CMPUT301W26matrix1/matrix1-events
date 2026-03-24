@@ -79,8 +79,7 @@ public class AdminBrowseEventsTest {
         List<Event> result = new ArrayList<>();
 
         for (Event event : events) {
-            if (query.isEmpty() ||
-                    (event.getName() != null && event.getName().toLowerCase().contains(query))) {
+            if (query.isEmpty() || (event.getName() != null && event.getName().toLowerCase().contains(query))) {
                 result.add(event);
             }
         }
