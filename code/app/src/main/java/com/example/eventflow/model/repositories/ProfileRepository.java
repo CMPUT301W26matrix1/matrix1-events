@@ -33,10 +33,22 @@ public class ProfileRepository {
      * Used in US 01.02.01.
      */
     public void saveProfile(@NonNull Profile profile, @NonNull SaveProfileCallback callback) {
+        String userId = profile.getDeviceId();
+
+        // Save to profiles collection
         profilesCollection
-                .document(profile.getDeviceId())
+                .document(userId)
                 .set(profile)
-                .addOnSuccessListener(unused -> callback.onSuccess())
+                .addOnSuccessListener(unused -> {
+
+
+                    db.collection("users")
+                            .document(userId)
+                            .set(profile)
+                            .addOnSuccessListener(aVoid -> callback.onSuccess())
+                            .addOnFailureListener(callback::onFailure);
+
+                })
                 .addOnFailureListener(callback::onFailure);
     }
 
@@ -45,10 +57,21 @@ public class ProfileRepository {
      * Used in US 01.02.02.
      */
     public void updateProfile(@NonNull Profile profile, @NonNull SaveProfileCallback callback) {
+        String userId = profile.getDeviceId();
+
         profilesCollection
-                .document(profile.getDeviceId())
+                .document(userId)
                 .set(profile)
-                .addOnSuccessListener(unused -> callback.onSuccess())
+                .addOnSuccessListener(unused -> {
+
+
+                    db.collection("users")
+                            .document(userId)
+                            .set(profile)
+                            .addOnSuccessListener(aVoid -> callback.onSuccess())
+                            .addOnFailureListener(callback::onFailure);
+
+                })
                 .addOnFailureListener(callback::onFailure);
     }
 

@@ -14,7 +14,6 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -26,18 +25,7 @@ import java.util.List;
  * NotificationsFragment
  *
  * Displays notifications stored in Firebase Firestore for the current user.
- * Notifications are shown in a RecyclerView and can be cleared using the
- * provided button.
- *
- * - Entrant-facing notifications screen
- * - Reads notification documents from Firestore in real time
- * - Supports clearing all notifications for the active user
- *
- * Outstanding issues:
- * - Current user ID may fall back to a demo/test value .
  */
-
-
 public class NotificationsFragment extends Fragment {
 
     private RecyclerView recyclerView;
@@ -47,12 +35,10 @@ public class NotificationsFragment extends Fragment {
 
     private final List<Notification> notificationList = new ArrayList<>();
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private final FirebaseAuth auth = FirebaseAuth.getInstance();
 
     private String userId;
-    public NotificationsFragment() {
 
-    }
+    public NotificationsFragment() {}
 
     public static NotificationsFragment newInstance(String userId) {
         NotificationsFragment fragment = new NotificationsFragment();
@@ -62,7 +48,6 @@ public class NotificationsFragment extends Fragment {
         return fragment;
     }
 
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -70,16 +55,15 @@ public class NotificationsFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_notifications, container, false);
 
-        if (auth.getCurrentUser() != null) {
-            userId = auth.getCurrentUser().getUid();
-        } else if (getArguments() != null) {
+        if (getArguments() != null) {
             userId = getArguments().getString("userId");
         }
 
         if (userId == null || userId.isEmpty()) {
-            userId = "1234";
+            Log.e("FIREBASE", "User ID is missing!");
+            Toast.makeText(getContext(), "User not found", Toast.LENGTH_SHORT).show();
+            return view;
         }
-
 
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyView = view.findViewById(R.id.emptyView);
@@ -102,8 +86,8 @@ public class NotificationsFragment extends Fragment {
         db.collection("users")
                 .document(userId)
                 .collection("notifications")
-                .orderBy("timestamp", Query.Direction.DESCENDING)
                 .addSnapshotListener((value, error) -> {
+
                     if (error != null) {
                         Log.e("FIREBASE", "Error loading notifications", error);
                         if (getContext() != null) {
@@ -112,10 +96,7 @@ public class NotificationsFragment extends Fragment {
                         return;
                     }
 
-                    if (value == null) {
-                        Log.d("FIREBASE", "Notifications snapshot is null");
-                        return;
-                    }
+                    if (value == null) return;
 
                     notificationList.clear();
 
@@ -124,7 +105,6 @@ public class NotificationsFragment extends Fragment {
                         if (notification != null) {
                             notification.setId(doc.getId());
                             notificationList.add(notification);
-                            Log.d("FIREBASE", "Loaded notification: " + notification.getMessage());
                         }
                     }
 
@@ -141,11 +121,11 @@ public class NotificationsFragment extends Fragment {
             recyclerView.setVisibility(View.VISIBLE);
             emptyView.setVisibility(View.GONE);
         }
+
     }
 
-    private void clearAllNotifications() {
-        Log.d("FIREBASE", "Clearing notifications for user: " + userId);
 
+    private void clearAllNotifications() {
         db.collection("users")
                 .document(userId)
                 .collection("notifications")
@@ -166,4 +146,5 @@ public class NotificationsFragment extends Fragment {
                     }
                 });
     }
+
 }
