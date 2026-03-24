@@ -76,7 +76,49 @@ public class NotificationTest {
         assertTrue(notification.isDeclined());
     }
     @Test
+    public void testCoOrganizerNotificationCreated() {
+        Notification notification = new Notification(
+                "You’ve been assigned as a co-organizer",
+                "Event",
+                "You are now a co-organizer",
+                Notification.TYPE_CO_ORGANIZER,
+                "event123"
+        );
+
+        notification.setUserId("user123");
+
+        assertEquals("You’ve been assigned as a co-organizer", notification.getMessage());
+        assertEquals(Notification.TYPE_CO_ORGANIZER, notification.getType());
+        assertEquals("user123", notification.getUserId());
+        assertFalse(notification.isRead());
+    }
+    @Test
+    public void testNotificationTypeIsCoOrganizer() {
+        Notification notification = new Notification(
+                "Assigned",
+                "Event",
+                "Details",
+                Notification.TYPE_CO_ORGANIZER,
+                "event1"
+        );
+
+        assertEquals("CO_ORGANIZER", notification.getType());
+    }
+    @Test
+    public void testUserIdAssignment() {
+        Notification notification = new Notification(
+                "Message",
+                "Event",
+                "Details"
+        );
+
+        notification.setUserId("device123");
+
+        assertEquals("device123", notification.getUserId());
+    }
+    @Test
     public void testDeclinedDefaultFalse() {
         assertFalse(notification.isDeclined());
     }
 }
+

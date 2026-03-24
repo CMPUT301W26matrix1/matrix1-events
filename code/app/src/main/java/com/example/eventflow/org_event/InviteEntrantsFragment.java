@@ -1,5 +1,6 @@
 package com.example.eventflow.org_event;
 
+
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -9,12 +10,15 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.example.eventflow.Notification;
+
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 
 import com.example.eventflow.R;
 import com.example.eventflow.model.entities.Profile;
@@ -24,8 +28,10 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+
 import java.util.ArrayList;
 import java.util.List;
+
 
 /**
  * US 02.01.03 — Invite entrants to private event waiting list
@@ -33,20 +39,25 @@ import java.util.List;
  */
 public class InviteEntrantsFragment extends Fragment {
 
+
     private static final String ARG_EVENT_ID = "eventId";
+
 
     private EditText etSearch;
     private RecyclerView rvResults;
     private TextView tvNoResults;
 
+
     private InviteEntrantsAdapter adapter;
     private final List<Profile> allProfiles = new ArrayList<>();
     private final List<Profile> filteredProfiles = new ArrayList<>();
+
 
     private ProfileRepository profileRepository;
     private EventRepository eventRepository;
     private FirebaseFirestore db;
     private String eventId;
+
 
     public static InviteEntrantsFragment newInstance(String eventId) {
         InviteEntrantsFragment fragment = new InviteEntrantsFragment();
@@ -56,23 +67,28 @@ public class InviteEntrantsFragment extends Fragment {
         return fragment;
     }
 
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_invite_entrants, container, false);
 
+
         if (getArguments() != null) {
             eventId = getArguments().getString(ARG_EVENT_ID);
         }
+
 
         profileRepository = new ProfileRepository();
         eventRepository   = new EventRepository();
         db                = FirebaseFirestore.getInstance();
 
+
         etSearch    = view.findViewById(R.id.et_search_entrant);
         rvResults   = view.findViewById(R.id.rv_search_results);
         tvNoResults = view.findViewById(R.id.tv_no_results);
+
 
         // Setup RecyclerView with both invite and co-organizer callbacks
         adapter = new InviteEntrantsAdapter(
@@ -83,6 +99,7 @@ public class InviteEntrantsFragment extends Fragment {
         rvResults.setLayoutManager(new LinearLayoutManager(getContext()));
         rvResults.setAdapter(adapter);
 
+
         // Back button
         View btnBack = view.findViewById(R.id.btn_invite_back);
         if (btnBack != null) {
@@ -90,7 +107,9 @@ public class InviteEntrantsFragment extends Fragment {
                     .getSupportFragmentManager().popBackStack());
         }
 
+
         loadAllProfiles();
+
 
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -100,8 +119,10 @@ public class InviteEntrantsFragment extends Fragment {
             @Override public void afterTextChanged(Editable s) {}
         });
 
+
         return view;
     }
+
 
     private void loadAllProfiles() {
         profileRepository.getProfilesCollection()
@@ -122,8 +143,10 @@ public class InviteEntrantsFragment extends Fragment {
                         Toast.makeText(getContext(), "Failed to load profiles.", Toast.LENGTH_SHORT).show());
     }
 
+
     private void filterProfiles(String query) {
         filteredProfiles.clear();
+
 
         if (query.isEmpty()) {
             filteredProfiles.addAll(allProfiles);
@@ -137,15 +160,18 @@ public class InviteEntrantsFragment extends Fragment {
                 boolean matchesPhone = p.getPhoneNumber() != null &&
                         p.getPhoneNumber().contains(query);
 
+
                 if (matchesName || matchesEmail || matchesPhone) {
                     filteredProfiles.add(p);
                 }
             }
         }
 
+
         adapter.notifyDataSetChanged();
         tvNoResults.setVisibility(filteredProfiles.isEmpty() ? View.VISIBLE : View.GONE);
     }
+
 
     /**
      * US 02.01.03 — Invite entrant to waiting list
@@ -156,23 +182,36 @@ public class InviteEntrantsFragment extends Fragment {
             return;
         }
 
-        eventRepository.joinWaitingList(eventId, profile.getDeviceId(),
-                new EventRepository.ActionCallback() {
-                    @Override
-                    public void onSuccess() {
-                        Toast.makeText(getContext(),
-                                profile.getFullName() + " invited successfully!",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                    @Override
-                    public void onFailure(Exception e) {
-                        Toast.makeText(getContext(),
-                                "Failed to invite: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show();
-                    }
+
+        Notification notification = new Notification(
+                "You’ve been invited to a private event",
+                "Private Event",
+                "Tap to respond",
+                Notification.TYPE_PRIVATE_INVITE,
+                eventId
+        );
+
+
+        //  USE DEVICE ID
+        String userId = profile.getDeviceId();
+        notification.setUserId(userId);
+
+
+        db.collection("users")
+                .document(userId)
+                .collection("notifications")
+                .add(notification)
+                .addOnSuccessListener(doc -> {
+                    Toast.makeText(getContext(),
+                            "Invite sent!",
+                            Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(),
+                            "Failed: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
                 });
     }
-
     /**
      * US 02.09.01 — Assign entrant as co-organizer.
      * Adds deviceId to coOrganizerIds array in Firestore.
@@ -184,13 +223,42 @@ public class InviteEntrantsFragment extends Fragment {
             return;
         }
 
+        String userId = profile.getDeviceId();
+
+        // 1. Add to coOrganizerIds
         db.collection("events")
                 .document(eventId)
-                .update("coOrganizerIds", FieldValue.arrayUnion(profile.getDeviceId()))
-                .addOnSuccessListener(aVoid ->
-                        Toast.makeText(getContext(),
-                                profile.getFullName() + " assigned as co-organizer!",
-                                Toast.LENGTH_SHORT).show())
+                .update("coOrganizerIds", FieldValue.arrayUnion(userId))
+                .addOnSuccessListener(aVoid -> {
+
+                    // 2. CREATE NOTIFICATION
+                    Notification notification = new Notification(
+                            "You’ve been assigned as a co-organizer",
+                            "Event",
+                            "You are now a co-organizer",
+                            Notification.TYPE_CO_ORGANIZER,
+                            eventId
+                    );
+
+                    notification.setUserId(userId);
+
+                    // 3. SAVE TO FIRESTORE
+                    db.collection("users")
+                            .document(userId)
+                            .collection("notifications")
+                            .add(notification)
+                            .addOnSuccessListener(doc -> {
+                                Toast.makeText(getContext(),
+                                        profile.getFullName() + " is now a co-organizer!",
+                                        Toast.LENGTH_SHORT).show();
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(getContext(),
+                                        "Notification failed: " + e.getMessage(),
+                                        Toast.LENGTH_SHORT).show();
+                            });
+
+                })
                 .addOnFailureListener(e ->
                         Toast.makeText(getContext(),
                                 "Failed to assign co-organizer: " + e.getMessage(),

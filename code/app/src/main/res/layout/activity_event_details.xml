@@ -205,6 +205,43 @@
                     android:textColor="#BBBBBB"
                     android:textSize="14sp" />
 
+                <!-- Comments Section -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="Comments"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etCommentInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@android:color/transparent"
+                    android:hint="Write a comment..."
+                    android:padding="12dp"
+                    android:textColor="#FFFFFF"
+                    android:textColorHint="#888888" />
+
+                <Button
+                    android:id="@+id/btnPostComment"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:backgroundTint="#4D5DFA"
+                    android:text="Post Comment"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvComments"
+                    android:layout_width="match_parent"
+                    android:layout_height="250dp"
+                    android:layout_marginTop="16dp" />
+
                 <Button
                     android:id="@+id/btn_join_now"
                     android:layout_width="match_parent"
@@ -237,6 +274,7 @@
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
+
 
     <!-- Bottom Nav Bar (Placeholder) -->
     <LinearLayout

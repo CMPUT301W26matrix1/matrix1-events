@@ -3,11 +3,14 @@ package com.example.eventflow;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
+import android.provider.Settings;
+
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
 import com.example.eventflow.view.profile.SelectedEntrantsActivity;
 
 /**
@@ -27,12 +30,12 @@ public class MainActivity extends AppCompatActivity {
         Button profileButton = findViewById(R.id.profileButton);
         Button notificationsButton = findViewById(R.id.notificationsButton);
         Button eventsButton = findViewById(R.id.eventsButton);
-        
+
         Button createEventOrgButton = findViewById(R.id.btn_create_event_org);
         Button selectedEntrantsButton = findViewById(R.id.viewSelectedEntrantsButton);
         Button viewWaitingListButton = findViewById(R.id.viewWaitingListButton);
         Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
-        
+
         Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
 
         // General Actions
@@ -44,7 +47,17 @@ public class MainActivity extends AppCompatActivity {
 
         if (notificationsButton != null) {
             notificationsButton.setOnClickListener(v -> {
-                startActivity(new Intent(MainActivity.this, NotificationsActivity.class));
+
+                // ✅ FIX: get correct userId
+                String userId = Settings.Secure.getString(
+                        getContentResolver(),
+                        Settings.Secure.ANDROID_ID
+                );
+
+                // ✅ PASS userId to NotificationsActivity
+                Intent intent = new Intent(MainActivity.this, NotificationsActivity.class);
+                intent.putExtra("userId", userId);
+                startActivity(intent);
             });
         }
 
