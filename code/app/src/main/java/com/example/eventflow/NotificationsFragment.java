@@ -15,7 +15,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
@@ -25,6 +24,7 @@ import java.util.List;
  * NotificationsFragment
  *
  * Displays notifications stored in Firebase Firestore for the current user.
+ * NOW ALSO supports opt-out (notificationsEnabled)
  */
 public class NotificationsFragment extends Fragment {
 
@@ -75,14 +75,48 @@ public class NotificationsFragment extends Fragment {
 
         clearAllButton.setOnClickListener(v -> clearAllNotifications());
 
+        // 🔥 UPDATED LOGIC HERE
         loadNotifications();
 
         return view;
     }
 
+    /**
+     * First checks if notifications are enabled in profile.
+     * If disabled → show nothing.
+     * If enabled → load normally.
+     */
     private void loadNotifications() {
-        Log.d("FIREBASE", "Loading notifications for user: " + userId);
+        db.collection("profiles")
+                .document(userId)
+                .get()
+                .addOnSuccessListener(profileDoc -> {
 
+                    if (profileDoc.exists()) {
+                        Boolean enabled = profileDoc.getBoolean("notificationsEnabled");
+
+                        if (enabled != null && !enabled) {
+                            notificationList.clear();
+                            adapter.notifyDataSetChanged();
+                            updateEmptyState();
+
+                            Log.d("NOTIFICATIONS", "Notifications disabled by user");
+                            return;
+                        }
+                    }
+
+                    loadActualNotifications();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("FIREBASE", "Failed to load profile", e);
+                    loadActualNotifications(); // fallback
+                });
+    }
+
+    /**
+     * Loads notifications from Firestore (original logic)
+     */
+    private void loadActualNotifications() {
         db.collection("users")
                 .document(userId)
                 .collection("notifications")
@@ -121,9 +155,7 @@ public class NotificationsFragment extends Fragment {
             recyclerView.setVisibility(View.VISIBLE);
             emptyView.setVisibility(View.GONE);
         }
-
     }
-
 
     private void clearAllNotifications() {
         db.collection("users")
@@ -146,5 +178,4 @@ public class NotificationsFragment extends Fragment {
                     }
                 });
     }
-
 }
