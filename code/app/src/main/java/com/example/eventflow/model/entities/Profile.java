@@ -1,12 +1,15 @@
 package com.example.eventflow.model.entities;
 
+
 import java.util.ArrayList;
 import java.util.List;
+
 
 /**
  * Represents an entrant profile in the EventFlow application.
  */
 public class Profile {
+
 
     private String deviceId;
     private String firstName;
@@ -18,7 +21,9 @@ public class Profile {
     private List<String> availableDays; // e.g., ["Monday", "Wednesday"]
     private String availableTimeOfDay; // e.g., "Morning", "Afternoon", "Evening"
 
+
     private boolean notificationsEnabled = true;
+
 
     /**
      * Default constructor required for Firebase Firestore deserialization.
@@ -27,6 +32,7 @@ public class Profile {
         this.interests = new ArrayList<>();
         this.availableDays = new ArrayList<>();
     }
+
 
     public Profile(String deviceId, String firstName, String lastName, String email, String phoneNumber) {
         this.deviceId = deviceId;
@@ -37,6 +43,7 @@ public class Profile {
         this.interests = new ArrayList<>();
         this.availableDays = new ArrayList<>();
     }
+
 
     public String getDeviceId() { return deviceId; }
     public void setDeviceId(String deviceId) { this.deviceId = deviceId; }
@@ -57,13 +64,15 @@ public class Profile {
     public String getAvailableTimeOfDay() { return availableTimeOfDay; }
     public void setAvailableTimeOfDay(String availableTimeOfDay) { this.availableTimeOfDay = availableTimeOfDay; }
 
+
     public String getFullName() {
         return firstName + " " + lastName;
     }
-    
+
     public boolean isNotificationsEnabled() {
         return notificationsEnabled;
     }
+
 
     public void setNotificationsEnabled(boolean notificationsEnabled) {
         this.notificationsEnabled = notificationsEnabled;
