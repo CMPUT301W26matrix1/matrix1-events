@@ -1,6 +1,7 @@
 package com.example.eventflow;
 
 import android.app.Dialog;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -28,6 +29,7 @@ import com.google.firebase.firestore.Query;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import com.example.eventflow.EntrantLocationMapActivity;
 
 public class EventDetailActivity extends AppCompatActivity {
 
@@ -35,15 +37,15 @@ public class EventDetailActivity extends AppCompatActivity {
     private String eventId;
     private Event currentEvent;
     private Button btnJoinNow;
+    private Button btnViewMap;  // ADDED for map (from left)
 
+    // Comment section (from right)
     private EditText etCommentInput;
     private Button btnPostComment;
     private RecyclerView rvComments;
-
     private FirebaseFirestore db;
     private final ArrayList<Comment> commentList = new ArrayList<>();
     private CommentAdapter commentAdapter;
-
     private String userId = "testUser123";
     private String userName = "Entrant";
 
@@ -52,6 +54,7 @@ public class EventDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_details);
 
+        // Comment section setup (from right)
         db = FirebaseFirestore.getInstance();
 
         etCommentInput = findViewById(R.id.etCommentInput);
@@ -75,6 +78,7 @@ public class EventDetailActivity extends AppCompatActivity {
 
         btnPostComment.setOnClickListener(v -> postComment());
 
+        // Event details setup
         String deviceId = Settings.Secure.getString(
                 getContentResolver(),
                 Settings.Secure.ANDROID_ID
@@ -85,20 +89,27 @@ public class EventDetailActivity extends AppCompatActivity {
         TextView locationText = findViewById(R.id.tv_event_location);
         TextView descriptionText = findViewById(R.id.tv_detail_description);
         btnJoinNow = findViewById(R.id.btn_join_now);
+        btnViewMap = findViewById(R.id.btn_view_entrant_map);  // ADDED for map (from left)
         ImageView backButton = findViewById(R.id.btn_detail_back);
-
-        eventId = getIntent().getStringExtra("eventId");
-        if (eventId == null) {
-            Toast.makeText(this, "Event ID missing", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
 
         loadEventDetails(nameText, locationText, descriptionText);
 
         backButton.setOnClickListener(v -> finish());
+
+        // View Map button click listener
+        if (btnViewMap != null) {
+            btnViewMap.setOnClickListener(v -> {
+                Intent intent = new Intent(EventDetailActivity.this, EntrantLocationMapActivity.class);
+                intent.putExtra("eventId", eventId);
+                if (currentEvent != null) {
+                    intent.putExtra("eventName", currentEvent.getName());
+                }
+                startActivity(intent);
+            });
+        }
     }
 
+    // Comment methods 
     private void postComment() {
         String commentText = etCommentInput.getText().toString().trim();
 
@@ -131,8 +142,6 @@ public class EventDetailActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Failed to post comment", Toast.LENGTH_SHORT).show());
-
-
     }
 
     private void loadComments() {

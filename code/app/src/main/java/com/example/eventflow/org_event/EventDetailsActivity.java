@@ -3,10 +3,12 @@ package com.example.eventflow.org_event;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.eventflow.EntrantLocationMapActivity;
 import com.example.eventflow.org_QR.QRDisplayActivity;
 import com.example.eventflow.R;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -14,6 +16,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 public class EventDetailsActivity extends AppCompatActivity {
 
     private String eventName, eventLocation, eventDescription, qrData;
+    private String eventId;  // ADDED for map
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,12 +27,14 @@ public class EventDetailsActivity extends AppCompatActivity {
         eventLocation = getIntent().getStringExtra("EVENT_LOCATION");
         eventDescription = getIntent().getStringExtra("EVENT_DESC");
         qrData = getIntent().getStringExtra("QR_DATA");
+        eventId = getIntent().getStringExtra("EVENT_ID");  // ADDED for map
 
         // from xml
         TextView tvTitle = findViewById(R.id.tv_detail_name);
         TextView tvLocation = findViewById(R.id.tv_event_location);
         TextView tvDescription = findViewById(R.id.tv_detail_description);
         TextView tvOrganizer = findViewById(R.id.tv_organizer_name);
+        Button viewMapButton = findViewById(R.id.btn_view_entrant_map);  // ADDED for map
 
         tvTitle.setText(eventName);
         tvLocation.setText(eventLocation != null ? eventLocation : "Location not set");
@@ -37,6 +42,16 @@ public class EventDetailsActivity extends AppCompatActivity {
                 ? eventDescription : "No description provided.");
 
         tvOrganizer.setText("EY");
+
+        // ADDED for map - View Map button click listener
+        if (viewMapButton != null) {
+            viewMapButton.setOnClickListener(v -> {
+                Intent intent = new Intent(EventDetailsActivity.this, EntrantLocationMapActivity.class);
+                intent.putExtra("eventId", eventId);
+                intent.putExtra("eventName", eventName);
+                startActivity(intent);
+            });
+        }
 
         // Share Button
         findViewById(R.id.btn_share_event).setOnClickListener(v -> {
