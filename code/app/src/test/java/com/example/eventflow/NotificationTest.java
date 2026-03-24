@@ -116,9 +116,107 @@ public class NotificationTest {
 
         assertEquals("device123", notification.getUserId());
     }
+
     @Test
     public void testDeclinedDefaultFalse() {
         assertFalse(notification.isDeclined());
     }
+
+    @Test
+    public void testPrivateInviteDefaults() {
+        Notification n = new Notification(
+                "Invite",
+                "Event",
+                "Details",
+                Notification.TYPE_PRIVATE_INVITE,
+                "event123"
+        );
+
+        assertEquals("event123", n.getEventId());
+        assertFalse(n.isAccepted());
+        assertFalse(n.isDeclined());
+        assertFalse(n.isRead());
+        assertEquals(Notification.TYPE_PRIVATE_INVITE, n.getType());
+    }
+
+    @Test
+    public void testAcceptNotification() {
+        Notification n = new Notification(
+                "Invite",
+                "Event",
+                "Details",
+                Notification.TYPE_PRIVATE_INVITE,
+                "event123"
+        );
+
+        n.setAccepted(true);
+
+        assertTrue(n.isAccepted());
+        assertFalse(n.isDeclined());  // should auto reset
+    }
+
+    @Test
+    public void testDeclineNotification() {
+        Notification n = new Notification(
+                "Invite",
+                "Event",
+                "Details",
+                Notification.TYPE_PRIVATE_INVITE,
+                "event123"
+        );
+
+        n.setDeclined(true);
+
+        assertTrue(n.isDeclined());
+        assertFalse(n.isAccepted());  // should auto reset
+    }
+
+    @Test
+    public void testAcceptThenDecline() {
+        Notification n = new Notification(
+                "Invite",
+                "Event",
+                "Details",
+                Notification.TYPE_PRIVATE_INVITE,
+                "event123"
+        );
+
+        n.setAccepted(true);
+        n.setDeclined(true);
+
+        assertTrue(n.isDeclined());
+        assertFalse(n.isAccepted());
+    }
+
+    @Test
+    public void testReadState() {
+        Notification n = new Notification(
+                "Invite",
+                "Event",
+                "Details",
+                Notification.TYPE_PRIVATE_INVITE,
+                "event123"
+        );
+
+        n.setRead(true);
+
+        assertTrue(n.isRead());
+    }
+
+    @Test
+    public void testUserIdSet() {
+        Notification n = new Notification(
+                "Invite",
+                "Event",
+                "Details",
+                Notification.TYPE_PRIVATE_INVITE,
+                "event123"
+        );
+
+        n.setUserId("user123");
+
+        assertEquals("user123", n.getUserId());
+    }
+
 }
 
