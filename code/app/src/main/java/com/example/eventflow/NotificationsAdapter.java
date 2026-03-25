@@ -15,9 +15,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 
@@ -153,9 +155,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
 
 
 
-        //  PRIVATE INVITE
-
-
+        //  PRIVATE INVITE - FIXED VERSION
         else if (Notification.TYPE_PRIVATE_INVITE.equals(n.getType())) {
 
 
@@ -171,18 +171,13 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             // ACCEPT BUTTON
             holder.acceptButton.setOnClickListener(v -> {
 
+                FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-                // Firestore instance
-                com.google.firebase.firestore.FirebaseFirestore db =
-                        com.google.firebase.firestore.FirebaseFirestore.getInstance();
-
-
-                // Get device ID (used as unique user identifier)
+                // Get device ID
                 String userId = Settings.Secure.getString(
                         holder.itemView.getContext().getContentResolver(),
                         Settings.Secure.ANDROID_ID
                 );
-
 
                 // 1. Add user to event waiting list
                 db.collection("events")
@@ -190,17 +185,39 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                         .update("waitingList",
                                 com.google.firebase.firestore.FieldValue.arrayUnion(userId));
 
-
-                // 2. Mark notification as accepted
+                // 2. Update the notifications field in the user document
                 db.collection("users")
                         .document(userId)
-                        .collection("notifications")
-                        .document(n.getId())
-                        .update("accepted", true, "isRead", true);
+                        .get()
+                        .addOnSuccessListener(documentSnapshot -> {
+                            if (documentSnapshot.exists()) {
+                                // Get current notifications list
+                                List<Map<String, Object>> notificationsList =
+                                        (List<Map<String, Object>>) documentSnapshot.get("notifications");
 
+                                if (notificationsList != null) {
+                                    // Find and update the specific notification
+                                    for (Map<String, Object> notif : notificationsList) {
+                                        if (n.getMessage().equals(notif.get("message")) &&
+                                                n.getEventName().equals(notif.get("eventName"))) {
+                                            notif.put("accepted", true);
+                                            notif.put("isRead", true);
+                                            break;
+                                        }
+                                    }
+                                    // Save back to Firestore
+                                    db.collection("users").document(userId)
+                                            .update("notifications", notificationsList);
+                                }
+                            }
+                        });
 
                 n.setAccepted(true);
-
+                // Update UI
+                holder.acceptButton.setVisibility(View.GONE);
+                holder.declineButton.setVisibility(View.GONE);
+                holder.acceptedMessage.setVisibility(View.VISIBLE);
+                holder.acceptedMessage.setText("You accepted the invitation!");
 
                 Toast.makeText(holder.itemView.getContext(),
                         "Joined waiting list for " + n.getEventName(),
@@ -211,28 +228,43 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             // DECLINE BUTTON
             holder.declineButton.setOnClickListener(v -> {
 
+                FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-                com.google.firebase.firestore.FirebaseFirestore db =
-                        com.google.firebase.firestore.FirebaseFirestore.getInstance();
-
-
-                //  Use device ID again
                 String userId = Settings.Secure.getString(
                         holder.itemView.getContext().getContentResolver(),
                         Settings.Secure.ANDROID_ID
                 );
 
-
-                // Mark notification as read only
+                // Update the notifications field to mark as read
                 db.collection("users")
                         .document(userId)
-                        .collection("notifications")
-                        .document(n.getId())
-                        .update("isRead", true);
+                        .get()
+                        .addOnSuccessListener(documentSnapshot -> {
+                            if (documentSnapshot.exists()) {
+                                List<Map<String, Object>> notificationsList =
+                                        (List<Map<String, Object>>) documentSnapshot.get("notifications");
 
+                                if (notificationsList != null) {
+                                    // Find and update the specific notification
+                                    for (Map<String, Object> notif : notificationsList) {
+                                        if (n.getMessage().equals(notif.get("message")) &&
+                                                n.getEventName().equals(notif.get("eventName"))) {
+                                            notif.put("isRead", true);
+                                            break;
+                                        }
+                                    }
+                                    db.collection("users").document(userId)
+                                            .update("notifications", notificationsList);
+                                }
+                            }
+                        });
 
                 n.setDeclined(true);
-
+                // Update UI
+                holder.acceptButton.setVisibility(View.GONE);
+                holder.declineButton.setVisibility(View.GONE);
+                holder.declinedMessage.setVisibility(View.VISIBLE);
+                holder.declinedMessage.setText("You declined the invitation");
 
                 Toast.makeText(holder.itemView.getContext(),
                         "Declined invite for " + n.getEventName(),

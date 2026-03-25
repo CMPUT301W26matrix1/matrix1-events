@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingVertical="12dp"
+    android:paddingHorizontal="16dp">
+
+    <!-- Profile Picture -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cv_profile_avatar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_centerVertical="true"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="0dp">
+
+        <ImageView
+            android:id="@+id/iv_profile_pic"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_profile_placeholder" />
+    </androidx.cardview.widget.CardView>
+
+    <!-- Profile Info -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="12dp"
+        android:layout_toEndOf="@id/cv_profile_avatar"
+        android:layout_toStartOf="@+id/ll_delete"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/profileName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="User Name"
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/profileEmail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="email@example.com"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:layout_marginTop="2dp"/>
+
+    </LinearLayout>
+
+    <!-- Delete Button -->
+    <LinearLayout
+        android:id="@+id/ll_delete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_delete"
+            app:tint="#F44336" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Remove"
+            android:textColor="#F44336"
+            android:textSize="10sp" />
+
+    </LinearLayout>
+
+</RelativeLayout>
