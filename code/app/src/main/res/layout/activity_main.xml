@@ -136,6 +136,17 @@
                 android:textColor="#FFFFFF"
                 android:textSize="16sp" />
 
+            <Button
+                android:id="@+id/btn_manage_entrants"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#2D2D6A"
+                android:text="Manage Entrants"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"

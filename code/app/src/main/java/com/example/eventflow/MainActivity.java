@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
         Button selectedEntrantsButton = findViewById(R.id.viewSelectedEntrantsButton);
         Button viewWaitingListButton = findViewById(R.id.viewWaitingListButton);
         Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
+        Button manageEntrantsButton = findViewById(R.id.btn_manage_entrants);
 
         Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
 
@@ -94,6 +95,21 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+
+        // Org - ManageEntrant Dashboard
+        if (manageEntrantsButton != null) {
+            manageEntrantsButton.setOnClickListener(v -> {
+                // This opens your 4-feature Dashboard
+                Intent intent = new Intent(MainActivity.this, com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity.class);
+
+                // Optional: If you want to pass a specific event context (like you did for Final Entrants)
+                intent.putExtra("eventId", "Tg34Yn6wNXvYAuvczoMA");
+                intent.putExtra("eventName", "Tech Summit 2026");
+
+                startActivity(intent);
+            });
+        }
+
 
         // Admin Actions
         if (adminBrowseEventsButton != null) {

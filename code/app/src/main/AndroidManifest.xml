@@ -64,6 +64,39 @@
 
         <activity android:name=".org_event.InviteEntrantsActivity" />
 
+        <!-- Manage Entrants -->
+        <activity
+            android:name="com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            android:exported="false" />
+
+        <activity
+            android:name=".org_event.manage_entrant.WaitlistMgmtActivity"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
+
+        <activity
+            android:name=".org_event.manage_entrant.CancelledEntrantsActivity"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"/>
+
+        <activity
+            android:name="com.example.eventflow.org_event.manage_entrant.EnrolledEntrantsActivity"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"/>
+
+        <activity
+            android:name=".org_event.manage_entrant.NotificationsActivity"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
+
+        <!-- to upload as CSV -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.example.eventflow.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <!-- NEW: Map Activity for viewing entrant locations -->
         <activity
             android:name=".EntrantLocationMapActivity"
