@@ -48,13 +48,13 @@ public class MainActivity extends AppCompatActivity {
         if (notificationsButton != null) {
             notificationsButton.setOnClickListener(v -> {
 
-                // ✅ FIX: get correct userId
+                // FIX: get correct userId
                 String userId = Settings.Secure.getString(
                         getContentResolver(),
                         Settings.Secure.ANDROID_ID
                 );
 
-                // ✅ PASS userId to NotificationsActivity
+                //  PASS userId to NotificationsActivity
                 Intent intent = new Intent(MainActivity.this, NotificationsActivity.class);
                 intent.putExtra("userId", userId);
                 startActivity(intent);

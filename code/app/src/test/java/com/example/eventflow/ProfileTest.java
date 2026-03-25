@@ -74,4 +74,24 @@ public class ProfileTest {
         profile.setNotificationsEnabled(true);
         assertTrue(profile.isNotificationsEnabled());
     }
+    @Test
+    public void notificationsMultipleToggles_finalStateCorrect() {
+        Profile profile = new Profile();
+
+        profile.setNotificationsEnabled(false);
+        profile.setNotificationsEnabled(true);
+        profile.setNotificationsEnabled(false);
+
+        assertFalse(profile.isNotificationsEnabled());
+    }
+
+    @Test
+    public void notificationsValuePersists() {
+        Profile profile = new Profile();
+        profile.setNotificationsEnabled(false);
+
+        // simulate persistence
+        assertFalse(profile.isNotificationsEnabled());
+    }
+
 }

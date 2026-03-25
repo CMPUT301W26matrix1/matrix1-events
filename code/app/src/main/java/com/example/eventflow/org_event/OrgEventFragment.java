@@ -26,9 +26,11 @@ import com.example.eventflow.R;
 import com.example.eventflow.org_QR.QRGenerator;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
 
 public class OrgEventFragment extends Fragment {
 
@@ -239,6 +241,10 @@ public class OrgEventFragment extends Fragment {
         eventData.put("isPrivate", newEvent.isPrivate());
         eventData.put("createdAt", Timestamp.now());
 
+        // Add waitingList and selectedEntrants (from right side)
+        eventData.put("waitingList", new ArrayList<String>());
+        eventData.put("selectedEntrants", new ArrayList<String>());
+
         // Add geolocation fields
         eventData.put("geolocationRequired", geolocationRequired);
         eventData.put("locationLatitude", selectedLatitude);
@@ -247,7 +253,7 @@ public class OrgEventFragment extends Fragment {
 
         db.collection("events")
                 .document(createdEventId)
-                .set(eventData)
+                .set(eventData, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
                     if (newEvent.isPrivate()) {
                         Toast.makeText(getContext(),
