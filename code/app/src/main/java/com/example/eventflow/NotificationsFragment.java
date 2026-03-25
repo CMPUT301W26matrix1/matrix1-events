@@ -26,6 +26,7 @@ import java.util.List;
  *
  * Displays notifications stored in Firebase Firestore for the current user.
  * Notifications are stored in a subcollection: users/{userId}/notifications/
+ * Also checks if user has notifications enabled in profile.
  */
 public class NotificationsFragment extends Fragment {
 
@@ -87,7 +88,41 @@ public class NotificationsFragment extends Fragment {
         return view;
     }
 
+    /**
+     * First checks if notifications are enabled in profile.
+     * If disabled → show nothing.
+     * If enabled → load normally.
+     */
     private void loadNotifications() {
+        db.collection("profiles")
+                .document(userId)
+                .get()
+                .addOnSuccessListener(profileDoc -> {
+
+                    if (profileDoc.exists()) {
+                        Boolean enabled = profileDoc.getBoolean("notificationsEnabled");
+
+                        if (enabled != null && !enabled) {
+                            notificationList.clear();
+                            adapter.notifyDataSetChanged();
+                            updateEmptyState();
+                            Log.d("NOTIFICATIONS", "Notifications disabled by user");
+                            return;
+                        }
+                    }
+
+                    loadActualNotifications();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("FIREBASE", "Failed to load profile", e);
+                    loadActualNotifications(); // fallback
+                });
+    }
+
+    /**
+     * Loads notifications from Firestore subcollection
+     */
+    private void loadActualNotifications() {
         Log.d("FIREBASE", "Loading notifications for user: " + userId);
 
         // Read from the notifications SUBCOLLECTION
