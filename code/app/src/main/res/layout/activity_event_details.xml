@@ -28,6 +28,7 @@
                     android:scaleType="centerCrop"
                     android:src="@android:drawable/ic_menu_gallery" />
 
+                <!-- Back Button -->
                 <ImageButton
                     android:id="@+id/btn_detail_back"
                     android:layout_width="40dp"
@@ -36,6 +37,18 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@android:drawable/ic_media_previous"
                     app:tint="#FFFFFF" />
+
+                <!-- DELETE IMAGE BUTTON (Admin only) -->
+                <ImageButton
+                    android:id="@+id/btn_delete_image"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="16dp"
+                    android:layout_alignParentEnd="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_delete"
+                    app:tint="#D32F2F"
+                    android:visibility="gone"/>
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -256,7 +269,7 @@
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
-                <!-- NEW: View Map Button -->
+                <!-- View Map Button -->
                 <Button
                     android:id="@+id/btn_view_entrant_map"
                     android:layout_width="match_parent"
@@ -274,7 +287,6 @@
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
-
 
     <!-- Bottom Nav Bar (Placeholder) -->
     <LinearLayout

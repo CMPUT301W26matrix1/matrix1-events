@@ -27,6 +27,7 @@
                     android:scaleType="centerCrop"
                     android:src="@android:drawable/ic_menu_gallery" />
 
+                <!-- Back Button -->
                 <ImageButton
                     android:id="@+id/btn_detail_back"
                     android:layout_width="40dp"
@@ -35,6 +36,18 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@android:drawable/ic_media_previous"
                     app:tint="#FFFFFF" />
+
+                <!-- ADD THIS - Delete Image Button (Top Right) -->
+                <ImageButton
+                    android:id="@+id/btn_delete_image"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="16dp"
+                    android:layout_alignParentEnd="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_delete"
+                    app:tint="#F44336"
+                    android:visibility="gone"/>
 
                 <TextView
                     android:layout_width="wrap_content"

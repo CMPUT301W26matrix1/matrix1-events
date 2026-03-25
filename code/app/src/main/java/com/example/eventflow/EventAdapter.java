@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.eventflow.model.entities.Event;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +39,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     public static class EventViewHolder extends RecyclerView.ViewHolder {
         TextView name, location;
         Button deleteButton, joinLeaveButton;
+        ImageView eventImage;  // ADD THIS
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -44,6 +47,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             location = itemView.findViewById(R.id.tvEventLocation);
             deleteButton = itemView.findViewById(R.id.deleteEventButton);
             joinLeaveButton = itemView.findViewById(R.id.btnJoinLeave);
+            eventImage = itemView.findViewById(R.id.iv_event_poster);  // ADD THIS
         }
     }
 
@@ -61,6 +65,17 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
         holder.name.setText(event.getName());
         holder.location.setText(event.getLocation());
+
+        // ADD THIS - Load event image or placeholder
+        String posterUrl = event.getPosterUrl();
+        if (posterUrl != null && !posterUrl.isEmpty()) {
+            Picasso.get().load(posterUrl)
+                    .placeholder(R.drawable.ic_placeholder)
+                    .error(R.drawable.ic_placeholder)
+                    .into(holder.eventImage);
+        } else {
+            holder.eventImage.setImageResource(R.drawable.ic_placeholder);
+        }
 
         String deviceId = Settings.Secure.getString(
                 holder.itemView.getContext().getContentResolver(),
