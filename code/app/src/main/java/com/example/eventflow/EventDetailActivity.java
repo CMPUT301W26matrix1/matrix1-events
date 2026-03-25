@@ -11,6 +11,7 @@ import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -33,6 +34,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,12 +44,13 @@ import com.example.eventflow.EntrantLocationMapActivity;
 public class EventDetailActivity extends AppCompatActivity {
 
     private boolean isOrganizer;
+    private boolean isAdmin;
 
     private EventController eventController;
     private String eventId;
     private Event currentEvent;
     private Button btnJoinNow;
-    private Button btnViewMap;  // ADDED for map
+    private Button btnViewMap;
 
     // Comment section
     private EditText etCommentInput;
@@ -62,6 +65,10 @@ public class EventDetailActivity extends AppCompatActivity {
     // Geolocation check
     private FusedLocationProviderClient fusedLocationClient;
 
+    // Image views
+    private ImageView ivEventPoster;
+    private ImageButton btnDeleteImage;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,6 +81,7 @@ public class EventDetailActivity extends AppCompatActivity {
 
         eventId = getIntent().getStringExtra("eventId");
         String userRole = getIntent().getStringExtra("userRole");
+        isAdmin = "admin".equals(userRole);
         isOrganizer = "organizer".equals(userRole);
 
         if (eventId == null || eventId.isEmpty()) {
@@ -109,10 +117,7 @@ public class EventDetailActivity extends AppCompatActivity {
         btnPostComment.setOnClickListener(v -> postComment());
 
         // Event details setup
-        String deviceId = Settings.Secure.getString(
-                getContentResolver(),
-                Settings.Secure.ANDROID_ID
-        );
+        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
         eventController = new EventController(deviceId);
 
         TextView nameText = findViewById(R.id.tv_detail_name);
@@ -121,6 +126,16 @@ public class EventDetailActivity extends AppCompatActivity {
         btnJoinNow = findViewById(R.id.btn_join_now);
         btnViewMap = findViewById(R.id.btn_view_entrant_map);
         ImageView backButton = findViewById(R.id.btn_detail_back);
+
+        // Find image views
+        ivEventPoster = findViewById(R.id.iv_detail_poster);
+        btnDeleteImage = findViewById(R.id.btn_delete_image);
+
+        // Show delete button only for ADMIN
+        if (isAdmin) {
+            btnDeleteImage.setVisibility(View.VISIBLE);
+            btnDeleteImage.setOnClickListener(v -> showDeleteImageConfirmation());
+        }
 
         loadEventDetails(nameText, locationText, descriptionText);
 
@@ -233,6 +248,18 @@ public class EventDetailActivity extends AppCompatActivity {
                 if (nameText != null) nameText.setText(event.getName());
                 if (locationText != null) locationText.setText(event.getLocation());
                 if (descriptionText != null) descriptionText.setText(event.getDescription());
+
+                // Load event poster image
+                String posterUrl = currentEvent.getPosterUrl();
+                if (posterUrl != null && !posterUrl.isEmpty()) {
+                    Picasso.get().load(posterUrl)
+                            .placeholder(R.drawable.ic_placeholder)
+                            .error(R.drawable.ic_placeholder)
+                            .into(ivEventPoster);
+                } else {
+                    ivEventPoster.setImageResource(R.drawable.ic_placeholder);
+                }
+
                 updateButtonState();
             }
 
@@ -288,17 +315,14 @@ public class EventDetailActivity extends AppCompatActivity {
 
     // Updated handleJoin with geolocation check
     private void handleJoin() {
-        // Check if geolocation is required for this event
         if (currentEvent != null && currentEvent.isGeolocationRequired()) {
             checkUserLocationAndJoin();
         } else {
-            // No geolocation required, join normally
             joinWaitingList();
         }
     }
 
     private void checkUserLocationAndJoin() {
-        // Check if location permission is granted
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
 
@@ -328,7 +352,6 @@ public class EventDetailActivity extends AppCompatActivity {
                         }
                     });
         } else {
-            // Request location permission
             ActivityCompat.requestPermissions(this,
                     new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 200);
         }
@@ -362,6 +385,38 @@ public class EventDetailActivity extends AppCompatActivity {
                 Toast.makeText(EventDetailActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    // Delete Image functionality - FIXED: Just update Firestore
+    private void showDeleteImageConfirmation() {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Image")
+                .setMessage("Are you sure you want to delete this event image?")
+                .setPositiveButton("Delete", (dialog, which) -> deleteEventImage())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void deleteEventImage() {
+        String posterUrl = currentEvent.getPosterUrl();
+
+        if (posterUrl != null && !posterUrl.isEmpty()) {
+            // Just update Firestore - set posterUrl to null
+            db.collection("events")
+                    .document(eventId)
+                    .update("posterUrl", null)
+                    .addOnSuccessListener(aVoid -> {
+                        // Update UI
+                        ivEventPoster.setImageResource(R.drawable.ic_placeholder);
+                        btnDeleteImage.setVisibility(View.GONE);
+                        Toast.makeText(this, "Image removed successfully", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Failed to remove image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        } else {
+            Toast.makeText(this, "No image to delete", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override

@@ -79,6 +79,11 @@
             android:name=".AdminProfileListActivity"
             android:label="Manage Profiles" />
 
+        <!--Manage Images -->
+        <activity
+            android:name=".AdminImageManagementActivity"
+            android:label="Manage Images" />
+
     </application>
 
 </manifest>
