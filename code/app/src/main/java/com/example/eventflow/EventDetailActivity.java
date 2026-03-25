@@ -2,8 +2,10 @@ package com.example.eventflow;
 
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.location.Location;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
@@ -13,7 +15,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -21,6 +27,8 @@ import com.example.eventflow.controller.EventController;
 import com.example.eventflow.model.entities.Comment;
 import com.example.eventflow.model.entities.Event;
 import com.example.eventflow.model.repositories.EventRepository;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -30,8 +38,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import com.example.eventflow.EntrantLocationMapActivity;
-import androidx.appcompat.app.AlertDialog;
-
 
 public class EventDetailActivity extends AppCompatActivity {
 
@@ -41,9 +47,9 @@ public class EventDetailActivity extends AppCompatActivity {
     private String eventId;
     private Event currentEvent;
     private Button btnJoinNow;
-    private Button btnViewMap;  // ADDED for map (from left)
+    private Button btnViewMap;  // ADDED for map
 
-    // Comment section (from right)
+    // Comment section
     private EditText etCommentInput;
     private Button btnPostComment;
     private RecyclerView rvComments;
@@ -53,10 +59,16 @@ public class EventDetailActivity extends AppCompatActivity {
     private String userId = "testUser123";
     private String userName = "Entrant";
 
+    // Geolocation check
+    private FusedLocationProviderClient fusedLocationClient;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_details);
+
+        // Initialize location client
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         db = FirebaseFirestore.getInstance();
 
@@ -179,7 +191,6 @@ public class EventDetailActivity extends AppCompatActivity {
                             if (comment != null) {
                                 comment.setCommentId(doc.getId());
                                 commentList.add(comment);
-
                             }
                         }
                     }
@@ -275,7 +286,55 @@ public class EventDetailActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    // Updated handleJoin with geolocation check
     private void handleJoin() {
+        // Check if geolocation is required for this event
+        if (currentEvent != null && currentEvent.isGeolocationRequired()) {
+            checkUserLocationAndJoin();
+        } else {
+            // No geolocation required, join normally
+            joinWaitingList();
+        }
+    }
+
+    private void checkUserLocationAndJoin() {
+        // Check if location permission is granted
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+
+            fusedLocationClient.getLastLocation()
+                    .addOnSuccessListener(location -> {
+                        if (location != null) {
+                            double userLat = location.getLatitude();
+                            double userLng = location.getLongitude();
+
+                            float[] results = new float[1];
+                            Location.distanceBetween(userLat, userLng,
+                                    currentEvent.getLocationLatitude(),
+                                    currentEvent.getLocationLongitude(), results);
+                            float distance = results[0];
+
+                            if (distance <= currentEvent.getLocationRadius()) {
+                                joinWaitingList();
+                            } else {
+                                Toast.makeText(this,
+                                        "You are outside the event area (" + (int)distance + "m away). Cannot join waiting list.",
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        } else {
+                            Toast.makeText(this,
+                                    "Unable to get your location. Please enable GPS and try again.",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    });
+        } else {
+            // Request location permission
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 200);
+        }
+    }
+
+    private void joinWaitingList() {
         eventController.joinWaitingList(currentEvent, new EventRepository.ActionCallback() {
             @Override
             public void onSuccess() {
@@ -303,5 +362,18 @@ public class EventDetailActivity extends AppCompatActivity {
                 Toast.makeText(EventDetailActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 200) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                checkUserLocationAndJoin();
+            } else {
+                Toast.makeText(this, "Location permission required to join this event", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 }
