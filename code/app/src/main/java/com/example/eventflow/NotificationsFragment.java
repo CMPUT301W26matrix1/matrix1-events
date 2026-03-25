@@ -1,6 +1,7 @@
 package com.example.eventflow;
 
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
@@ -24,7 +26,7 @@ import java.util.List;
  * NotificationsFragment
  *
  * Displays notifications stored in Firebase Firestore for the current user.
- * NOW ALSO supports opt-out (notificationsEnabled)
+ * Notifications are stored in: users/{userId}/notifications
  */
 public class NotificationsFragment extends Fragment {
 
@@ -50,20 +52,11 @@ public class NotificationsFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
         View view = inflater.inflate(R.layout.fragment_notifications, container, false);
-
-        if (getArguments() != null) {
-            userId = getArguments().getString("userId");
-        }
-
-        if (userId == null || userId.isEmpty()) {
-            Log.e("FIREBASE", "User ID is missing!");
-            Toast.makeText(getContext(), "User not found", Toast.LENGTH_SHORT).show();
-            return view;
-        }
 
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyView = view.findViewById(R.id.emptyView);
@@ -75,75 +68,65 @@ public class NotificationsFragment extends Fragment {
 
         clearAllButton.setOnClickListener(v -> clearAllNotifications());
 
-        // 🔥 UPDATED LOGIC HERE
+        if (getContext() == null) {
+            return view;
+        }
+
+        userId = Settings.Secure.getString(
+                requireContext().getContentResolver(),
+                Settings.Secure.ANDROID_ID
+        );
+
+        Log.d("FIREBASE", "Using user ID: " + userId);
+
+        if (userId == null || userId.isEmpty()) {
+            Log.e("FIREBASE", "User ID is missing");
+            Toast.makeText(getContext(), "User not found", Toast.LENGTH_SHORT).show();
+            updateEmptyState();
+            return view;
+        }
+
         loadNotifications();
 
         return view;
     }
 
-    /**
-     * First checks if notifications are enabled in profile.
-     * If disabled → show nothing.
-     * If enabled → load normally.
-     */
     private void loadNotifications() {
-        db.collection("profiles")
-                .document(userId)
-                .get()
-                .addOnSuccessListener(profileDoc -> {
+        Log.d("FIREBASE", "Loading notifications for user: " + userId);
 
-                    if (profileDoc.exists()) {
-                        Boolean enabled = profileDoc.getBoolean("notificationsEnabled");
-
-                        if (enabled != null && !enabled) {
-                            notificationList.clear();
-                            adapter.notifyDataSetChanged();
-                            updateEmptyState();
-
-                            Log.d("NOTIFICATIONS", "Notifications disabled by user");
-                            return;
-                        }
-                    }
-
-                    loadActualNotifications();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("FIREBASE", "Failed to load profile", e);
-                    loadActualNotifications(); // fallback
-                });
-    }
-
-    /**
-     * Loads notifications from Firestore (original logic)
-     */
-    private void loadActualNotifications() {
         db.collection("users")
                 .document(userId)
                 .collection("notifications")
-                .addSnapshotListener((value, error) -> {
-
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .addSnapshotListener((querySnapshot, error) -> {
                     if (error != null) {
                         Log.e("FIREBASE", "Error loading notifications", error);
                         if (getContext() != null) {
-                            Toast.makeText(getContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(
+                                    getContext(),
+                                    "Failed to load notifications",
+                                    Toast.LENGTH_SHORT
+                            ).show();
                         }
                         return;
                     }
 
-                    if (value == null) return;
-
                     notificationList.clear();
 
-                    for (QueryDocumentSnapshot doc : value) {
-                        Notification notification = doc.toObject(Notification.class);
-                        if (notification != null) {
-                            notification.setId(doc.getId());
-                            notificationList.add(notification);
+                    if (querySnapshot != null) {
+                        for (QueryDocumentSnapshot doc : querySnapshot) {
+                            Notification notification = doc.toObject(Notification.class);
+                            if (notification != null) {
+                                notification.setId(doc.getId());
+                                notificationList.add(notification);
+                                Log.d("FIREBASE", "Added notification: " + notification.getMessage());
+                            }
                         }
                     }
 
                     adapter.notifyDataSetChanged();
                     updateEmptyState();
+                    Log.d("FIREBASE", "Loaded " + notificationList.size() + " notifications");
                 });
     }
 
@@ -166,6 +149,10 @@ public class NotificationsFragment extends Fragment {
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         doc.getReference().delete();
                     }
+
+                    notificationList.clear();
+                    adapter.notifyDataSetChanged();
+                    updateEmptyState();
 
                     if (getContext() != null) {
                         Toast.makeText(getContext(), "All notifications cleared", Toast.LENGTH_SHORT).show();

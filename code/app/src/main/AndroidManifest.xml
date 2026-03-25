@@ -98,9 +98,25 @@
         </provider>
 
         <!-- NEW: Map Activity for viewing entrant locations -->
+        <!-- Map Activity for viewing entrant locations -->
         <activity
             android:name=".EntrantLocationMapActivity"
             android:label="Entrant Locations" />
+
+        <!-- Location Picker Activity (US 02.01.05) -->
+        <activity
+            android:name=".LocationPickerActivity"
+            android:label="Pick Location" />
+
+        <!-- Admin Profile Management Activity (US 03.01.01) -->
+        <activity
+            android:name=".AdminProfileListActivity"
+            android:label="Manage Profiles" />
+
+        <!--Manage Images -->
+        <activity
+            android:name=".AdminImageManagementActivity"
+            android:label="Manage Images" />
 
     </application>
 
