@@ -24,14 +24,11 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.Calendar;
 import java.util.Locale;
 
-/**
- * OrgEventActivity
- * Standalone screen for organizers to manage events.
- * US 02.01.02 — Private event (no QR)
- * US 02.01.03 — Invite entrants to private event
- * US 02.01.04 — Registration Period
- * US 02.04.01 — Poster Upload
- */
+// 🔥 ADDED IMPORTS
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ArrayList;
+
 public class OrgEventActivity extends AppCompatActivity {
 
     private static final int PICK_IMAGE_REQUEST = 1;
@@ -41,7 +38,7 @@ public class OrgEventActivity extends AppCompatActivity {
     private ImageView ivEventPoster;
     private View btnAddEvent, btnBack;
     private Button btnUpdate, btnDelete, btnEditImage;
-    private Button btnInviteEntrants; // US 02.01.03
+    private Button btnInviteEntrants;
     private FirebaseFirestore db;
     private String currentEventId = "";
     private Uri imageUri;
@@ -53,9 +50,11 @@ public class OrgEventActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         initViews();
         currentEventId = getIntent().getStringExtra("EVENT_ID");
+
         if (currentEventId != null && !currentEventId.isEmpty()) {
             loadEventData(currentEventId);
         }
+
         AttendanceLimit.setupLimitToggle(cbLimit, etLimit);
         setupListeners();
     }
@@ -76,12 +75,12 @@ public class OrgEventActivity extends AppCompatActivity {
         btnUpdate         = findViewById(R.id.btn_update_event);
         btnDelete         = findViewById(R.id.btn_delete_event);
         btnEditImage      = findViewById(R.id.btn_edit_image);
-        btnInviteEntrants = findViewById(R.id.btn_invite_entrants); // US 02.01.03
+        btnInviteEntrants = findViewById(R.id.btn_invite_entrants);
 
-        // US 02.01.03 — hide invite button by default, show when private is checked
         if (btnInviteEntrants != null) {
             btnInviteEntrants.setVisibility(View.GONE);
         }
+
         if (cbPrivate != null) {
             cbPrivate.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 if (btnInviteEntrants != null) {
@@ -95,20 +94,23 @@ public class OrgEventActivity extends AppCompatActivity {
         if (btnAddEvent != null) {
             btnAddEvent.setOnClickListener(v -> handleAddEvent());
         }
+
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
         }
+
         if (btnUpdate != null) {
             btnUpdate.setOnClickListener(v -> handleUpdateEvent());
         }
+
         if (btnDelete != null) {
             btnDelete.setOnClickListener(v -> handleDeleteEvent());
         }
+
         if (btnEditImage != null) {
             btnEditImage.setOnClickListener(v -> openGallery());
         }
 
-        // US 02.01.03 — Invite button opens InviteEntrantsActivity
         if (btnInviteEntrants != null) {
             btnInviteEntrants.setOnClickListener(v -> {
                 if (currentEventId == null || currentEventId.isEmpty()) {
@@ -117,13 +119,13 @@ public class OrgEventActivity extends AppCompatActivity {
                             Toast.LENGTH_SHORT).show();
                     return;
                 }
+
                 Intent intent = new Intent(this, InviteEntrantsActivity.class);
                 intent.putExtra("EVENT_ID", currentEventId);
                 startActivity(intent);
             });
         }
 
-        // US 02.01.04 — Date Pickers
         if (etRegStart != null) etRegStart.setOnClickListener(v -> showDatePicker(etRegStart));
         if (etRegEnd != null) etRegEnd.setOnClickListener(v -> showDatePicker(etRegEnd));
         if (etDate != null) etDate.setOnClickListener(v -> showDatePicker(etDate));
@@ -131,15 +133,13 @@ public class OrgEventActivity extends AppCompatActivity {
 
     private void showDatePicker(EditText editText) {
         final Calendar c = Calendar.getInstance();
-        int year = c.get(Calendar.YEAR);
-        int month = c.get(Calendar.MONTH);
-        int day = c.get(Calendar.DAY_OF_MONTH);
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(this,
                 (view, year1, monthOfYear, dayOfMonth) ->
                         editText.setText(String.format(Locale.getDefault(),
                                 "%02d/%02d/%d", dayOfMonth, monthOfYear + 1, year1)),
-                year, month, day);
+                c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH));
+
         datePickerDialog.show();
     }
 
@@ -153,6 +153,7 @@ public class OrgEventActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK
                 && data != null && data.getData() != null) {
             imageUri = data.getData();
@@ -161,6 +162,7 @@ public class OrgEventActivity extends AppCompatActivity {
         }
     }
 
+    // 🔥 FINAL FIXED METHOD
     private void handleAddEvent() {
         Event newEvent = EventFormManager.validateAndCreateEvent(
                 this, etName, etLocation, etDate, etDescription, cbLimit, etLimit,
@@ -169,16 +171,35 @@ public class OrgEventActivity extends AppCompatActivity {
 
         if (newEvent == null) return;
 
+        Map<String, Object> eventMap = new HashMap<>();
+
+        eventMap.put("eventId", newEvent.getEventId());
+        eventMap.put("name", newEvent.getName());
+        eventMap.put("location", newEvent.getLocation());
+        eventMap.put("date", newEvent.getDate());
+        eventMap.put("description", newEvent.getDescription());
+        eventMap.put("attendanceLimit", newEvent.getAttendanceLimit());
+        eventMap.put("private", newEvent.isPrivate());
+        eventMap.put("registrationStart", newEvent.getRegistrationStart());
+        eventMap.put("registrationEnd", newEvent.getRegistrationEnd());
+        eventMap.put("posterUrl", newEvent.getPosterUrl());
+
+        // 🔥 CRITICAL FIX
+        eventMap.put("waitingList", new ArrayList<>());
+        eventMap.put("selectedEntrants", new ArrayList<>());
+
         db.collection("events")
                 .document(newEvent.getEventId())
-                .set(newEvent)
+                .set(eventMap)
                 .addOnSuccessListener(aVoid -> {
+
                     currentEventId = newEvent.getEventId();
+
                     if (cbPrivate != null && cbPrivate.isChecked()) {
                         Toast.makeText(this,
                                 "Private event created! You can now invite entrants.",
                                 Toast.LENGTH_LONG).show();
-                        // Stay on screen so organizer can tap Invite Entrants
+                        // ✅ stay on screen
                     } else {
                         Toast.makeText(this, "Event created successfully!", Toast.LENGTH_SHORT).show();
                         finish();
@@ -211,6 +232,7 @@ public class OrgEventActivity extends AppCompatActivity {
             Toast.makeText(this, "Nothing to delete", Toast.LENGTH_SHORT).show();
             return;
         }
+
         new AlertDialog.Builder(this)
                 .setTitle("Delete Event")
                 .setMessage("Remove this event?")
@@ -231,8 +253,10 @@ public class OrgEventActivity extends AppCompatActivity {
                         etDescription.setText(doc.getString("description"));
                         etRegStart.setText(doc.getString("registrationStart"));
                         etRegEnd.setText(doc.getString("registrationEnd"));
+
                         cbPrivate.setChecked(doc.getBoolean("private") != null
                                 && doc.getBoolean("private"));
+
                         Long limit = doc.getLong("attendanceLimit");
                         if (limit != null) {
                             cbLimit.setChecked(true);

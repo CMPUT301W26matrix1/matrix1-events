@@ -4,8 +4,8 @@ import androidx.annotation.NonNull;
 
 import com.example.eventflow.model.entities.Profile;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
 public class ProfileRepository {
 
@@ -28,23 +28,18 @@ public class ProfileRepository {
         void onFailure(@NonNull Exception e);
     }
 
-    /**
-     * Save a new profile to Firestore.
-     * Used in US 01.02.01.
-     */
+    // SAVE PROFILE
     public void saveProfile(@NonNull Profile profile, @NonNull SaveProfileCallback callback) {
         String userId = profile.getDeviceId();
 
-        // Save to profiles collection
         profilesCollection
                 .document(userId)
-                .set(profile)
+                .set(profile, SetOptions.merge())
                 .addOnSuccessListener(unused -> {
-
 
                     db.collection("users")
                             .document(userId)
-                            .set(profile)
+                            .set(profile, SetOptions.merge())
                             .addOnSuccessListener(aVoid -> callback.onSuccess())
                             .addOnFailureListener(callback::onFailure);
 
@@ -52,22 +47,18 @@ public class ProfileRepository {
                 .addOnFailureListener(callback::onFailure);
     }
 
-    /**
-     * Update an existing profile in Firestore.
-     * Used in US 01.02.02.
-     */
+    // UPDATE PROFILE
     public void updateProfile(@NonNull Profile profile, @NonNull SaveProfileCallback callback) {
         String userId = profile.getDeviceId();
 
         profilesCollection
                 .document(userId)
-                .set(profile)
+                .set(profile, SetOptions.merge())
                 .addOnSuccessListener(unused -> {
-
 
                     db.collection("users")
                             .document(userId)
-                            .set(profile)
+                            .set(profile, SetOptions.merge())
                             .addOnSuccessListener(aVoid -> callback.onSuccess())
                             .addOnFailureListener(callback::onFailure);
 
@@ -75,31 +66,24 @@ public class ProfileRepository {
                 .addOnFailureListener(callback::onFailure);
     }
 
-    /**
-     * Load a profile by device ID.
-     * Used when checking whether a user already has a saved profile.
-     */
+    // LOAD PROFILE
     public void getProfileByDeviceId(@NonNull String deviceId, @NonNull LoadProfileCallback callback) {
         profilesCollection
                 .document(deviceId)
                 .get()
-                .addOnSuccessListener(documentSnapshot -> handleProfileDocument(documentSnapshot, callback))
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        Profile profile = doc.toObject(Profile.class);
+                        if (profile != null) {
+                            callback.onSuccess(profile);
+                        } else {
+                            callback.onNotFound();
+                        }
+                    } else {
+                        callback.onNotFound();
+                    }
+                })
                 .addOnFailureListener(callback::onFailure);
-    }
-
-    private void handleProfileDocument(@NonNull DocumentSnapshot documentSnapshot,
-                                       @NonNull LoadProfileCallback callback) {
-        if (documentSnapshot.exists()) {
-            Profile profile = documentSnapshot.toObject(Profile.class);
-
-            if (profile != null) {
-                callback.onSuccess(profile);
-            } else {
-                callback.onNotFound();
-            }
-        } else {
-            callback.onNotFound();
-        }
     }
 
     public CollectionReference getProfilesCollection() {

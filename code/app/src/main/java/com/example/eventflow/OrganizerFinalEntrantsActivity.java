@@ -310,35 +310,16 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
 
         Notification notification = new Notification(message, eventName, details, type);
 
-        db.collection("profiles")
-                .whereEqualTo("deviceId", userId)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
+        // 🔥 ALWAYS SEND (removed notificationsEnabled check)
+        db.collection("users")
+                .document(userId)
+                .collection("notifications")
+                .add(notification)
+                .addOnSuccessListener(ref ->
+                        Log.d("NOTIF", "Notification sent"))
+                .addOnFailureListener(e ->
+                        Log.e("NOTIF", "Failed", e));
 
-                    if (!querySnapshot.isEmpty()) {
-
-                        Boolean enabled = querySnapshot.getDocuments()
-                                .get(0)
-                                .getBoolean("notificationsEnabled");
-
-
-                        if (enabled == null || enabled) {
-
-
-                            db.collection("users")
-                                    .document(userId)
-                                    .collection("notifications")
-                                    .add(notification)
-                                    .addOnSuccessListener(documentReference ->
-                                            Log.d("FINAL_DEBUG", "Notification sent to user: " + userId))
-                                    .addOnFailureListener(e ->
-                                            Log.e("FINAL_DEBUG", "Failed to send notification to user: " + userId, e));
-
-                        } else {
-                            Log.d("FINAL_DEBUG", "User opted out of notifications: " + userId);
-                        }
-                    }
-                });
     }
 
     /**
