@@ -37,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
         Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
 
         Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
+        Button manageProfilesButton = findViewById(R.id.btn_manage_profiles);
 
         // General Actions
         if (profileButton != null) {
@@ -47,14 +48,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (notificationsButton != null) {
             notificationsButton.setOnClickListener(v -> {
-
-                // ✅ FIX: get correct userId
-                String userId = Settings.Secure.getString(
-                        getContentResolver(),
-                        Settings.Secure.ANDROID_ID
-                );
-
-                // ✅ PASS userId to NotificationsActivity
+                String userId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
                 Intent intent = new Intent(MainActivity.this, NotificationsActivity.class);
                 intent.putExtra("userId", userId);
                 startActivity(intent);
@@ -99,6 +93,13 @@ public class MainActivity extends AppCompatActivity {
         if (adminBrowseEventsButton != null) {
             adminBrowseEventsButton.setOnClickListener(v -> {
                 startActivity(new Intent(MainActivity.this, AdminBrowseEventsActivity.class));
+            });
+        }
+
+        // NEW - Manage Profiles button
+        if (manageProfilesButton != null) {
+            manageProfilesButton.setOnClickListener(v -> {
+                startActivity(new Intent(MainActivity.this, AdminProfileListActivity.class));
             });
         }
 

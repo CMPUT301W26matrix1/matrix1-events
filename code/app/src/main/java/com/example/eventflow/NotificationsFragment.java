@@ -25,6 +25,7 @@ import java.util.List;
  * NotificationsFragment
  *
  * Displays notifications stored in Firebase Firestore for the current user.
+ * Notifications are stored in a subcollection: users/{userId}/notifications/
  */
 public class NotificationsFragment extends Fragment {
 
@@ -55,9 +56,15 @@ public class NotificationsFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_notifications, container, false);
 
-        if (getArguments() != null) {
-            userId = getArguments().getString("userId");
-        }
+        // TEMPORARY: Hardcode the user ID to match Firestore data for testing
+        userId = "0082d7b512266895";
+
+        // Commented out for now - will be replaced with FirebaseAuth later
+        // if (getArguments() != null) {
+        //     userId = getArguments().getString("userId");
+        // }
+
+        Log.d("FIREBASE", "Using user ID: " + userId);
 
         if (userId == null || userId.isEmpty()) {
             Log.e("FIREBASE", "User ID is missing!");
@@ -83,33 +90,39 @@ public class NotificationsFragment extends Fragment {
     private void loadNotifications() {
         Log.d("FIREBASE", "Loading notifications for user: " + userId);
 
+        // Read from the notifications SUBCOLLECTION
         db.collection("users")
                 .document(userId)
                 .collection("notifications")
-                .addSnapshotListener((value, error) -> {
-
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .addSnapshotListener((querySnapshot, error) -> {
                     if (error != null) {
                         Log.e("FIREBASE", "Error loading notifications", error);
                         if (getContext() != null) {
-                            Toast.makeText(getContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "Failed to load notifications: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                         return;
                     }
 
-                    if (value == null) return;
+                    if (querySnapshot == null) {
+                        Log.d("FIREBASE", "Query snapshot is null");
+                        return;
+                    }
 
                     notificationList.clear();
 
-                    for (QueryDocumentSnapshot doc : value) {
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
                         Notification notification = doc.toObject(Notification.class);
                         if (notification != null) {
                             notification.setId(doc.getId());
                             notificationList.add(notification);
+                            Log.d("FIREBASE", "Added notification: " + notification.getMessage());
                         }
                     }
 
                     adapter.notifyDataSetChanged();
                     updateEmptyState();
+                    Log.d("FIREBASE", "Loaded " + notificationList.size() + " notifications");
                 });
     }
 
@@ -121,11 +134,10 @@ public class NotificationsFragment extends Fragment {
             recyclerView.setVisibility(View.VISIBLE);
             emptyView.setVisibility(View.GONE);
         }
-
     }
 
-
     private void clearAllNotifications() {
+        // Delete all documents in the notifications subcollection
         db.collection("users")
                 .document(userId)
                 .collection("notifications")
@@ -134,7 +146,9 @@ public class NotificationsFragment extends Fragment {
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         doc.getReference().delete();
                     }
-
+                    notificationList.clear();
+                    adapter.notifyDataSetChanged();
+                    updateEmptyState();
                     if (getContext() != null) {
                         Toast.makeText(getContext(), "All notifications cleared", Toast.LENGTH_SHORT).show();
                     }
@@ -146,5 +160,4 @@ public class NotificationsFragment extends Fragment {
                     }
                 });
     }
-
 }

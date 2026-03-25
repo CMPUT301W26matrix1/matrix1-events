@@ -152,6 +152,19 @@
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
+
+            <!-- Admin - Manage Profiles Button -->
+            <Button
+                android:id="@+id/btn_manage_profiles"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="32dp"
+                android:backgroundTint="#8B2D2D"
+                android:text="Manage Profile"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
             <Button
                 android:id="@+id/adminBrowseEventsButton"
                 android:layout_width="match_parent"
