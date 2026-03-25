@@ -59,8 +59,8 @@ public class EventDetailActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private final ArrayList<Comment> commentList = new ArrayList<>();
     private CommentAdapter commentAdapter;
-    private String userId = "testUser123";
-    private String userName = "Entrant";
+    private String userId = "";
+    private String userName = "";
 
     // Geolocation check
     private FusedLocationProviderClient fusedLocationClient;
@@ -84,6 +84,17 @@ public class EventDetailActivity extends AppCompatActivity {
         isAdmin = "admin".equals(userRole);
         isOrganizer = "organizer".equals(userRole);
 
+        userId = getIntent().getStringExtra("userId");
+        userName = getIntent().getStringExtra("userName");
+
+        if (userId == null || userId.isEmpty()) {
+            userId = isOrganizer ? "testOrganizer123" : "testEntrant123";
+        }
+
+        if (userName == null || userName.isEmpty()) {
+            userName = isOrganizer ? "Organizer" : "Entrant";
+        }
+
         if (eventId == null || eventId.isEmpty()) {
             Toast.makeText(this, "Event ID missing", Toast.LENGTH_SHORT).show();
             finish();
@@ -94,13 +105,8 @@ public class EventDetailActivity extends AppCompatActivity {
         btnPostComment = findViewById(R.id.btnPostComment);
         rvComments = findViewById(R.id.rvComments);
 
-        if (isOrganizer) {
-            etCommentInput.setVisibility(View.GONE);
-            btnPostComment.setVisibility(View.GONE);
-        } else {
-            etCommentInput.setVisibility(View.VISIBLE);
-            btnPostComment.setVisibility(View.VISIBLE);
-        }
+        etCommentInput.setVisibility(View.VISIBLE);
+        btnPostComment.setVisibility(View.VISIBLE);
 
         commentAdapter = new CommentAdapter(
                 commentList,
@@ -173,6 +179,7 @@ public class EventDetailActivity extends AppCompatActivity {
         commentData.put("userName", userName);
         commentData.put("text", commentText);
         commentData.put("timestamp", Timestamp.now());
+        commentData.put("role", isOrganizer ? "Organizer" : "Entrant");
 
         db.collection("events")
                 .document(eventId)
