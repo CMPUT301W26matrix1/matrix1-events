@@ -47,6 +47,7 @@ public class CommentTest {
         assertEquals(timestamp, comment.getTimestamp());
     }
 
+
     @Test
     public void testDefaultConstructor() {
         Comment comment = new Comment();
@@ -56,5 +57,29 @@ public class CommentTest {
         assertNull(comment.getUserName());
         assertNull(comment.getText());
         assertNull(comment.getTimestamp());
+    }
+
+    @Test
+    public void testOrganizerAndEntrantComments() {
+        Timestamp timestamp = Timestamp.now();
+
+        Comment entrantComment = new Comment(
+                "c3",
+                "u3",
+                "Entrant",
+                "Excited!",
+                timestamp
+        );
+
+        Comment organizerComment = new Comment(
+                "c4",
+                "u4",
+                "Organizer",
+                "Please arrive early",
+                timestamp
+        );
+
+        assertEquals("Entrant", entrantComment.getUserName());
+        assertEquals("Organizer", organizerComment.getUserName());
     }
 }
