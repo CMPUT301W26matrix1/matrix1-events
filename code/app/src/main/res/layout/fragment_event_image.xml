@@ -30,15 +30,34 @@
                 android:src="@android:drawable/ic_menu_gallery"/>
         </androidx.cardview.widget.CardView>
 
-        <Button
-            android:id="@+id/btn_edit_image"
+        <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="35dp"
-            android:backgroundTint="#2D2D2D"
-            android:textColor="#FFFFFF"
-            android:textSize="10sp"
-            android:textAllCaps="false"
-            android:text="Edit Image"/>
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btn_edit_image"
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:backgroundTint="#2D2D2D"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:textAllCaps="false"
+                android:text="Edit Image"/>
+
+            <Button
+                android:id="@+id/btn_remove_image"
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="#B3261E"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:textAllCaps="false"
+                android:text="Remove"
+                android:visibility="gone"/>
+        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>

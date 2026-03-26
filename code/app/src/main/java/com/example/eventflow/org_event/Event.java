@@ -56,6 +56,7 @@ public class Event {
     public String getPosterUrl() { return posterUrl; }
 
     // Setters
+    public void setEventId(String eventId) { this.eventId = eventId; }
     public void setPosterUrl(String posterUrl) { this.posterUrl = posterUrl; }
 
     public String getQRDataString() {
