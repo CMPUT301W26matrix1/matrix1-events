@@ -1,17 +1,22 @@
 package com.example.eventflow;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
 import android.provider.Settings;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.eventflow.view.profile.SelectedEntrantsActivity;
+import com.journeyapps.barcodescanner.ScanContract;
+import com.journeyapps.barcodescanner.ScanOptions;
 
 /**
  * MainActivity
@@ -20,6 +25,15 @@ import com.example.eventflow.view.profile.SelectedEntrantsActivity;
  * Hosts navigation buttons organized in a dashboard layout.
  */
 public class MainActivity extends AppCompatActivity {
+
+    private final ActivityResultLauncher<ScanOptions> barcodeLauncher = registerForActivityResult(new ScanContract(),
+            result -> {
+                if(result.getContents() == null) {
+                    Toast.makeText(MainActivity.this, "Cancelled", Toast.LENGTH_LONG).show();
+                } else {
+                    handleScanResult(result.getContents());
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
         Button profileButton = findViewById(R.id.profileButton);
         Button notificationsButton = findViewById(R.id.notificationsButton);
         Button eventsButton = findViewById(R.id.eventsButton);
+        Button scanQrButton = findViewById(R.id.btn_scan_qr);
 
         Button createEventOrgButton = findViewById(R.id.btn_create_event_org);
         Button selectedEntrantsButton = findViewById(R.id.viewSelectedEntrantsButton);
@@ -63,6 +78,16 @@ public class MainActivity extends AppCompatActivity {
         if (eventsButton != null) {
             eventsButton.setOnClickListener(v -> {
                 startActivity(new Intent(MainActivity.this, BrowseEventsActivity.class));
+            });
+        }
+
+        if (scanQrButton != null) {
+            scanQrButton.setOnClickListener(v -> {
+                ScanOptions options = new ScanOptions();
+                options.setPrompt("Scan an event QR code");
+                options.setBeepEnabled(true);
+                options.setOrientationLocked(false);
+                barcodeLauncher.launch(options);
             });
         }
 
@@ -136,5 +161,25 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+    }
+
+    private void handleScanResult(String contents) {
+        if (contents.startsWith("eventflow://details?id=")) {
+            Uri uri = Uri.parse(contents);
+            String eventId = uri.getQueryParameter("id");
+            if (eventId != null && !eventId.isEmpty()) {
+                Intent intent = new Intent(MainActivity.this, EventDetailActivity.class);
+                intent.putExtra("eventId", eventId);
+                // Optionally pass user info if available, similar to other parts of the app
+                String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+                intent.putExtra("userId", deviceId);
+                intent.putExtra("userRole", "entrant");
+                startActivity(intent);
+            } else {
+                Toast.makeText(this, "Invalid QR code: Missing event ID", Toast.LENGTH_LONG).show();
+            }
+        } else {
+            Toast.makeText(this, "Unrecognized QR code format", Toast.LENGTH_LONG).show();
+        }
     }
 }
