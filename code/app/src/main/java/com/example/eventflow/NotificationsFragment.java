@@ -6,6 +6,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,6 +16,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.eventflow.model.entities.Profile;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -23,16 +25,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * NotificationsFragment
- *
- * Displays notifications stored in Firebase Firestore for the current user.
- * Notifications are stored in: users/{userId}/notifications
+ * Fragment that displays a list of notifications for the entrant.
+ * Entrants can view, clear, and opt-out of notifications from this screen.
  */
 public class NotificationsFragment extends Fragment {
 
     private RecyclerView recyclerView;
-    private View emptyView;
+    private View emptyView, disabledContainer;
     private TextView clearAllButton;
+    private Button btnOptOut, btnReEnable;
     private NotificationsAdapter adapter;
 
     private final List<Notification> notificationList = new ArrayList<>();
@@ -40,8 +41,13 @@ public class NotificationsFragment extends Fragment {
 
     private String userId;
 
-    public NotificationsFragment() {}
+    public NotificationsFragment() {
+        // Required empty public constructor
+    }
 
+    /**
+     * Use this factory method to create a new instance of this fragment.
+     */
     public static NotificationsFragment newInstance(String userId) {
         NotificationsFragment fragment = new NotificationsFragment();
         Bundle args = new Bundle();
@@ -58,78 +64,113 @@ public class NotificationsFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_notifications, container, false);
 
+        // Initialize UI components
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyView = view.findViewById(R.id.emptyView);
+        disabledContainer = view.findViewById(R.id.ll_disabled_container);
         clearAllButton = view.findViewById(R.id.clearAllButton);
+        btnOptOut = view.findViewById(R.id.btn_opt_out_notifications);
+        btnReEnable = view.findViewById(R.id.btn_re_enable_notifications);
 
+        // Setup RecyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new NotificationsAdapter(notificationList);
         recyclerView.setAdapter(adapter);
 
+        // Retrieve user device ID for database queries
+        if (getContext() != null) {
+            userId = Settings.Secure.getString(
+                    requireContext().getContentResolver(),
+                    Settings.Secure.ANDROID_ID
+            );
+        }
+
+        // Setup click listeners
+        btnOptOut.setOnClickListener(v -> toggleNotifications(false));
+        btnReEnable.setOnClickListener(v -> toggleNotifications(true));
         clearAllButton.setOnClickListener(v -> clearAllNotifications());
 
-        if (getContext() == null) {
-            return view;
-        }
+        view.findViewById(R.id.btn_notifications_back).setOnClickListener(v -> {
+            if (getActivity() != null) getActivity().onBackPressed();
+        });
 
-        userId = Settings.Secure.getString(
-                requireContext().getContentResolver(),
-                Settings.Secure.ANDROID_ID
-        );
-
-        Log.d("FIREBASE", "Using user ID: " + userId);
-
-        if (userId == null || userId.isEmpty()) {
-            Log.e("FIREBASE", "User ID is missing");
-            Toast.makeText(getContext(), "User not found", Toast.LENGTH_SHORT).show();
-            updateEmptyState();
-            return view;
-        }
-
-        loadNotifications();
+        // Initial check for notification preferences
+        checkNotificationPreference();
 
         return view;
     }
 
-    private void loadNotifications() {
-        Log.d("FIREBASE", "Loading notifications for user: " + userId);
+    /**
+     * Updates the user's notification preference in Firestore.
+     */
+    private void toggleNotifications(boolean enabled) {
+        db.collection("profiles").document(userId)
+                .update("notificationsEnabled", enabled)
+                .addOnSuccessListener(aVoid -> {
+                    String msg = enabled ? "Notifications Enabled" : "Notifications Disabled";
+                    Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+                    checkNotificationPreference();
+                });
+    }
 
+    /**
+     * Checks user's notification settings and either loads notifications or shows disabled state.
+     */
+    private void checkNotificationPreference() {
+        if (userId == null) return;
+        
+        db.collection("profiles").document(userId).get().addOnSuccessListener(doc -> {
+            Profile profile = doc.toObject(Profile.class);
+            boolean isEnabled = (profile == null) || profile.isNotificationsEnabled();
+
+            if (isEnabled) {
+                disabledContainer.setVisibility(View.GONE);
+                btnOptOut.setVisibility(View.VISIBLE);
+                loadNotifications();
+            } else {
+                recyclerView.setVisibility(View.GONE);
+                emptyView.setVisibility(View.GONE);
+                disabledContainer.setVisibility(View.VISIBLE);
+                btnOptOut.setVisibility(View.GONE);
+                notificationList.clear();
+                adapter.notifyDataSetChanged();
+            }
+        });
+    }
+
+    /**
+     * Fetches notifications from Firestore in real-time.
+     */
+    private void loadNotifications() {
         db.collection("users")
                 .document(userId)
                 .collection("notifications")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
-                .addSnapshotListener((querySnapshot, error) -> {
+                .addSnapshotListener((snapshot, error) -> {
                     if (error != null) {
                         Log.e("FIREBASE", "Error loading notifications", error);
-                        if (getContext() != null) {
-                            Toast.makeText(
-                                    getContext(),
-                                    "Failed to load notifications",
-                                    Toast.LENGTH_SHORT
-                            ).show();
-                        }
                         return;
                     }
 
                     notificationList.clear();
-
-                    if (querySnapshot != null) {
-                        for (QueryDocumentSnapshot doc : querySnapshot) {
-                            Notification notification = doc.toObject(Notification.class);
-                            if (notification != null) {
-                                notification.setId(doc.getId());
-                                notificationList.add(notification);
-                                Log.d("FIREBASE", "Added notification: " + notification.getMessage());
+                    if (snapshot != null) {
+                        for (QueryDocumentSnapshot doc : snapshot) {
+                            Notification n = doc.toObject(Notification.class);
+                            if (n != null) {
+                                n.setId(doc.getId());
+                                notificationList.add(n);
                             }
                         }
                     }
 
                     adapter.notifyDataSetChanged();
                     updateEmptyState();
-                    Log.d("FIREBASE", "Loaded " + notificationList.size() + " notifications");
                 });
     }
 
+    /**
+     * Toggles between the list view and empty state view based on notification count.
+     */
     private void updateEmptyState() {
         if (notificationList.isEmpty()) {
             recyclerView.setVisibility(View.GONE);
@@ -140,29 +181,27 @@ public class NotificationsFragment extends Fragment {
         }
     }
 
+    /**
+     * Deletes all notification documents for the current user from Firestore.
+     */
     private void clearAllNotifications() {
         db.collection("users")
                 .document(userId)
                 .collection("notifications")
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                .addOnSuccessListener(snapshot -> {
+                    for (QueryDocumentSnapshot doc : snapshot) {
                         doc.getReference().delete();
                     }
-
                     notificationList.clear();
                     adapter.notifyDataSetChanged();
                     updateEmptyState();
-
                     if (getContext() != null) {
                         Toast.makeText(getContext(), "All notifications cleared", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.e("FIREBASE", "Failed to clear notifications", e);
-                    if (getContext() != null) {
-                        Toast.makeText(getContext(), "Failed to clear notifications", Toast.LENGTH_SHORT).show();
-                    }
                 });
     }
 }

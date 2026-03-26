@@ -15,25 +15,24 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.eventflow.controller.LotteryController;
+import com.example.eventflow.model.entities.Profile;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Activity that displays the event waiting list in the EventFlow app.
- * Allows organizers to view entrants and search through them.
+ * Activity responsible for displaying and managing the waiting list for a specific event.
+ * Provides organizers with a searchable list of entrants including their full identification
+ * (name, email, and phone number).
  */
 public class WaitingListActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
     private ListView lvWaitingList;
     private EditText etSearch;
-
-    private List<String> waitingList = new ArrayList<>();
-    private List<String> filteredList = new ArrayList<>();
+    private final List<Profile> waitingList = new ArrayList<>();
+    private final List<Profile> filteredList = new ArrayList<>();
     
     private WaitingListAdapter adapter;
 
@@ -50,7 +49,7 @@ public class WaitingListActivity extends AppCompatActivity {
         adapter = new WaitingListAdapter(this, filteredList);
         lvWaitingList.setAdapter(adapter);
 
-        // Real-time search functionality
+        // Implementation of real-time search filtering
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -70,7 +69,10 @@ public class WaitingListActivity extends AppCompatActivity {
     }
 
     /**
-     * Filters the list based on the search query.
+     * Filters the displayed waiting list based on a search query.
+     * Searches across name, email, and phone number fields.
+     *
+     * @param query The text to filter the list by.
      */
     private void filterList(String query) {
         filteredList.clear();
@@ -78,9 +80,13 @@ public class WaitingListActivity extends AppCompatActivity {
             filteredList.addAll(waitingList);
         } else {
             String lowerCaseQuery = query.toLowerCase().trim();
-            for (String name : waitingList) {
-                if (name.toLowerCase().contains(lowerCaseQuery)) {
-                    filteredList.add(name);
+            for (Profile profile : waitingList) {
+                String fullName = profile.getFullName().toLowerCase();
+                String email = profile.getEmail() != null ? profile.getEmail().toLowerCase() : "";
+                String phone = profile.getPhoneNumber() != null ? profile.getPhoneNumber() : "";
+                
+                if (fullName.contains(lowerCaseQuery) || email.contains(lowerCaseQuery) || phone.contains(lowerCaseQuery)) {
+                    filteredList.add(profile);
                 }
             }
         }
@@ -88,32 +94,44 @@ public class WaitingListActivity extends AppCompatActivity {
     }
 
     /**
-     * Loads the waiting list from Firestore.
+     * Retrieves the waiting list IDs from the event document and fetches corresponding 
+     * profile details for each user.
      */
     private void loadWaitingListFromFirebase() {
-        db.collection("profiles")
+        String eventId = getIntent().getStringExtra("eventId");
+        if (eventId == null) return;
+
+        db.collection("events")
+                .document(eventId)
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
+                .addOnSuccessListener(doc -> {
+                    List<String> userIds = (List<String>) doc.get("waitingList");
+                    if (userIds == null) return;
+
                     waitingList.clear();
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        String firstName = doc.getString("firstName");
-                        String lastName = doc.getString("lastName");
-                        if (firstName != null) {
-                            String fullName = firstName + (lastName != null ? " " + lastName : "");
-                            waitingList.add(fullName);
-                        }
+                    // Resolve each device ID to a full Profile object
+                    for (String userId : userIds) {
+                        db.collection("profiles")
+                                .document(userId)
+                                .get()
+                                .addOnSuccessListener(profileDoc -> {
+                                    Profile profile = profileDoc.toObject(Profile.class);
+                                    if (profile != null) {
+                                        waitingList.add(profile);
+                                        filterList(etSearch.getText().toString());
+                                    }
+                                });
                     }
-                    // Initial display
-                    filterList(etSearch.getText().toString());
                 });
     }
 
     /**
-     * Custom adapter to match the Figma design item layout.
+     * Custom adapter for rendering profile information in the waiting list.
+     * Specifically displays name, email, and phone number for entrant identification.
      */
-    private class WaitingListAdapter extends ArrayAdapter<String> {
-        public WaitingListAdapter(android.content.Context context, List<String> names) {
-            super(context, 0, names);
+    private class WaitingListAdapter extends ArrayAdapter<Profile> {
+        public WaitingListAdapter(android.content.Context context, List<Profile> profiles) {
+            super(context, 0, profiles);
         }
 
         @NonNull
@@ -123,17 +141,20 @@ public class WaitingListActivity extends AppCompatActivity {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.waiting_list_item, parent, false);
             }
             
-            String name = getItem(position);
+            Profile profile = getItem(position);
             TextView tvName = convertView.findViewById(R.id.userName);
+            TextView tvEmail = convertView.findViewById(R.id.userEmail);
+            TextView tvPhone = convertView.findViewById(R.id.userPhone);
             
-            // Set name and ensure it's white (as defined in XML)
-            tvName.setText(name);
+            if (profile != null) {
+                tvName.setText(profile.getFullName());
+                tvEmail.setText(profile.getEmail());
+                tvPhone.setText(profile.getPhoneNumber() != null && !profile.getPhoneNumber().isEmpty() 
+                        ? profile.getPhoneNumber() : "No phone provided");
+            }
             
-            // Toggle "Remove" visibility for specific items if needed (matching Ryan in design)
             View removeView = convertView.findViewById(R.id.ll_remove);
-            if (name.equalsIgnoreCase("Ryan")) {
-                removeView.setVisibility(View.VISIBLE);
-            } else {
+            if (removeView != null) {
                 removeView.setVisibility(View.GONE);
             }
 

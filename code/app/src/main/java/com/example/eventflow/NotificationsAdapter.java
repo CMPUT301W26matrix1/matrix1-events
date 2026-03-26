@@ -11,10 +11,13 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.eventflow.controller.LotteryController;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +26,11 @@ import java.util.concurrent.TimeUnit;
 public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdapter.ViewHolder> {
 
     private List<Notification> notifications;
+    private final LotteryController lotteryController;
 
     public NotificationsAdapter(List<Notification> notifications) {
         this.notifications = notifications;
+        this.lotteryController = new LotteryController();
     }
 
     @NonNull
@@ -63,7 +68,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         holder.acceptedMessage.setVisibility(View.GONE);
         holder.declinedMessage.setVisibility(View.GONE);
 
-        // ================= PRIVATE INVITE =================
+        // PRIVATE INVITE
         if (Notification.TYPE_PRIVATE_INVITE.equals(n.getType())) {
 
             holder.acceptButton.setVisibility(View.VISIBLE);
@@ -100,16 +105,16 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             });
         }
 
-        // ================= SELECTED =================
+        //  SELECTED
         else if ("SELECTED".equals(n.getType())) {
 
             holder.acceptButton.setVisibility(View.VISIBLE);
             holder.declineButton.setVisibility(View.VISIBLE);
 
-            // ✅ ACCEPT
+            // ACCEPT
             holder.acceptButton.setOnClickListener(v -> {
 
-                // Add to selected
+                // Add to selected (or "accepted" attendees)
                 Map<String, Object> addData = new HashMap<>();
                 addData.put("selectedEntrants",
                         com.google.firebase.firestore.FieldValue.arrayUnion(userId));
@@ -131,56 +136,42 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                 holder.acceptedMessage.setText("You accepted");
             });
 
-            // ✅ DECLINE + REROLL
+            //  DECLINE + REROLL (Only if someone declines)
             holder.declineButton.setOnClickListener(v -> {
-
-                // STEP 1: Remove current user from selected
-                Map<String, Object> removeData = new HashMap<>();
-                removeData.put("selectedEntrants",
-                        com.google.firebase.firestore.FieldValue.arrayRemove(userId));
-
-                db.collection("events")
-                        .document(eventId)
-                        .set(removeData, SetOptions.merge())
+                // Step 1: Remove current user from selected
+                db.collection("events").document(eventId)
+                        .update("selectedEntrants", FieldValue.arrayRemove(userId))
                         .addOnSuccessListener(unused -> {
+                            
+                            // Step 2: Get updated event data to find a replacement
+                            db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
+                                if (!doc.exists()) return;
 
-                            // STEP 2: Get updated event data
-                            db.collection("events")
-                                    .document(eventId)
-                                    .get()
-                                    .addOnSuccessListener(doc -> {
+                                List<String> waitingList = (List<String>) doc.get("waitingList");
+                                List<String> selectedList = (List<String>) doc.get("selectedEntrants");
 
-                                        List<String> waitingList = (List<String>) doc.get("waitingList");
-                                        List<String> selectedList = (List<String>) doc.get("selectedEntrants");
+                                if (waitingList != null && !waitingList.isEmpty()) {
+                                    if (selectedList == null) selectedList = new ArrayList<>();
 
-                                        if (waitingList != null && selectedList != null) {
+                                    // Step 3: Use LotteryController to pick the replacement
+                                    String replacement = lotteryController.drawReplacement(waitingList, selectedList);
 
-                                            for (String candidate : waitingList) {
-
-                                                if (!selectedList.contains(candidate)) {
-
-                                                    // STEP 3: Add replacement + remove from waiting list
-                                                    Map<String, Object> updateData = new HashMap<>();
-                                                    updateData.put("selectedEntrants",
-                                                            com.google.firebase.firestore.FieldValue.arrayUnion(candidate));
-
-                                                    updateData.put("waitingList",
-                                                            com.google.firebase.firestore.FieldValue.arrayRemove(candidate));
-
-                                                    db.collection("events")
-                                                            .document(eventId)
-                                                            .set(updateData, SetOptions.merge());
-
-                                                    Toast.makeText(holder.itemView.getContext(),
-                                                            "Replacement selected!",
-                                                            Toast.LENGTH_SHORT).show();
-
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    });
+                                    if (replacement != null) {
+                                        // Step 4: Update Firestore with the new selection
+                                        db.collection("events").document(eventId)
+                                                .update("selectedEntrants", selectedList,
+                                                        "waitingList", FieldValue.arrayRemove(replacement))
+                                                .addOnSuccessListener(aVoid -> {
+                                                    sendSelectionNotification(replacement, eventId, n.getEventName());
+                                                });
+                                    }
+                                }
+                            });
                         });
+
+                Toast.makeText(holder.itemView.getContext(),
+                        "Invitation declined.",
+                        Toast.LENGTH_SHORT).show();
 
                 holder.acceptButton.setVisibility(View.GONE);
                 holder.declineButton.setVisibility(View.GONE);
@@ -188,6 +179,19 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                 holder.declinedMessage.setText("You declined");
             });
         }
+    }
+
+    private void sendSelectionNotification(String userId, String eventId, String eventName) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Notification notification = new Notification(
+                "Good news! You've been selected from the waiting list.",
+                eventName != null ? eventName : "Event Update",
+                "Please respond to your invitation.",
+                "SELECTED",
+                eventId
+        );
+        notification.setUserId(userId);
+        db.collection("users").document(userId).collection("notifications").add(notification);
     }
 
     private String getTimeAgo(Timestamp timestamp) {

@@ -28,6 +28,11 @@ public class ProfileRepository {
         void onFailure(@NonNull Exception e);
     }
 
+    public interface DeleteProfileCallback {
+        void onSuccess();
+        void onFailure(@NonNull Exception e);
+    }
+
     // SAVE PROFILE
     public void saveProfile(@NonNull Profile profile, @NonNull SaveProfileCallback callback) {
         String userId = profile.getDeviceId();
@@ -62,6 +67,21 @@ public class ProfileRepository {
                             .addOnSuccessListener(aVoid -> callback.onSuccess())
                             .addOnFailureListener(callback::onFailure);
 
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    // DELETE PROFILE
+    public void deleteProfile(@NonNull String deviceId, @NonNull DeleteProfileCallback callback) {
+        profilesCollection
+                .document(deviceId)
+                .delete()
+                .addOnSuccessListener(unused -> {
+                    db.collection("users")
+                            .document(deviceId)
+                            .delete()
+                            .addOnSuccessListener(aVoid -> callback.onSuccess())
+                            .addOnFailureListener(callback::onFailure);
                 })
                 .addOnFailureListener(callback::onFailure);
     }
