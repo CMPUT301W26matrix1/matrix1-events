@@ -39,7 +39,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     public static class EventViewHolder extends RecyclerView.ViewHolder {
         TextView name, location;
         Button deleteButton, joinLeaveButton;
-        ImageView eventImage;  // ADD THIS
+        ImageView eventImage;
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -47,7 +47,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             location = itemView.findViewById(R.id.tvEventLocation);
             deleteButton = itemView.findViewById(R.id.deleteEventButton);
             joinLeaveButton = itemView.findViewById(R.id.btnJoinLeave);
-            eventImage = itemView.findViewById(R.id.iv_event_poster);  // ADD THIS
+            eventImage = itemView.findViewById(R.id.ivEventImage);
         }
     }
 
@@ -63,18 +63,20 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = events.get(position);
 
-        holder.name.setText(event.getName());
-        holder.location.setText(event.getLocation());
+        if (holder.name != null) holder.name.setText(event.getName());
+        if (holder.location != null) holder.location.setText(event.getLocation());
 
-        // ADD THIS - Load event image or placeholder
-        String posterUrl = event.getPosterUrl();
-        if (posterUrl != null && !posterUrl.isEmpty()) {
-            Picasso.get().load(posterUrl)
-                    .placeholder(R.drawable.ic_placeholder)
-                    .error(R.drawable.ic_placeholder)
-                    .into(holder.eventImage);
-        } else {
-            holder.eventImage.setImageResource(R.drawable.ic_placeholder);
+        // Load event image or placeholder
+        if (holder.eventImage != null) {
+            String posterUrl = event.getPosterUrl();
+            if (posterUrl != null && !posterUrl.isEmpty()) {
+                Picasso.get().load(posterUrl)
+                        .placeholder(R.drawable.ic_placeholder)
+                        .error(R.drawable.ic_placeholder)
+                        .into(holder.eventImage);
+            } else {
+                holder.eventImage.setImageResource(R.drawable.ic_placeholder);
+            }
         }
 
         String deviceId = Settings.Secure.getString(
@@ -84,71 +86,78 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
         boolean isJoined = event.getWaitingList() != null
                 && event.getWaitingList().contains(deviceId);
-        holder.joinLeaveButton.setText(isJoined ? "Leave" : "Join");
+        
+        if (holder.joinLeaveButton != null) {
+            holder.joinLeaveButton.setText(isJoined ? "Leave" : "Join");
 
-        holder.joinLeaveButton.setOnClickListener(v -> {
-            boolean currentlyJoined = event.getWaitingList() != null
-                    && event.getWaitingList().contains(deviceId);
+            holder.joinLeaveButton.setOnClickListener(v -> {
+                boolean currentlyJoined = event.getWaitingList() != null
+                        && event.getWaitingList().contains(deviceId);
 
-            if (currentlyJoined) {
-                db.collection("events")
-                        .document(event.getId())
-                        .update("waitingList", FieldValue.arrayRemove(deviceId))
-                        .addOnSuccessListener(aVoid -> {
-                            if (event.getWaitingList() != null) {
-                                event.getWaitingList().remove(deviceId);
-                            }
-                            holder.joinLeaveButton.setText("Join");
-                            Toast.makeText(v.getContext(),
-                                    "Left waiting list.", Toast.LENGTH_SHORT).show();
-                        })
-                        .addOnFailureListener(e ->
+                if (currentlyJoined) {
+                    db.collection("events")
+                            .document(event.getId())
+                            .update("waitingList", FieldValue.arrayRemove(deviceId))
+                            .addOnSuccessListener(aVoid -> {
+                                if (event.getWaitingList() != null) {
+                                    event.getWaitingList().remove(deviceId);
+                                }
+                                holder.joinLeaveButton.setText("Join");
                                 Toast.makeText(v.getContext(),
-                                        "Failed to leave.", Toast.LENGTH_SHORT).show());
-            } else {
-                db.collection("events")
-                        .document(event.getId())
-                        .update("waitingList", FieldValue.arrayUnion(deviceId))
-                        .addOnSuccessListener(aVoid -> {
-                            if (event.getWaitingList() == null) {
-                                event.setWaitingList(new ArrayList<>());
-                            }
-                            event.getWaitingList().add(deviceId);
-                            holder.joinLeaveButton.setText("Leave");
-                            Toast.makeText(v.getContext(),
-                                    "Joined waiting list!", Toast.LENGTH_SHORT).show();
-                        })
-                        .addOnFailureListener(e ->
+                                        "Left waiting list.", Toast.LENGTH_SHORT).show();
+                            })
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(v.getContext(),
+                                            "Failed to leave.", Toast.LENGTH_SHORT).show());
+                } else {
+                    db.collection("events")
+                            .document(event.getId())
+                            .update("waitingList", FieldValue.arrayUnion(deviceId))
+                            .addOnSuccessListener(aVoid -> {
+                                if (event.getWaitingList() == null) {
+                                    event.setWaitingList(new ArrayList<>());
+                                }
+                                event.getWaitingList().add(deviceId);
+                                holder.joinLeaveButton.setText("Leave");
                                 Toast.makeText(v.getContext(),
-                                        "Failed to join.", Toast.LENGTH_SHORT).show());
-            }
-        });
-
-        if ("organizer".equals(userRole)) {
-            holder.deleteButton.setVisibility(View.VISIBLE);
-            holder.joinLeaveButton.setVisibility(View.GONE);
-        } else {
-            holder.deleteButton.setVisibility(View.GONE);
-            holder.joinLeaveButton.setVisibility(View.VISIBLE);
+                                        "Joined waiting list!", Toast.LENGTH_SHORT).show();
+                            })
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(v.getContext(),
+                                            "Failed to join.", Toast.LENGTH_SHORT).show());
+                }
+            });
         }
 
-        holder.deleteButton.setOnClickListener(v -> {
-            db.collection("events")
-                    .document(event.getId())
-                    .delete()
-                    .addOnSuccessListener(aVoid -> {
-                        int currentPosition = holder.getAdapterPosition();
-                        if (currentPosition != RecyclerView.NO_POSITION) {
-                            events.remove(currentPosition);
-                            notifyItemRemoved(currentPosition);
-                            Toast.makeText(v.getContext(),
-                                    "Event deleted", Toast.LENGTH_SHORT).show();
-                        }
-                    })
-                    .addOnFailureListener(e ->
-                            Toast.makeText(v.getContext(),
-                                    "Failed to delete event", Toast.LENGTH_SHORT).show());
-        });
+        if (holder.deleteButton != null && holder.joinLeaveButton != null) {
+            if ("organizer".equals(userRole)) {
+                holder.deleteButton.setVisibility(View.VISIBLE);
+                holder.joinLeaveButton.setVisibility(View.GONE);
+            } else {
+                holder.deleteButton.setVisibility(View.GONE);
+                holder.joinLeaveButton.setVisibility(View.VISIBLE);
+            }
+        }
+
+        if (holder.deleteButton != null) {
+            holder.deleteButton.setOnClickListener(v -> {
+                db.collection("events")
+                        .document(event.getId())
+                        .delete()
+                        .addOnSuccessListener(aVoid -> {
+                            int currentPosition = holder.getAdapterPosition();
+                            if (currentPosition != RecyclerView.NO_POSITION) {
+                                events.remove(currentPosition);
+                                notifyItemRemoved(currentPosition);
+                                Toast.makeText(v.getContext(),
+                                        "Event deleted", Toast.LENGTH_SHORT).show();
+                            }
+                        })
+                        .addOnFailureListener(e ->
+                                Toast.makeText(v.getContext(),
+                                        "Failed to delete event", Toast.LENGTH_SHORT).show());
+            });
+        }
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(v.getContext(), EventDetailActivity.class);

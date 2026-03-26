@@ -46,13 +46,22 @@ public class AdminBrowseEventsActivity extends AppCompatActivity {
 
         loadEvents();
 
-        searchBar.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterEvents(s.toString());
-            }
-            @Override public void afterTextChanged(Editable s) {}
-        });
+        if (searchBar != null) {
+            searchBar.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    filterEvents(s.toString());
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                }
+            });
+        }
 
         // US 03.09.01 — Admin can create events as organizer
         Button btnCreateEvent = findViewById(R.id.btnAdminCreateEvent);
@@ -72,13 +81,23 @@ public class AdminBrowseEventsActivity extends AppCompatActivity {
                     filteredEvents.clear();
 
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        Event event = doc.toObject(Event.class);
-                        event.setEventId(doc.getId());
-                        allEvents.add(event);
+                        try {
+                            Event event = doc.toObject(Event.class);
+                            if (event != null) {
+                                event.setEventId(doc.getId());
+                                allEvents.add(event);
+                            }
+                        } catch (Exception e) {
+                            // Skip documents that don't match Event model
+                            e.printStackTrace();
+                        }
                     }
 
                     filteredEvents.addAll(allEvents);
                     adapter.notifyDataSetChanged();
+                })
+                .addOnFailureListener(e -> {
+                    e.printStackTrace();
                 });
     }
 
