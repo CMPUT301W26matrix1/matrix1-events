@@ -1,7 +1,9 @@
 package com.example.eventflow.org_event;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +18,8 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -27,10 +31,13 @@ import com.example.eventflow.org_QR.QRGenerator;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class OrgEventFragment extends Fragment {
 
@@ -39,6 +46,7 @@ public class OrgEventFragment extends Fragment {
     private CheckBox cbLimit;
     private CheckBox cbPrivate; // US 02.01.02
     private ImageView ivEventPoster;
+    private Button btnEditImage, btnRemoveImage;
 
     private View btnAddEvent, btnBack;
     private Button btnUpdate, btnDelete;
@@ -57,6 +65,19 @@ public class OrgEventFragment extends Fragment {
     private double selectedLongitude = 0;
 
     private String createdEventId; // stored after event is created
+    private Uri selectedImageUri;
+    private String currentPosterUrl;
+
+    private final ActivityResultLauncher<String> imagePickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.GetContent(),
+            uri -> {
+                if (uri != null) {
+                    selectedImageUri = uri;
+                    ivEventPoster.setImageURI(uri);
+                    if (btnRemoveImage != null) btnRemoveImage.setVisibility(View.VISIBLE);
+                }
+            }
+    );
 
     @Nullable
     @Override
@@ -72,6 +93,8 @@ public class OrgEventFragment extends Fragment {
         cbLimit          = view.findViewById(R.id.cb_limit_attendees);
         etLimit          = view.findViewById(R.id.et_max_attendees);
         ivEventPoster    = view.findViewById(R.id.iv_event_poster);
+        btnEditImage     = view.findViewById(R.id.btn_edit_image);
+        btnRemoveImage   = view.findViewById(R.id.btn_remove_image);
         cbPrivate        = view.findViewById(R.id.cb_private_event);  // US 02.01.02
         btnInviteEntrants = view.findViewById(R.id.btn_invite_entrants); // US 02.01.03
 
@@ -91,6 +114,20 @@ public class OrgEventFragment extends Fragment {
 
         // Setup Logic
         AttendanceLimit.setupLimitToggle(cbLimit, etLimit);
+
+        // Image Picker Logic (US 02.04.02)
+        if (btnEditImage != null) {
+            btnEditImage.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
+        }
+
+        if (btnRemoveImage != null) {
+            btnRemoveImage.setOnClickListener(v -> {
+                selectedImageUri = null;
+                currentPosterUrl = null;
+                ivEventPoster.setImageResource(android.R.drawable.ic_menu_gallery);
+                btnRemoveImage.setVisibility(View.GONE);
+            });
+        }
 
         // Geolocation switch listener
         if (switchGeolocationRequired != null) {
@@ -189,7 +226,7 @@ public class OrgEventFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 100 && resultCode == getActivity().RESULT_OK) {
+        if (requestCode == 100 && resultCode == Activity.RESULT_OK && data != null) {
             selectedLatitude = data.getDoubleExtra("latitude", 0);
             selectedLongitude = data.getDoubleExtra("longitude", 0);
             radiusMeters = data.getIntExtra("radius", 500);
@@ -206,96 +243,102 @@ public class OrgEventFragment extends Fragment {
         }
     }
 
-    /**
-     * US 02.01.02 — private events skip QR
-     * US 02.01.03 — stores eventId so Invite button works
-     * US 02.01.05 — saves geolocation data
-     */
     private void handleAddEvent() {
-        Event newEvent = EventFormManager.validateAndCreateEvent(
+        if (selectedImageUri != null) {
+            uploadImageAndSaveEvent(null);
+        } else {
+            saveEventToFirestore(null);
+        }
+    }
+
+    private void handleUpdateEvent() {
+        if (createdEventId == null) {
+            Toast.makeText(getContext(), "No event to update. Create one first.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (selectedImageUri != null) {
+            uploadImageAndSaveEvent(createdEventId);
+        } else {
+            saveEventToFirestore(createdEventId);
+        }
+    }
+
+    private void uploadImageAndSaveEvent(String existingId) {
+        StorageReference storageRef = FirebaseStorage.getInstance().getReference()
+                .child("event_posters/" + UUID.randomUUID().toString() + ".jpg");
+
+        storageRef.putFile(selectedImageUri)
+                .addOnSuccessListener(taskSnapshot -> storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                    currentPosterUrl = uri.toString();
+                    saveEventToFirestore(existingId);
+                }))
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Image upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    saveEventToFirestore(existingId); // Try saving without image
+                });
+    }
+
+    private void saveEventToFirestore(String existingId) {
+        Event event = EventFormManager.validateAndCreateEvent(
                 getContext(), etName, etLocation, etDate, etDescription,
                 cbLimit, etLimit, cbPrivate
         );
 
-        if (newEvent == null) return;
+        if (event == null) return;
 
-        createdEventId = newEvent.getEventId(); // store for invite button
+        if (existingId != null) {
+            event.setEventId(existingId);
+        }
+        createdEventId = event.getEventId();
 
-        // Get geolocation data
         boolean geolocationRequired = switchGeolocationRequired != null && switchGeolocationRequired.isChecked();
-
-        // Validate location if geolocation is required
         if (geolocationRequired && (selectedLatitude == 0 || selectedLongitude == 0)) {
             Toast.makeText(getContext(), "Please pick a location on the map", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Save to Firestore with geolocation data
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("eventId", createdEventId);
-        eventData.put("name", newEvent.getName());
+        eventData.put("name", event.getName());
         eventData.put("location", etLocation.getText().toString().trim());
         eventData.put("description", etDescription.getText().toString().trim());
         eventData.put("date", etDate.getText().toString().trim());
-        eventData.put("isPrivate", newEvent.isPrivate());
-        eventData.put("createdAt", Timestamp.now());
-
-        // Add waitingList and selectedEntrants (from right side)
-        eventData.put("waitingList", new ArrayList<String>());
-        eventData.put("selectedEntrants", new ArrayList<String>());
-
-        // Add geolocation fields
+        eventData.put("isPrivate", event.isPrivate());
+        eventData.put("posterUrl", currentPosterUrl);
         eventData.put("geolocationRequired", geolocationRequired);
         eventData.put("locationLatitude", selectedLatitude);
         eventData.put("locationLongitude", selectedLongitude);
         eventData.put("locationRadius", radiusMeters);
 
-        db.collection("events")
-                .document(createdEventId)
+        if (existingId == null) {
+            eventData.put("createdAt", Timestamp.now());
+            eventData.put("waitingList", new ArrayList<String>());
+            eventData.put("selectedEntrants", new ArrayList<String>());
+        }
+
+        db.collection("events").document(createdEventId)
                 .set(eventData, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
-                    if (newEvent.isPrivate()) {
+                    if (event.isPrivate()) {
                         Toast.makeText(getContext(),
-                                "Private event created! You can now invite entrants.",
+                                existingId == null ? "Private event created! You can now invite entrants." : "Private event updated.",
                                 Toast.LENGTH_LONG).show();
-                        return; // stay on screen so organizer can use Invite button
+                        return;
                     }
 
+                    Toast.makeText(getContext(), existingId == null ? "Event Created!" : "Event Updated!", Toast.LENGTH_SHORT).show();
+
                     Intent intent = new Intent(getActivity(), EventDetailsActivity.class);
-                    intent.putExtra("EVENT_NAME", newEvent.getName());
+                    intent.putExtra("EVENT_NAME", event.getName());
                     intent.putExtra("EVENT_LOCATION", etLocation.getText().toString().trim());
                     intent.putExtra("EVENT_DESC", etDescription.getText().toString().trim());
-                    intent.putExtra("QR_DATA", newEvent.getQRDataString());
-                    intent.putExtra("IS_PRIVATE", newEvent.isPrivate());
+                    intent.putExtra("QR_DATA", event.getQRDataString());
+                    intent.putExtra("IS_PRIVATE", event.isPrivate());
+                    intent.putExtra("EVENT_ID", createdEventId);
                     startActivity(intent);
-                    Toast.makeText(getContext(), "Review your event details!", Toast.LENGTH_SHORT).show();
                 })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Failed to create event: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                });
-    }
-
-    private void handleUpdateEvent() {
-        Event updatedEvent = EventFormManager.validateAndCreateEvent(
-                getContext(), etName, etLocation, etDate, etDescription,
-                cbLimit, etLimit, cbPrivate
-        );
-
-        if (updatedEvent == null) return;
-
-        if (updatedEvent.isPrivate()) {
-            Toast.makeText(getContext(),
-                    "Private event updated — no QR code.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        Bitmap generatedQR = QRGenerator.generateQRCode(updatedEvent.getQRDataString());
-        if (generatedQR != null) {
-            ivEventPoster.setImageBitmap(generatedQR);
-            Toast.makeText(getContext(), "Event Updated Successfully!", Toast.LENGTH_LONG).show();
-        } else {
-            Toast.makeText(getContext(), "Error updating QR Code.", Toast.LENGTH_SHORT).show();
-        }
+                .addOnFailureListener(e -> Toast.makeText(getContext(), "Failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
     }
 }
