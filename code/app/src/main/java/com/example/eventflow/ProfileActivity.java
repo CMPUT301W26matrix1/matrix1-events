@@ -20,10 +20,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
-        userId = Settings.Secure.getString(
-                getContentResolver(),
-                Settings.Secure.ANDROID_ID
-        );
+        userId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
