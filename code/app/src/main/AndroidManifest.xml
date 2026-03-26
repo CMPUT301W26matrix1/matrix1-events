@@ -118,6 +118,15 @@
             android:name=".AdminImageManagementActivity"
             android:label="Manage Images" />
 
+        <!--Profile detail -->
+        <activity
+            android:name=".ProfileDetailActivity"
+            android:label="Profile Details" />
+
+        <activity
+            android:name=".FullscreenImageActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
+
     </application>
 
 </manifest>
