@@ -18,6 +18,7 @@
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_media_previous"
+            android:contentDescription="Back"
             app:tint="#FFFFFF" />
 
         <TextView
@@ -62,7 +63,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:scaleType="centerCrop"
-                        android:src="@android:drawable/ic_menu_myplaces" />
+                        android:src="@android:drawable/ic_menu_myplaces"
+                        android:contentDescription="Profile Picture" />
                 </androidx.cardview.widget.CardView>
 
                 <androidx.cardview.widget.CardView
@@ -80,6 +82,7 @@
                         android:layout_height="18dp"
                         android:layout_gravity="center"
                         android:src="@android:drawable/ic_menu_camera"
+                        android:contentDescription="Change Picture"
                         app:tint="#FFFFFF" />
                 </androidx.cardview.widget.CardView>
             </RelativeLayout>
@@ -100,8 +103,11 @@
                 android:layout_height="52dp"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_profile_input"
+                android:hint="Full Name"
+                android:inputType="textPersonName"
                 android:paddingHorizontal="16dp"
                 android:textColor="#FFFFFF"
+                android:textColorHint="#666666"
                 android:textSize="16sp" />
 
             <!-- Email Field -->
@@ -120,9 +126,11 @@
                 android:layout_height="52dp"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_profile_input"
+                android:hint="Email Address"
                 android:inputType="textEmailAddress"
                 android:paddingHorizontal="16dp"
                 android:textColor="#FFFFFF"
+                android:textColorHint="#666666"
                 android:textSize="16sp" />
 
             <!-- Password Field -->
@@ -141,9 +149,11 @@
                 android:layout_height="52dp"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_profile_input"
+                android:hint="Password"
                 android:inputType="textPassword"
                 android:paddingHorizontal="16dp"
                 android:textColor="#FFFFFF"
+                android:textColorHint="#666666"
                 android:textSize="16sp" />
 
             <!-- Date of Birth Field -->
@@ -168,8 +178,11 @@
                     android:layout_height="match_parent"
                     android:background="@android:color/transparent"
                     android:focusable="false"
+                    android:hint="Select DOB"
+                    android:inputType="none"
                     android:paddingHorizontal="16dp"
                     android:textColor="#FFFFFF"
+                    android:textColorHint="#666666"
                     android:textSize="16sp" />
 
                 <ImageView
@@ -179,6 +192,7 @@
                     android:layout_centerVertical="true"
                     android:layout_marginEnd="16dp"
                     android:src="@android:drawable/arrow_down_float"
+                    android:contentDescription="Dropdown"
                     app:tint="#FFFFFF" />
             </RelativeLayout>
 
@@ -196,8 +210,30 @@
                     android:textColor="#666666"
                     android:textSize="15sp" />
 
-                <Switch
+                <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switchEditGeoTracking"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:checked="true" />
+            </RelativeLayout>
+
+            <!-- Notifications Switch -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:text="Enable Notifications"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchEditNotifications"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"

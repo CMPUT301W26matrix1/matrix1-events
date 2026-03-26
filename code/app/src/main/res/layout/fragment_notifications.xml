@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#121212">
@@ -18,6 +19,7 @@
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_media_previous"
+            android:contentDescription="Go Back"
             app:tint="#FFFFFF" />
 
         <TextView
@@ -29,16 +31,35 @@
             android:textSize="20sp"
             android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/clearAllButton"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:text="Clear all"
-            android:textColor="#4D5DFA"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <Button
+                android:id="@+id/btn_opt_out_notifications"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="#FF4444"
+                android:text="Opt Out"
+                android:paddingHorizontal="12dp"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/clearAllButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Clear"
+                android:textColor="#4D5DFA"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
     </RelativeLayout>
 
     <!-- RecyclerView for notifications -->
@@ -49,7 +70,37 @@
         android:layout_below="@id/rl_notifications_header"
         android:paddingHorizontal="16dp"
         android:clipToPadding="false"
-        android:visibility="visible"/>
+        android:visibility="visible"
+        tools:listitem="@layout/item_notification"/>
+
+    <!-- Status Message (for disabled notifications) -->
+    <LinearLayout
+        android:id="@+id/ll_disabled_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/rl_notifications_header"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Notifications are disabled"
+            android:textColor="#FF4444"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btn_re_enable_notifications"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="#4CAF50"
+            android:text="Enable Notifications"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
 
     <!-- Empty state -->
     <LinearLayout
@@ -61,37 +112,12 @@
         android:orientation="vertical"
         android:visibility="gone">
 
-        <RelativeLayout
-            android:layout_width="160dp"
-            android:layout_height="160dp"
-            android:gravity="center">
-
-            <!-- Bell Icon Placeholder -->
-            <ImageView
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:src="@android:drawable/ic_popup_reminder"
-                app:tint="#FFFFFF" />
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentBottom="true"
-                android:layout_marginEnd="10dp"
-                android:layout_marginBottom="30dp"
-                app:cardBackgroundColor="#4D5DFA"
-                app:cardCornerRadius="14dp">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="0"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:textStyle="bold"/>
-            </androidx.cardview.widget.CardView>
-        </RelativeLayout>
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@android:drawable/ic_popup_reminder"
+            android:contentDescription="Notification Bell"
+            app:tint="#FFFFFF" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -101,22 +127,6 @@
             android:textColor="#FFFFFF"
             android:textSize="22sp"
             android:textStyle="bold"/>
-
-    </LinearLayout>
-
-    <!-- Bottom Nav Bar (Placeholder) -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_alignParentBottom="true"
-        android:background="#121212"
-        android:gravity="center"
-        android:orientation="horizontal">
-        <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:src="@android:drawable/ic_menu_compass" app:tint="#4D5DFA"/>
-        <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:src="@android:drawable/ic_menu_today" app:tint="#888888"/>
-        <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:src="@android:drawable/ic_menu_search" app:tint="#888888"/>
-        <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:src="@android:drawable/ic_dialog_map" app:tint="#888888"/>
-        <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:src="@android:drawable/ic_menu_myplaces" app:tint="#888888"/>
     </LinearLayout>
 
 </RelativeLayout>

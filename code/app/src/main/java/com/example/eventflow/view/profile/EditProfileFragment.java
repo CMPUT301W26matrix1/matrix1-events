@@ -1,6 +1,8 @@
 package com.example.eventflow.view.profile;
 
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
@@ -16,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.eventflow.MainActivity;
 import com.example.eventflow.R;
 import com.example.eventflow.controller.ProfileController;
 import com.example.eventflow.model.entities.Profile;
@@ -26,8 +29,8 @@ import java.util.Calendar;
 public class EditProfileFragment extends Fragment {
 
     private EditText etName, etEmail, etPassword, etDOB;
-    private Switch switchGeoTracking;
-    private Button btnUpdateProfile;
+    private Switch switchGeoTracking, switchNotifications;
+    private Button btnUpdateProfile, btnDeleteProfile;
 
     private ProfileController profileController;
     private ProfileRepository profileRepository;
@@ -61,7 +64,9 @@ public class EditProfileFragment extends Fragment {
         etPassword = view.findViewById(R.id.etEditPassword);
         etDOB = view.findViewById(R.id.etEditDOB);
         switchGeoTracking = view.findViewById(R.id.switchEditGeoTracking);
+        switchNotifications = view.findViewById(R.id.switchEditNotifications);
         btnUpdateProfile = view.findViewById(R.id.btnUpdateProfile);
+        btnDeleteProfile = view.findViewById(R.id.btnDeleteProfile);
 
         profileController = new ProfileController();
         profileRepository = new ProfileRepository();
@@ -73,6 +78,8 @@ public class EditProfileFragment extends Fragment {
         etDOB.setOnClickListener(v -> showDatePickerDialog());
 
         btnUpdateProfile.setOnClickListener(v -> updateProfile());
+
+        btnDeleteProfile.setOnClickListener(v -> showDeleteConfirmationDialog());
         
         view.findViewById(R.id.btnEditBack).setOnClickListener(v -> {
             if (getParentFragment() instanceof ProfileContainerFragment) {
@@ -114,6 +121,7 @@ public class EditProfileFragment extends Fragment {
                 if (profile.getDateOfBirth() != null) {
                     etDOB.setText(profile.getDateOfBirth());
                 }
+                switchNotifications.setChecked(profile.isNotificationsEnabled());
             }
 
             @Override
@@ -131,6 +139,7 @@ public class EditProfileFragment extends Fragment {
         String name = etName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String dob = etDOB.getText().toString().trim();
+        boolean notificationsEnabled = switchNotifications.isChecked();
 
         String firstName = name;
         String lastName = "";
@@ -148,6 +157,7 @@ public class EditProfileFragment extends Fragment {
 
         Profile updatedProfile = new Profile(deviceId, firstName, lastName, email, "");
         updatedProfile.setDateOfBirth(dob);
+        updatedProfile.setNotificationsEnabled(notificationsEnabled);
 
         profileRepository.updateProfile(updatedProfile, new ProfileRepository.SaveProfileCallback() {
             @Override
@@ -161,6 +171,33 @@ public class EditProfileFragment extends Fragment {
             @Override
             public void onFailure(@NonNull Exception e) {
                 Toast.makeText(requireContext(), "Failed to update profile", Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void showDeleteConfirmationDialog() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete Profile")
+                .setMessage("Are you sure you want to delete your profile? This action cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> deleteProfile())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void deleteProfile() {
+        profileRepository.deleteProfile(deviceId, new ProfileRepository.DeleteProfileCallback() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(requireContext(), "Profile deleted successfully", Toast.LENGTH_SHORT).show();
+                // Navigate back to MainActivity (which handles sign-in/profile creation)
+                Intent intent = new Intent(requireContext(), MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(requireContext(), "Failed to delete profile", Toast.LENGTH_LONG).show();
             }
         });
     }
