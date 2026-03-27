@@ -27,27 +27,23 @@ public class OrganizerModerationTest {
         organizerDeviceId = "device_organizer_123";
         otherDeviceId = "device_other_456";
 
-        // Create an event owned by the organizer
         ownedEvent = new Event();
         ownedEvent.setEventId("event_mine");
         ownedEvent.setOrganizerId(organizerDeviceId);
 
-        // Create an event owned by someone else
+
         otherEvent = new Event();
         otherEvent.setEventId("event_theirs");
         otherEvent.setOrganizerId(otherDeviceId);
     }
 
-    /**
-     * US 02.08.01 - Test that an Organizer can moderate (delete) comments on their own event.
-     */
+
     @Test
     public void testOrganizerCanModerateOwnEvent() {
         boolean isOwner = organizerDeviceId.equals(ownedEvent.getOrganizerId());
         boolean isOrganizerRole = true;
         boolean isAdmin = false;
-        
-        // Logical check similar to what is used in CommentAdapter and EventDetailActivity
+
         boolean canModerate = (isOrganizerRole && isOwner) || isAdmin;
         
         assertTrue("Organizer should be able to moderate their own event", canModerate);
@@ -75,9 +71,7 @@ public class OrganizerModerationTest {
         boolean isOwner = organizerDeviceId.equals(ownedEvent.getOrganizerId());
         boolean isOrganizerRole = true;
         boolean isAdmin = false;
-        
-        // Visibility logic used in EventDetailActivity:
-        // Entrants always see it, Admins never see it, Organizers only see it on owned events.
+
         boolean showCommentBox = !isAdmin && (!isOrganizerRole || isOwner);
         
         assertTrue("Organizer should be able to comment on their own event", showCommentBox);
