@@ -23,20 +23,22 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
 
     private final List<Comment> comments;
     private final OnDeleteClickListener deleteClickListener;
-    private final boolean showDeleteButton;
+    private final boolean isOrganizer;
+    private final boolean isAdmin;
 
-    public CommentAdapter(List<Comment> comments,
-                          OnDeleteClickListener deleteClickListener,
-                          boolean showDeleteButton) {
+    public CommentAdapter(List<Comment> comments, OnDeleteClickListener deleteClickListener,
+                          boolean isOrganizer, boolean isAdmin) {
         this.comments = comments;
         this.deleteClickListener = deleteClickListener;
-        this.showDeleteButton = showDeleteButton;
+        this.isOrganizer = isOrganizer;
+        this.isAdmin = isAdmin;
     }
 
     @NonNull
     @Override
     public CommentViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_comment, parent, false);
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_comment, parent, false);
         return new CommentViewHolder(view);
     }
 
@@ -54,7 +56,9 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             holder.tvCommentTime.setText("");
         }
 
-        if (showDeleteButton) {
+        boolean canDelete = isOrganizer || isAdmin;
+
+        if (canDelete) {
             holder.btnDeleteComment.setVisibility(View.VISIBLE);
             holder.btnDeleteComment.setOnClickListener(v -> {
                 if (deleteClickListener != null) {

@@ -41,7 +41,7 @@ public class AdminBrowseEventsActivity extends AppCompatActivity {
         EditText searchBar = findViewById(R.id.searchBar);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new EventAdapter(filteredEvents, "organizer");
+        adapter = new EventAdapter(filteredEvents, "Admin");
         recyclerView.setAdapter(adapter);
 
         loadEvents();

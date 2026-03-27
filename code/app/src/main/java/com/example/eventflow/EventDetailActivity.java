@@ -81,18 +81,18 @@ public class EventDetailActivity extends AppCompatActivity {
 
         eventId = getIntent().getStringExtra("eventId");
         String userRole = getIntent().getStringExtra("userRole");
-        isAdmin = "admin".equals(userRole);
-        isOrganizer = "organizer".equals(userRole);
+        isAdmin = "Admin".equalsIgnoreCase(userRole);
+        isOrganizer = "Organizer".equalsIgnoreCase(userRole);
 
         userId = getIntent().getStringExtra("userId");
         userName = getIntent().getStringExtra("userName");
 
         if (userId == null || userId.isEmpty()) {
-            userId = isOrganizer ? "testOrganizer123" : "testEntrant123";
+            userId = isAdmin ? "AdminUser" : (isOrganizer ? "testOrganizer123" : "testEntrant123");
         }
 
         if (userName == null || userName.isEmpty()) {
-            userName = isOrganizer ? "Organizer" : "Entrant";
+            userName = isAdmin ? "Administrator" : (isOrganizer ? "Organizer" : "Entrant");
         }
 
         if (eventId == null || eventId.isEmpty()) {
@@ -105,15 +105,21 @@ public class EventDetailActivity extends AppCompatActivity {
         btnPostComment = findViewById(R.id.btnPostComment);
         rvComments = findViewById(R.id.rvComments);
 
-        etCommentInput.setVisibility(View.VISIBLE);
-        btnPostComment.setVisibility(View.VISIBLE);
+        // US 03.06.01 - Admin role is for moderation. Hide comment input for Admins.
+        if (isAdmin) {
+            etCommentInput.setVisibility(View.GONE);
+            btnPostComment.setVisibility(View.GONE);
+        } else {
+            etCommentInput.setVisibility(View.VISIBLE);
+            btnPostComment.setVisibility(View.VISIBLE);
+        }
 
         commentAdapter = new CommentAdapter(
                 commentList,
                 comment -> showDeleteConfirmation(comment),
-                isOrganizer
+                isOrganizer,
+                isAdmin
         );
-
         rvComments.setLayoutManager(new LinearLayoutManager(this));
         rvComments.setAdapter(commentAdapter);
         rvComments.setNestedScrollingEnabled(false);
@@ -179,7 +185,12 @@ public class EventDetailActivity extends AppCompatActivity {
         commentData.put("userName", userName);
         commentData.put("text", commentText);
         commentData.put("timestamp", Timestamp.now());
-        commentData.put("role", isOrganizer ? "Organizer" : "Entrant");
+        
+        String roleLabel = "Entrant";
+        if (isAdmin) roleLabel = "Admin";
+        else if (isOrganizer) roleLabel = "Organizer";
+        
+        commentData.put("role", roleLabel);
 
         db.collection("events")
                 .document(eventId)
