@@ -130,7 +130,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         }
 
         if (holder.deleteButton != null && holder.joinLeaveButton != null) {
-            if ("organizer".equals(userRole)) {
+            // US 03.01.01 — Admin and Organizer can delete events
+            if ("organizer".equalsIgnoreCase(userRole) || "Admin".equalsIgnoreCase(userRole)) {
                 holder.deleteButton.setVisibility(View.VISIBLE);
                 holder.joinLeaveButton.setVisibility(View.GONE);
             } else {

@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="#121212">
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
@@ -287,7 +287,7 @@
 
             </LinearLayout>
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
     <!-- Bottom Nav Bar (Placeholder) -->
     <LinearLayout

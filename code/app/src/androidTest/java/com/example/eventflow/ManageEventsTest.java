@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static junit.framework.TestCase.assertEquals;
 
@@ -23,8 +24,9 @@ public class ManageEventsTest {
 
     @Test
     public void clickingManageEventsButton_opensAdminBrowseEventsActivity() {
-        onView(withId(R.id.adminBrowseEventsButton)).perform(click());
+        onView(withId(R.id.adminBrowseEventsButton)).perform(scrollTo(), click());
     }
+
     @Test
     public void setId_getId_returnsCorrectId() {
         Event event = new Event();

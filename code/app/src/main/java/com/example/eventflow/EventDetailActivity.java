@@ -69,7 +69,7 @@ public class EventDetailActivity extends AppCompatActivity {
 
     // Image views
     private ImageView ivEventPoster;
-    private ImageButton btnDeleteImage;  // Keep as ImageButton
+    private ImageButton btnDeleteImage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,18 +85,21 @@ public class EventDetailActivity extends AppCompatActivity {
         Log.d("EventDetail", "Event ID from intent: " + eventId);
 
         String userRole = getIntent().getStringExtra("userRole");
-        isAdmin = "admin".equals(userRole);
-        isOrganizer = "organizer".equals(userRole);
+        isAdmin = "admin".equalsIgnoreCase(userRole);
+        isOrganizer = "organizer".equalsIgnoreCase(userRole);
 
         userId = getIntent().getStringExtra("userId");
         userName = getIntent().getStringExtra("userName");
 
+        // Get device ID for identity check
+        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+
         if (userId == null || userId.isEmpty()) {
-            userId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+            userId = isAdmin ? "AdminUser" : deviceId;
         }
 
         if (userName == null || userName.isEmpty()) {
-            userName = isOrganizer ? "Organizer" : "Entrant";
+            userName = isAdmin ? "Administrator" : (isOrganizer ? "Organizer" : "Entrant");
         }
 
         if (eventId == null || eventId.isEmpty()) {
@@ -109,13 +112,23 @@ public class EventDetailActivity extends AppCompatActivity {
         btnPostComment = findViewById(R.id.btnPostComment);
         rvComments = findViewById(R.id.rvComments);
 
-        etCommentInput.setVisibility(View.VISIBLE);
-        btnPostComment.setVisibility(View.VISIBLE);
+        // Comment box visibility logic:
+        // 1. If Admin -> Hide (Admin is strictly for moderation/deletion)
+        // 2. If Organizer -> Show only after verifying ownership (handled in updateCommentBoxVisibility)
+        // 3. If Entrant -> Show
+        if (isAdmin) {
+            etCommentInput.setVisibility(View.GONE);
+            btnPostComment.setVisibility(View.GONE);
+        } else if (!isOrganizer) {
+            etCommentInput.setVisibility(View.VISIBLE);
+            btnPostComment.setVisibility(View.VISIBLE);
+        }
 
         commentAdapter = new CommentAdapter(
                 commentList,
                 comment -> showDeleteConfirmation(comment),
-                isOrganizer
+                isOrganizer,
+                isAdmin
         );
 
         rvComments.setLayoutManager(new LinearLayoutManager(this));
@@ -127,7 +140,6 @@ public class EventDetailActivity extends AppCompatActivity {
         btnPostComment.setOnClickListener(v -> postComment());
 
         // Event details setup
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
         eventController = new EventController(deviceId);
 
         TextView nameText = findViewById(R.id.tv_detail_name);
@@ -195,10 +207,8 @@ public class EventDetailActivity extends AppCompatActivity {
                 .setTitle("Delete Options")
                 .setItems(options, (dialog, which) -> {
                     if (which == 0) {
-                        // Delete Image
                         showDeleteImageConfirmation();
                     } else if (which == 1) {
-                        // Delete Event
                         showDeleteEventConfirmation();
                     }
                 })
@@ -272,7 +282,7 @@ public class EventDetailActivity extends AppCompatActivity {
         db.collection("events").document(eventId).delete()
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, "Event deleted successfully", Toast.LENGTH_SHORT).show();
-                    finish(); // Go back to previous screen
+                    finish();
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Failed to delete event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -299,7 +309,15 @@ public class EventDetailActivity extends AppCompatActivity {
         commentData.put("userName", userName);
         commentData.put("text", commentText);
         commentData.put("timestamp", Timestamp.now());
-        commentData.put("role", isOrganizer ? "Organizer" : "Entrant");
+
+        String roleLabel = "Entrant";
+        if (isAdmin) {
+            roleLabel = "Admin";
+        } else if (isOrganizer) {
+            roleLabel = "Organizer";
+        }
+
+        commentData.put("role", roleLabel);
 
         db.collection("events")
                 .document(eventId)
@@ -370,38 +388,53 @@ public class EventDetailActivity extends AppCompatActivity {
     private void loadEventDetails(TextView nameText, TextView locationText, TextView descriptionText) {
         Log.d("EventDetail", "Loading event with ID: " + eventId);
 
-        db.collection("events").document(eventId).get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        Log.d("EventDetail", "Event found: " + documentSnapshot.getString("name"));
-                        currentEvent = documentSnapshot.toObject(Event.class);
-                        if (currentEvent != null) {
-                            currentEvent.setId(documentSnapshot.getId());
-                            if (nameText != null) nameText.setText(currentEvent.getName());
-                            if (locationText != null) locationText.setText(currentEvent.getLocation());
-                            if (descriptionText != null) descriptionText.setText(currentEvent.getDescription());
+        eventController.loadEventById(eventId, new EventRepository.EventCallback() {
+            @Override
+            public void onSuccess(Event event) {
+                currentEvent = event;
+                if (nameText != null) nameText.setText(event.getName());
+                if (locationText != null) locationText.setText(event.getLocation());
+                if (descriptionText != null) descriptionText.setText(event.getDescription());
 
-                            String posterUrl = currentEvent.getPosterUrl();
-                            if (posterUrl != null && !posterUrl.isEmpty()) {
-                                Picasso.get().load(posterUrl)
-                                        .placeholder(R.drawable.ic_placeholder)
-                                        .error(R.drawable.ic_placeholder)
-                                        .into(ivEventPoster);
-                            } else {
-                                ivEventPoster.setImageResource(R.drawable.ic_placeholder);
-                            }
+                // Load event poster image
+                String posterUrl = currentEvent.getPosterUrl();
+                if (posterUrl != null && !posterUrl.isEmpty()) {
+                    Picasso.get().load(posterUrl)
+                            .placeholder(R.drawable.ic_placeholder)
+                            .error(R.drawable.ic_placeholder)
+                            .into(ivEventPoster);
+                } else {
+                    ivEventPoster.setImageResource(R.drawable.ic_placeholder);
+                }
 
-                            updateButtonState();
-                        }
-                    } else {
-                        Log.e("EventDetail", "Event not found with ID: " + eventId);
-                        Toast.makeText(EventDetailActivity.this, "Event not found", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("EventDetail", "Error loading event: " + e.getMessage());
-                    Toast.makeText(EventDetailActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+                updateButtonState();
+                updateCommentBoxVisibility();
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Toast.makeText(EventDetailActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void updateCommentBoxVisibility() {
+        if (isAdmin) return;
+
+        if (isOrganizer) {
+            String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+            boolean isOwner = currentEvent != null && deviceId.equals(currentEvent.getOrganizerId());
+            boolean isCoOrganizer = currentEvent != null && currentEvent.getCoOrganizerIds() != null
+                    && currentEvent.getCoOrganizerIds().contains(deviceId);
+
+            if (isOwner || isCoOrganizer) {
+                etCommentInput.setVisibility(View.VISIBLE);
+                btnPostComment.setVisibility(View.VISIBLE);
+            } else {
+                etCommentInput.setVisibility(View.GONE);
+                btnPostComment.setVisibility(View.GONE);
+            }
+        }
     }
 
     private void updateButtonState() {
@@ -524,7 +557,6 @@ public class EventDetailActivity extends AppCompatActivity {
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(EventDetailActivity.this, "Joined waiting list", Toast.LENGTH_SHORT).show();
 
-                    // Send notification about joining waiting list (for admin logs)
                     if (currentEvent != null) {
                         Notification notification = new Notification(
                                 "Joined waiting list",
@@ -549,7 +581,6 @@ public class EventDetailActivity extends AppCompatActivity {
             public void onSuccess() {
                 Toast.makeText(EventDetailActivity.this, "Left waiting list", Toast.LENGTH_SHORT).show();
 
-                // Send notification about leaving waiting list (for admin logs)
                 if (currentEvent != null) {
                     Notification notification = new Notification(
                             "Left waiting list",
