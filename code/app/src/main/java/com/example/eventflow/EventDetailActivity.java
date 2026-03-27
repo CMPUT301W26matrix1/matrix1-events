@@ -87,8 +87,11 @@ public class EventDetailActivity extends AppCompatActivity {
         userId = getIntent().getStringExtra("userId");
         userName = getIntent().getStringExtra("userName");
 
+        // Logic to get Device ID for proper identity check
+        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+
         if (userId == null || userId.isEmpty()) {
-            userId = isAdmin ? "AdminUser" : (isOrganizer ? "testOrganizer123" : "testEntrant123");
+            userId = isAdmin ? "AdminUser" : deviceId;
         }
 
         if (userName == null || userName.isEmpty()) {
@@ -105,11 +108,15 @@ public class EventDetailActivity extends AppCompatActivity {
         btnPostComment = findViewById(R.id.btnPostComment);
         rvComments = findViewById(R.id.rvComments);
 
-        // US 03.06.01 - Admin role is for moderation. Hide comment input for Admins.
+        // Feature: Organizers can only comment on THEIR event. Admins cannot comment (moderation only).
+        // Comment box visibility logic:
+        // 1. If Admin -> Hide (Admin is strictly for moderation/deletion)
+        // 2. If Organizer -> We must load event first to check ownership (see updateCommentBoxVisibility)
+        // 3. If Entrant -> Show
         if (isAdmin) {
             etCommentInput.setVisibility(View.GONE);
             btnPostComment.setVisibility(View.GONE);
-        } else {
+        } else if (!isOrganizer) {
             etCommentInput.setVisibility(View.VISIBLE);
             btnPostComment.setVisibility(View.VISIBLE);
         }
@@ -129,7 +136,6 @@ public class EventDetailActivity extends AppCompatActivity {
         btnPostComment.setOnClickListener(v -> postComment());
 
         // Event details setup
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
         eventController = new EventController(deviceId);
 
         TextView nameText = findViewById(R.id.tv_detail_name);
@@ -279,6 +285,7 @@ public class EventDetailActivity extends AppCompatActivity {
                 }
 
                 updateButtonState();
+                updateCommentBoxVisibility();
             }
 
             @Override
@@ -286,6 +293,26 @@ public class EventDetailActivity extends AppCompatActivity {
                 Toast.makeText(EventDetailActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void updateCommentBoxVisibility() {
+        if (isAdmin) return; // Admin already handled in onCreate
+
+        if (isOrganizer) {
+            String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+            // Organizer can only comment if they are the owner or a co-organizer
+            boolean isOwner = currentEvent != null && deviceId.equals(currentEvent.getOrganizerId());
+            boolean isCoOrganizer = currentEvent != null && currentEvent.getCoOrganizerIds() != null 
+                    && currentEvent.getCoOrganizerIds().contains(deviceId);
+
+            if (isOwner || isCoOrganizer) {
+                etCommentInput.setVisibility(View.VISIBLE);
+                btnPostComment.setVisibility(View.VISIBLE);
+            } else {
+                etCommentInput.setVisibility(View.GONE);
+                btnPostComment.setVisibility(View.GONE);
+            }
+        }
     }
 
     private void updateButtonState() {

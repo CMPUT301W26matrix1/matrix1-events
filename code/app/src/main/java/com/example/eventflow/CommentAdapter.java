@@ -23,8 +23,8 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
 
     private final List<Comment> comments;
     private final OnDeleteClickListener deleteClickListener;
-    private final boolean isOrganizer;
-    private final boolean isAdmin;
+    private boolean isOrganizer;
+    private boolean isAdmin;
 
     public CommentAdapter(List<Comment> comments, OnDeleteClickListener deleteClickListener,
                           boolean isOrganizer, boolean isAdmin) {
@@ -32,6 +32,16 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
         this.deleteClickListener = deleteClickListener;
         this.isOrganizer = isOrganizer;
         this.isAdmin = isAdmin;
+    }
+
+    /**
+     * Updates moderation permissions and refreshes the UI.
+     * US 02.08.01 - Allows dynamic permission checks for organizers.
+     */
+    public void setPermissions(boolean isOrganizer, boolean isAdmin) {
+        this.isOrganizer = isOrganizer;
+        this.isAdmin = isAdmin;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -56,6 +66,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             holder.tvCommentTime.setText("");
         }
 
+        // US 02.08.01 & US 03.06.01 - Check if current user has moderation rights
         boolean canDelete = isOrganizer || isAdmin;
 
         if (canDelete) {

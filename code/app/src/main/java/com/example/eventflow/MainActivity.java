@@ -51,10 +51,13 @@ public class MainActivity extends AppCompatActivity {
         Button viewWaitingListButton = findViewById(R.id.viewWaitingListButton);
         Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
         Button manageEntrantsButton = findViewById(R.id.btn_manage_entrants);
+        
+        // NEW: Button to test Organizer Commenting
+        Button btnManageMyEvents = findViewById(R.id.btn_manage_my_events);
 
         Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
         Button manageProfilesButton = findViewById(R.id.btn_manage_profiles);
-        Button manageImagesButton = findViewById(R.id.btn_manage_images);  // ADD THIS
+        Button manageImagesButton = findViewById(R.id.btn_manage_images);
 
         // General Actions
         if (profileButton != null) {
@@ -65,10 +68,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (notificationsButton != null) {
             notificationsButton.setOnClickListener(v -> {
-                // FIX: get correct userId
                 String userId = Settings.Secure.getString(getContentResolver(),Settings.Secure.ANDROID_ID);
-
-                // PASS userId to NotificationsActivity
                 Intent intent = new Intent(MainActivity.this, NotificationsActivity.class);
                 intent.putExtra("userId", userId);
                 startActivity(intent);
@@ -119,16 +119,26 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // Org - ManageEntrant Dashboard
         if (manageEntrantsButton != null) {
             manageEntrantsButton.setOnClickListener(v -> {
-                // This opens your 4-feature Dashboard
                 Intent intent = new Intent(MainActivity.this, com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity.class);
-
-                // Optional: If you want to pass a specific event context (like you did for Final Entrants)
                 intent.putExtra("eventId", "Tg34Yn6wNXvYAuvczoMA");
                 intent.putExtra("eventName", "Tech Summit 2026");
-
+                startActivity(intent);
+            });
+        }
+        
+        // Handle "Manage My Events" (Organizer View)
+        // This launches the event detail screen as an Organizer for testing
+        if (btnManageMyEvents != null) {
+            btnManageMyEvents.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, EventDetailActivity.class);
+                // Hardcoded ID for your "GameFair" event from the screenshot
+                intent.putExtra("eventId", "7d99db57-c0c9-486d-81e7-69cd51b7d3df"); 
+                intent.putExtra("userRole", "Organizer");
+                String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+                intent.putExtra("userId", deviceId);
+                intent.putExtra("userName", "Organizer (Me)");
                 startActivity(intent);
             });
         }
@@ -141,14 +151,12 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // Manage Profiles button
         if (manageProfilesButton != null) {
             manageProfilesButton.setOnClickListener(v -> {
                 startActivity(new Intent(MainActivity.this, AdminProfileListActivity.class));
             });
         }
 
-        // Manage Images button
         if (manageImagesButton != null) {
             manageImagesButton.setOnClickListener(v -> {
                 startActivity(new Intent(MainActivity.this, AdminImageManagementActivity.class));
@@ -170,7 +178,6 @@ public class MainActivity extends AppCompatActivity {
             if (eventId != null && !eventId.isEmpty()) {
                 Intent intent = new Intent(MainActivity.this, EventDetailActivity.class);
                 intent.putExtra("eventId", eventId);
-                // Optionally pass user info if available, similar to other parts of the app
                 String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
                 intent.putExtra("userId", deviceId);
                 intent.putExtra("userRole", "entrant");
