@@ -97,7 +97,7 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- NEW: Map Activity for viewing entrant locations -->
+        <!-- Map Activity for viewing entrant locations -->
         <activity
             android:name=".EntrantLocationMapActivity"
             android:label="Entrant Locations" />
@@ -112,12 +112,12 @@
             android:name=".AdminProfileListActivity"
             android:label="Manage Profiles" />
 
-        <!--Manage Images -->
+        <!-- Manage Images -->
         <activity
             android:name=".AdminImageManagementActivity"
             android:label="Manage Images" />
 
-        <!--Profile detail -->
+        <!-- Profile detail -->
         <activity
             android:name=".ProfileDetailActivity"
             android:label="Profile Details" />
@@ -126,7 +126,12 @@
             android:name=".FullscreenImageActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
 
-        <!-- NEW: Organizer Events List (Fixes crash) -->
+        <!-- Admin Notification Logs (US 03.08.01) -->
+        <activity
+            android:name=".AdminNotificationLogsActivity"
+            android:label="Notification Logs" />
+
+        <!-- Organizer Events List (Fixes crash) -->
         <activity
             android:name=".OrganizerEventsActivity"
             android:label="My Events" />
