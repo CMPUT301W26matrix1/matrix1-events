@@ -127,6 +127,10 @@
             android:name=".FullscreenImageActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
 
+        <activity
+            android:name=".AdminNotificationLogsActivity"
+            android:label="Notification Logs" />
+
     </application>
 
 </manifest>

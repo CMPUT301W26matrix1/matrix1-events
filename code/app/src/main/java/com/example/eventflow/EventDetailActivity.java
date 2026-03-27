@@ -8,6 +8,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -32,6 +33,7 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.squareup.picasso.Picasso;
@@ -39,7 +41,7 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import com.example.eventflow.EntrantLocationMapActivity;
+import java.util.UUID;
 
 public class EventDetailActivity extends AppCompatActivity {
 
@@ -67,7 +69,7 @@ public class EventDetailActivity extends AppCompatActivity {
 
     // Image views
     private ImageView ivEventPoster;
-    private ImageButton btnDeleteImage;
+    private ImageButton btnDeleteImage;  // Keep as ImageButton
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,6 +82,8 @@ public class EventDetailActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
 
         eventId = getIntent().getStringExtra("eventId");
+        Log.d("EventDetail", "Event ID from intent: " + eventId);
+
         String userRole = getIntent().getStringExtra("userRole");
         isAdmin = "admin".equals(userRole);
         isOrganizer = "organizer".equals(userRole);
@@ -88,7 +92,7 @@ public class EventDetailActivity extends AppCompatActivity {
         userName = getIntent().getStringExtra("userName");
 
         if (userId == null || userId.isEmpty()) {
-            userId = isOrganizer ? "testOrganizer123" : "testEntrant123";
+            userId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
         }
 
         if (userName == null || userName.isEmpty()) {
@@ -137,10 +141,10 @@ public class EventDetailActivity extends AppCompatActivity {
         ivEventPoster = findViewById(R.id.iv_detail_poster);
         btnDeleteImage = findViewById(R.id.btn_delete_image);
 
-        // Show delete button only for ADMIN
+        // Show delete button only for ADMIN with two options
         if (isAdmin) {
             btnDeleteImage.setVisibility(View.VISIBLE);
-            btnDeleteImage.setOnClickListener(v -> showDeleteImageConfirmation());
+            btnDeleteImage.setOnClickListener(v -> showDeleteOptionsDialog());
         }
 
         loadEventDetails(nameText, locationText, descriptionText);
@@ -157,6 +161,122 @@ public class EventDetailActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+    }
+
+    /**
+     * Helper method to save notification to both user and admin collections
+     */
+    private void saveNotificationToBoth(Notification notification, String userId) {
+        if (notification.getId() == null || notification.getId().isEmpty()) {
+            notification.setId(UUID.randomUUID().toString());
+        }
+        notification.setUserId(userId);
+
+        // 1. Save to user's subcollection
+        db.collection("users")
+                .document(userId)
+                .collection("notifications")
+                .document(notification.getId())
+                .set(notification);
+
+        // 2. Save to admin's top-level collection
+        db.collection("notifications")
+                .document(notification.getId())
+                .set(notification);
+    }
+
+    /**
+     * Show dialog with two delete options: Delete Image or Delete Event
+     */
+    private void showDeleteOptionsDialog() {
+        String[] options = {"Delete Image", "Delete Event"};
+
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Options")
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        // Delete Image
+                        showDeleteImageConfirmation();
+                    } else if (which == 1) {
+                        // Delete Event
+                        showDeleteEventConfirmation();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Show confirmation dialog before deleting image
+     */
+    private void showDeleteImageConfirmation() {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Image")
+                .setMessage("Are you sure you want to delete this event image?")
+                .setPositiveButton("Delete", (dialog, which) -> deleteEventImage())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Show confirmation dialog before deleting event
+     */
+    private void showDeleteEventConfirmation() {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Event")
+                .setMessage("Are you sure you want to delete this event?\n\nThis will permanently delete:\n• Event details\n• Waiting list\n• Selected entrants\n• All comments\n• All notifications\n\nThis action cannot be undone!")
+                .setPositiveButton("Delete", (dialog, which) -> deleteEvent())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Delete the event image only
+     */
+    private void deleteEventImage() {
+        String posterUrl = currentEvent.getPosterUrl();
+
+        if (posterUrl != null && !posterUrl.isEmpty()) {
+            db.collection("events")
+                    .document(eventId)
+                    .update("posterUrl", null)
+                    .addOnSuccessListener(aVoid -> {
+                        ivEventPoster.setImageResource(R.drawable.ic_placeholder);
+                        Toast.makeText(this, "Image removed successfully", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Failed to remove image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        } else {
+            Toast.makeText(this, "No image to delete", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Delete the entire event and all its related data
+     */
+    private void deleteEvent() {
+        Toast.makeText(this, "Deleting event...", Toast.LENGTH_SHORT).show();
+
+        // Delete all notifications related to this event from admin logs
+        db.collection("notifications")
+                .whereEqualTo("eventId", eventId)
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    for (DocumentSnapshot doc : snapshots) {
+                        doc.getReference().delete();
+                    }
+                });
+
+        // Delete the event document
+        db.collection("events").document(eventId).delete()
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Event deleted successfully", Toast.LENGTH_SHORT).show();
+                    finish(); // Go back to previous screen
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to delete event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void postComment() {
@@ -248,33 +368,40 @@ public class EventDetailActivity extends AppCompatActivity {
     }
 
     private void loadEventDetails(TextView nameText, TextView locationText, TextView descriptionText) {
-        eventController.loadEventById(eventId, new EventRepository.EventCallback() {
-            @Override
-            public void onSuccess(Event event) {
-                currentEvent = event;
-                if (nameText != null) nameText.setText(event.getName());
-                if (locationText != null) locationText.setText(event.getLocation());
-                if (descriptionText != null) descriptionText.setText(event.getDescription());
+        Log.d("EventDetail", "Loading event with ID: " + eventId);
 
-                // Load event poster image
-                String posterUrl = currentEvent.getPosterUrl();
-                if (posterUrl != null && !posterUrl.isEmpty()) {
-                    Picasso.get().load(posterUrl)
-                            .placeholder(R.drawable.ic_placeholder)
-                            .error(R.drawable.ic_placeholder)
-                            .into(ivEventPoster);
-                } else {
-                    ivEventPoster.setImageResource(R.drawable.ic_placeholder);
-                }
+        db.collection("events").document(eventId).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        Log.d("EventDetail", "Event found: " + documentSnapshot.getString("name"));
+                        currentEvent = documentSnapshot.toObject(Event.class);
+                        if (currentEvent != null) {
+                            currentEvent.setId(documentSnapshot.getId());
+                            if (nameText != null) nameText.setText(currentEvent.getName());
+                            if (locationText != null) locationText.setText(currentEvent.getLocation());
+                            if (descriptionText != null) descriptionText.setText(currentEvent.getDescription());
 
-                updateButtonState();
-            }
+                            String posterUrl = currentEvent.getPosterUrl();
+                            if (posterUrl != null && !posterUrl.isEmpty()) {
+                                Picasso.get().load(posterUrl)
+                                        .placeholder(R.drawable.ic_placeholder)
+                                        .error(R.drawable.ic_placeholder)
+                                        .into(ivEventPoster);
+                            } else {
+                                ivEventPoster.setImageResource(R.drawable.ic_placeholder);
+                            }
 
-            @Override
-            public void onFailure(Exception e) {
-                Toast.makeText(EventDetailActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
+                            updateButtonState();
+                        }
+                    } else {
+                        Log.e("EventDetail", "Event not found with ID: " + eventId);
+                        Toast.makeText(EventDetailActivity.this, "Event not found", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("EventDetail", "Error loading event: " + e.getMessage());
+                    Toast.makeText(EventDetailActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void updateButtonState() {
@@ -320,7 +447,6 @@ public class EventDetailActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    // Updated handleJoin with geolocation check
     private void handleJoin() {
         if (currentEvent != null && currentEvent.isGeolocationRequired()) {
             checkUserLocationAndJoin();
@@ -365,18 +491,56 @@ public class EventDetailActivity extends AppCompatActivity {
     }
 
     private void joinWaitingList() {
-        eventController.joinWaitingList(currentEvent, new EventRepository.ActionCallback() {
-            @Override
-            public void onSuccess() {
-                Toast.makeText(EventDetailActivity.this, "Joined waiting list", Toast.LENGTH_SHORT).show();
-                loadEventDetails(null, null, null);
-            }
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
 
-            @Override
-            public void onFailure(Exception e) {
-                Toast.makeText(EventDetailActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
+            fusedLocationClient.getLastLocation()
+                    .addOnSuccessListener(location -> {
+                        double lat = location != null ? location.getLatitude() : 0;
+                        double lng = location != null ? location.getLongitude() : 0;
+                        addToWaitingListWithLocation(lat, lng);
+                    })
+                    .addOnFailureListener(e -> {
+                        addToWaitingListWithLocation(0, 0);
+                    });
+        } else {
+            addToWaitingListWithLocation(0, 0);
+        }
+    }
+
+    private void addToWaitingListWithLocation(double lat, double lng) {
+        Map<String, Object> entrantData = new HashMap<>();
+        entrantData.put("userId", userId);
+        entrantData.put("userName", userName);
+        entrantData.put("latitude", lat);
+        entrantData.put("longitude", lng);
+        entrantData.put("joinedAt", FieldValue.serverTimestamp());
+
+        db.collection("events")
+                .document(eventId)
+                .collection("waitingList")
+                .document(userId)
+                .set(entrantData)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(EventDetailActivity.this, "Joined waiting list", Toast.LENGTH_SHORT).show();
+
+                    // Send notification about joining waiting list (for admin logs)
+                    if (currentEvent != null) {
+                        Notification notification = new Notification(
+                                "Joined waiting list",
+                                currentEvent.getName(),
+                                "User joined the waiting list for " + currentEvent.getName(),
+                                "JOINED_WAITING_LIST",
+                                eventId
+                        );
+                        saveNotificationToBoth(notification, userId);
+                    }
+
+                    loadEventDetails(null, null, null);
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(EventDetailActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void handleLeave() {
@@ -384,6 +548,19 @@ public class EventDetailActivity extends AppCompatActivity {
             @Override
             public void onSuccess() {
                 Toast.makeText(EventDetailActivity.this, "Left waiting list", Toast.LENGTH_SHORT).show();
+
+                // Send notification about leaving waiting list (for admin logs)
+                if (currentEvent != null) {
+                    Notification notification = new Notification(
+                            "Left waiting list",
+                            currentEvent.getName(),
+                            "User left the waiting list for " + currentEvent.getName(),
+                            "LEFT_WAITING_LIST",
+                            eventId
+                    );
+                    saveNotificationToBoth(notification, userId);
+                }
+
                 loadEventDetails(null, null, null);
             }
 
@@ -392,38 +569,6 @@ public class EventDetailActivity extends AppCompatActivity {
                 Toast.makeText(EventDetailActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
-    }
-
-    // Delete Image functionality - FIXED: Just update Firestore
-    private void showDeleteImageConfirmation() {
-        new AlertDialog.Builder(this)
-                .setTitle("Delete Image")
-                .setMessage("Are you sure you want to delete this event image?")
-                .setPositiveButton("Delete", (dialog, which) -> deleteEventImage())
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    private void deleteEventImage() {
-        String posterUrl = currentEvent.getPosterUrl();
-
-        if (posterUrl != null && !posterUrl.isEmpty()) {
-            // Just update Firestore - set posterUrl to null
-            db.collection("events")
-                    .document(eventId)
-                    .update("posterUrl", null)
-                    .addOnSuccessListener(aVoid -> {
-                        // Update UI
-                        ivEventPoster.setImageResource(R.drawable.ic_placeholder);
-                        btnDeleteImage.setVisibility(View.GONE);
-                        Toast.makeText(this, "Image removed successfully", Toast.LENGTH_SHORT).show();
-                    })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Failed to remove image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
-        } else {
-            Toast.makeText(this, "No image to delete", Toast.LENGTH_SHORT).show();
-        }
     }
 
     @Override

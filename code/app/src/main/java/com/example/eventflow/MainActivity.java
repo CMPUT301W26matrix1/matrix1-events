@@ -39,7 +39,8 @@ public class MainActivity extends AppCompatActivity {
 
         Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
         Button manageProfilesButton = findViewById(R.id.btn_manage_profiles);
-        Button manageImagesButton = findViewById(R.id.btn_manage_images);  // ADD THIS
+        Button manageImagesButton = findViewById(R.id.btn_manage_images);
+        Button notificationLogsButton = findViewById(R.id.btn_notification_logs);  // ADD THIS
 
         // General Actions
         if (profileButton != null) {
@@ -127,6 +128,13 @@ public class MainActivity extends AppCompatActivity {
         if (manageImagesButton != null) {
             manageImagesButton.setOnClickListener(v -> {
                 startActivity(new Intent(MainActivity.this, AdminImageManagementActivity.class));
+            });
+        }
+
+        // ADD THIS - Notification Logs button
+        if (notificationLogsButton != null) {
+            notificationLogsButton.setOnClickListener(v -> {
+                startActivity(new Intent(MainActivity.this, AdminNotificationLogsActivity.class));
             });
         }
 
