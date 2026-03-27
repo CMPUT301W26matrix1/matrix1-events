@@ -52,7 +52,6 @@ public class MainActivity extends AppCompatActivity {
         Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
         Button manageEntrantsButton = findViewById(R.id.btn_manage_entrants);
         
-        // NEW: Button to test Organizer Commenting
         Button btnManageMyEvents = findViewById(R.id.btn_manage_my_events);
 
         Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
@@ -128,17 +127,10 @@ public class MainActivity extends AppCompatActivity {
             });
         }
         
-        // Handle "Manage My Events" (Organizer View)
-        // This launches the event detail screen as an Organizer for testing
+        // Final implementation for "Manage My Events" (Full list view)
         if (btnManageMyEvents != null) {
             btnManageMyEvents.setOnClickListener(v -> {
-                Intent intent = new Intent(MainActivity.this, EventDetailActivity.class);
-                // Hardcoded ID for your "GameFair" event from the screenshot
-                intent.putExtra("eventId", "7d99db57-c0c9-486d-81e7-69cd51b7d3df"); 
-                intent.putExtra("userRole", "Organizer");
-                String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
-                intent.putExtra("userId", deviceId);
-                intent.putExtra("userName", "Organizer (Me)");
+                Intent intent = new Intent(MainActivity.this, OrganizerEventsActivity.class);
                 startActivity(intent);
             });
         }
