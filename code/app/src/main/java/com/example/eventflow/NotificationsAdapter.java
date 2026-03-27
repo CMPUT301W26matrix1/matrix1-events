@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,6 +19,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
+import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -72,6 +74,31 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                 holder.itemView.getContext().getContentResolver(),
                 Settings.Secure.ANDROID_ID
         );
+
+        // Load event image for the notification
+        if (eventId != null && !eventId.isEmpty()) {
+            db.collection("events").document(eventId).get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc.exists()) {
+                            String posterUrl = doc.getString("posterUrl");
+                            if (posterUrl != null && !posterUrl.isEmpty()) {
+                                Picasso.get().load(posterUrl)
+                                        .placeholder(R.drawable.ic_placeholder)
+                                        .error(R.drawable.ic_placeholder)
+                                        .into(holder.ivNotificationImage);
+                            } else {
+                                holder.ivNotificationImage.setImageResource(R.drawable.ic_placeholder);
+                            }
+                        } else {
+                            holder.ivNotificationImage.setImageResource(R.drawable.ic_placeholder);
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        holder.ivNotificationImage.setImageResource(R.drawable.ic_placeholder);
+                    });
+        } else {
+            holder.ivNotificationImage.setImageResource(R.drawable.ic_placeholder);
+        }
 
         // Make the whole notification item clickable to open event details
         holder.itemView.setOnClickListener(v -> {
@@ -324,6 +351,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         TextView message, eventName, details, time;
         TextView acceptedMessage, declinedMessage;
         Button acceptButton, declineButton, tryAgainButton;
+        ImageView ivNotificationImage;  // ← ADD THIS
 
         ViewHolder(View v) {
             super(v);
@@ -332,6 +360,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             eventName = v.findViewById(R.id.eventNameTextView);
             details = v.findViewById(R.id.detailsTextView);
             time = v.findViewById(R.id.timestampTextView);
+            ivNotificationImage = v.findViewById(R.id.iv_notification_event_image);  // ← ADD THIS
 
             acceptButton = v.findViewById(R.id.acceptButton);
             declineButton = v.findViewById(R.id.declineButton);
