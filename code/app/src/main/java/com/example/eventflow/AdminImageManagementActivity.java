@@ -1,5 +1,6 @@
 package com.example.eventflow;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.GridView;
 import android.widget.ImageButton;

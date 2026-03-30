@@ -3,8 +3,8 @@ package com.example.eventflow;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.widget.Button;
 import android.provider.Settings;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -14,21 +14,25 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.example.eventflow.view.profile.SelectedEntrantsActivity;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
+<<<<<<< HEAD
 /**
  * MainActivity
- *
  * Main landing screen for the application.
- * Hosts navigation buttons organized in a dashboard layout.
  */
+public class MainActivity extends AppCompatActivity {
+
+    private final ActivityResultLauncher<ScanOptions> barcodeLauncher =
+            registerForActivityResult(new ScanContract(), result -> {
+=======
 public class MainActivity extends AppCompatActivity {
 
     private final ActivityResultLauncher<ScanOptions> barcodeLauncher = registerForActivityResult(new ScanContract(),
             result -> {
-                if(result.getContents() == null) {
+>>>>>>> 0aab4456c339d6b7eb1d2feafa8699940ab220c7
+                if (result.getContents() == null) {
                     Toast.makeText(MainActivity.this, "Cancelled", Toast.LENGTH_LONG).show();
                 } else {
                     handleScanResult(result.getContents());
@@ -41,46 +45,79 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+<<<<<<< HEAD
+        // General Actions
+        Button profileButton       = findViewById(R.id.profileButton);
+=======
+        // General buttons
         Button profileButton = findViewById(R.id.profileButton);
+>>>>>>> 0aab4456c339d6b7eb1d2feafa8699940ab220c7
         Button notificationsButton = findViewById(R.id.notificationsButton);
-        Button eventsButton = findViewById(R.id.eventsButton);
-        Button scanQrButton = findViewById(R.id.btn_scan_qr);
+        Button eventsButton        = findViewById(R.id.eventsButton);
+        Button scanQrButton        = findViewById(R.id.btn_scan_qr);
 
+<<<<<<< HEAD
+        // Organizer Actions
+        Button createEventOrgButton  = findViewById(R.id.btn_create_event_org);
+        Button manageEntrantsButton  = findViewById(R.id.btn_manage_entrants);
+
+        // Admin Actions
+        Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
+        Button manageProfilesButton    = findViewById(R.id.btn_manage_profiles);
+        Button manageImagesButton      = findViewById(R.id.btn_manage_images);
+=======
+        // Organizer buttons
         Button createEventOrgButton = findViewById(R.id.btn_create_event_org);
         Button selectedEntrantsButton = findViewById(R.id.viewSelectedEntrantsButton);
         Button viewWaitingListButton = findViewById(R.id.viewWaitingListButton);
         Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
         Button manageEntrantsButton = findViewById(R.id.btn_manage_entrants);
+        Button btnManageMyEvents = findViewById(R.id.btn_manage_my_events);
 
+        // Admin buttons
         Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
         Button manageProfilesButton = findViewById(R.id.btn_manage_profiles);
-        Button manageImagesButton = findViewById(R.id.btn_manage_images);  // ADD THIS
+        Button manageImagesButton = findViewById(R.id.btn_manage_images);
+        Button notificationLogsButton = findViewById(R.id.btn_notification_logs);
+>>>>>>> 0aab4456c339d6b7eb1d2feafa8699940ab220c7
 
-        // General Actions
+        // Profile button
         if (profileButton != null) {
-            profileButton.setOnClickListener(v -> {
-                startActivity(new Intent(MainActivity.this, ProfileActivity.class));
-            });
+<<<<<<< HEAD
+            profileButton.setOnClickListener(v ->
+                    startActivity(new Intent(this, ProfileActivity.class)));
+=======
+            profileButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, ProfileActivity.class)));
+>>>>>>> 0aab4456c339d6b7eb1d2feafa8699940ab220c7
         }
 
+        // Notifications button
         if (notificationsButton != null) {
             notificationsButton.setOnClickListener(v -> {
-                // FIX: get correct userId
-                String userId = Settings.Secure.getString(getContentResolver(),Settings.Secure.ANDROID_ID);
-
-                // PASS userId to NotificationsActivity
+<<<<<<< HEAD
+                String userId = Settings.Secure.getString(
+                        getContentResolver(), Settings.Secure.ANDROID_ID);
+                Intent intent = new Intent(this, NotificationsActivity.class);
+=======
+                String userId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
                 Intent intent = new Intent(MainActivity.this, NotificationsActivity.class);
+>>>>>>> 0aab4456c339d6b7eb1d2feafa8699940ab220c7
                 intent.putExtra("userId", userId);
                 startActivity(intent);
             });
         }
 
+        // Events button
         if (eventsButton != null) {
-            eventsButton.setOnClickListener(v -> {
-                startActivity(new Intent(MainActivity.this, BrowseEventsActivity.class));
-            });
+<<<<<<< HEAD
+            eventsButton.setOnClickListener(v ->
+                    startActivity(new Intent(this, BrowseEventsActivity.class)));
+=======
+            eventsButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, BrowseEventsActivity.class)));
+>>>>>>> 0aab4456c339d6b7eb1d2feafa8699940ab220c7
         }
 
+        // Scan QR button
         if (scanQrButton != null) {
             scanQrButton.setOnClickListener(v -> {
                 ScanOptions options = new ScanOptions();
@@ -91,25 +128,35 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // Organizer Actions
+        // Create Event button
         if (createEventOrgButton != null) {
-            createEventOrgButton.setOnClickListener(v -> {
-                startActivity(new Intent(MainActivity.this, com.example.eventflow.org_event.OrgEventActivity.class));
-            });
+<<<<<<< HEAD
+            createEventOrgButton.setOnClickListener(v ->
+                    startActivity(new Intent(this,
+                            com.example.eventflow.org_event.OrgEventActivity.class)));
         }
 
+        // Manage Entrants — opens Event Dashboard
+        // (replaces Selected Entrants, Waiting Lists, Final Entrants buttons)
+        if (manageEntrantsButton != null) {
+            manageEntrantsButton.setOnClickListener(v -> {
+                Intent intent = new Intent(this,
+                        com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity.class);
+=======
+            createEventOrgButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, com.example.eventflow.org_event.OrgEventActivity.class)));
+        }
+
+        // Selected Entrants button
         if (selectedEntrantsButton != null) {
-            selectedEntrantsButton.setOnClickListener(v -> {
-                startActivity(new Intent(MainActivity.this, SelectedEntrantsActivity.class));
-            });
+            selectedEntrantsButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, SelectedEntrantsActivity.class)));
         }
 
+        // View Waiting List button
         if (viewWaitingListButton != null) {
-            viewWaitingListButton.setOnClickListener(v -> {
-                startActivity(new Intent(MainActivity.this, WaitingListActivity.class));
-            });
+            viewWaitingListButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, WaitingListActivity.class)));
         }
 
+        // Final Entrants button
         if (finalEntrantsButton != null) {
             finalEntrantsButton.setOnClickListener(v -> {
                 Intent intent = new Intent(MainActivity.this, OrganizerFinalEntrantsActivity.class);
@@ -119,43 +166,60 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // Org - ManageEntrant Dashboard
+        // Manage Entrants button
         if (manageEntrantsButton != null) {
             manageEntrantsButton.setOnClickListener(v -> {
-                // This opens your 4-feature Dashboard
                 Intent intent = new Intent(MainActivity.this, com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity.class);
-
-                // Optional: If you want to pass a specific event context (like you did for Final Entrants)
+>>>>>>> 0aab4456c339d6b7eb1d2feafa8699940ab220c7
                 intent.putExtra("eventId", "Tg34Yn6wNXvYAuvczoMA");
                 intent.putExtra("eventName", "Tech Summit 2026");
-
                 startActivity(intent);
             });
         }
 
-
+<<<<<<< HEAD
         // Admin Actions
         if (adminBrowseEventsButton != null) {
-            adminBrowseEventsButton.setOnClickListener(v -> {
-                startActivity(new Intent(MainActivity.this, AdminBrowseEventsActivity.class));
-            });
+            adminBrowseEventsButton.setOnClickListener(v ->
+                    startActivity(new Intent(this, AdminBrowseEventsActivity.class)));
+=======
+        // Manage My Events button
+        if (btnManageMyEvents != null) {
+            btnManageMyEvents.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, OrganizerEventsActivity.class)));
         }
 
-        // Manage Profiles button
+        // Admin Browse Events button
+        if (adminBrowseEventsButton != null) {
+            adminBrowseEventsButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, AdminBrowseEventsActivity.class)));
+>>>>>>> 0aab4456c339d6b7eb1d2feafa8699940ab220c7
+        }
+
         if (manageProfilesButton != null) {
-            manageProfilesButton.setOnClickListener(v -> {
-                startActivity(new Intent(MainActivity.this, AdminProfileListActivity.class));
-            });
+<<<<<<< HEAD
+            manageProfilesButton.setOnClickListener(v ->
+                    startActivity(new Intent(this, AdminProfileListActivity.class)));
+=======
+            manageProfilesButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, AdminProfileListActivity.class)));
+>>>>>>> 0aab4456c339d6b7eb1d2feafa8699940ab220c7
         }
 
-        // Manage Images button
         if (manageImagesButton != null) {
-            manageImagesButton.setOnClickListener(v -> {
-                startActivity(new Intent(MainActivity.this, AdminImageManagementActivity.class));
-            });
+<<<<<<< HEAD
+            manageImagesButton.setOnClickListener(v ->
+                    startActivity(new Intent(this, AdminImageManagementActivity.class)));
         }
 
-        /* Handle edge-to-edge window insets */
+=======
+            manageImagesButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, AdminImageManagementActivity.class)));
+        }
+
+        // Notification Logs button
+        if (notificationLogsButton != null) {
+            notificationLogsButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, AdminNotificationLogsActivity.class)));
+        }
+
+        // Handle edge-to-edge window insets
+>>>>>>> 0aab4456c339d6b7eb1d2feafa8699940ab220c7
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -168,18 +232,24 @@ public class MainActivity extends AppCompatActivity {
             Uri uri = Uri.parse(contents);
             String eventId = uri.getQueryParameter("id");
             if (eventId != null && !eventId.isEmpty()) {
-                Intent intent = new Intent(MainActivity.this, EventDetailActivity.class);
+                String deviceId = Settings.Secure.getString(
+                        getContentResolver(), Settings.Secure.ANDROID_ID);
+                Intent intent = new Intent(this, EventDetailActivity.class);
                 intent.putExtra("eventId", eventId);
-                // Optionally pass user info if available, similar to other parts of the app
+<<<<<<< HEAD
+=======
                 String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+>>>>>>> 0aab4456c339d6b7eb1d2feafa8699940ab220c7
                 intent.putExtra("userId", deviceId);
                 intent.putExtra("userRole", "entrant");
                 startActivity(intent);
             } else {
-                Toast.makeText(this, "Invalid QR code: Missing event ID", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Invalid QR code: Missing event ID",
+                        Toast.LENGTH_LONG).show();
             }
         } else {
-            Toast.makeText(this, "Unrecognized QR code format", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Unrecognized QR code format",
+                    Toast.LENGTH_LONG).show();
         }
     }
 }

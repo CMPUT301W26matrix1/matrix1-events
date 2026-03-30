@@ -7,69 +7,62 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.eventflow.OrganizerFinalEntrantsActivity;
 import com.example.eventflow.R;
+import com.example.eventflow.WaitingListActivity;
+import com.example.eventflow.view.profile.SelectedEntrantsActivity;
 
 public class EntrantDashboardActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // 1. Inflate the UI
         setContentView(R.layout.activity_entrant_dashboard);
 
-        // 2. Reference the Back Button
+        // Get event info passed from MainActivity
+        String eventId   = getIntent().getStringExtra("eventId");
+        String eventName = getIntent().getStringExtra("eventName");
+
+        // Back button
         ImageView btnBack = findViewById(R.id.btnBack);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
         }
 
-        // 3. Initialize Feature Cards
-        View cardCancelled = findViewById(R.id.cardCancelled);
-        View cardWaitlist = findViewById(R.id.cardWaitlist);
-        View cardEnrolled = findViewById(R.id.cardEnrolled);
+        View cardCancelled     = findViewById(R.id.cardCancelled);
+        View cardWaitlist      = findViewById(R.id.cardWaitlist);
+        View cardEnrolled      = findViewById(R.id.cardEnrolled);
         View cardNotifications = findViewById(R.id.cardNotifications);
 
-        // 4. Handle Navigation (The Edit is Here)
-
-        // Navigation for Waitlist (Issue #35)
-        if (cardWaitlist != null) {
-            cardWaitlist.setOnClickListener(v -> {
-                try {
-                    // Use the absolute full package path
-                    Intent intent = new Intent(this, com.example.eventflow.org_event.manage_entrant.WaitlistMgmtActivity.class);
-                    startActivity(intent);
-                } catch (Exception e) {
-                    // This will tell you EXACTLY why it failed in a popup
-                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    e.printStackTrace();
-                }
-            });
-        }
-
-        // Navigation for Cancelled (Issue #33)
+        // Cancelled Entrants → was Selected Entrants button
         if (cardCancelled != null) {
-            cardCancelled.setOnClickListener(v -> {
-                Intent intent = new Intent(EntrantDashboardActivity.this, CancelledEntrantsActivity.class);
-                startActivity(intent);
-            });
+            cardCancelled.setOnClickListener(v ->
+                    startActivity(new Intent(this, SelectedEntrantsActivity.class)));
         }
 
-        // Navigation for Enrolled (Issue #36)
+        // Manage Waitlist → was Waiting Lists button
+        if (cardWaitlist != null) {
+            cardWaitlist.setOnClickListener(v ->
+                    startActivity(new Intent(this, WaitingListActivity.class)));
+        }
+
+        // Final Enrolled Entrants → was Final Entrants button
         if (cardEnrolled != null) {
             cardEnrolled.setOnClickListener(v -> {
-                Intent intent = new Intent(EntrantDashboardActivity.this, EnrolledEntrantsActivity.class);
+                Intent intent = new Intent(this, OrganizerFinalEntrantsActivity.class);
+                intent.putExtra("eventId", eventId != null ? eventId : "Tg34Yn6wNXvYAuvczoMA");
+                intent.putExtra("eventName", eventName != null ? eventName : "Tech Summit 2026");
                 startActivity(intent);
             });
         }
 
-        // Navigation for Notifications (Issue #37)
+        // Notifications card — keeps existing behaviour
         if (cardNotifications != null) {
             cardNotifications.setOnClickListener(v -> {
-                Intent intent = new Intent(EntrantDashboardActivity.this, NotificationsActivity.class);
+                Intent intent = new Intent(this, NotificationsActivity.class);
                 startActivity(intent);
             });
         }
-
     }
 }
