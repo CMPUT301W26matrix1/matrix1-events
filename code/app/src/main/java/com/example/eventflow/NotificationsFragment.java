@@ -6,7 +6,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,7 +15,6 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.eventflow.model.entities.Profile;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -26,14 +24,13 @@ import java.util.List;
 
 /**
  * Fragment that displays a list of notifications for the entrant.
- * Entrants can view, clear, and opt-out of notifications from this screen.
+ * Designed with a modern dark theme to match the system dashboard.
  */
 public class NotificationsFragment extends Fragment {
 
     private RecyclerView recyclerView;
-    private View emptyView, disabledContainer;
-    private TextView clearAllButton;
-    private Button btnOptOut, btnReEnable;
+    private View emptyView;
+    private TextView tvUnreadCount, markAllAsReadButton;
     private NotificationsAdapter adapter;
 
     private final List<Notification> notificationList = new ArrayList<>();
@@ -45,9 +42,6 @@ public class NotificationsFragment extends Fragment {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of this fragment.
-     */
     public static NotificationsFragment newInstance(String userId) {
         NotificationsFragment fragment = new NotificationsFragment();
         Bundle args = new Bundle();
@@ -67,18 +61,19 @@ public class NotificationsFragment extends Fragment {
         // Initialize UI components
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyView = view.findViewById(R.id.emptyView);
-        disabledContainer = view.findViewById(R.id.ll_disabled_container);
-        clearAllButton = view.findViewById(R.id.clearAllButton);
-        btnOptOut = view.findViewById(R.id.btn_opt_out_notifications);
-        btnReEnable = view.findViewById(R.id.btn_re_enable_notifications);
+        tvUnreadCount = view.findViewById(R.id.tv_unread_count);
+        markAllAsReadButton = view.findViewById(R.id.markAllAsReadButton);
 
         // Setup RecyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new NotificationsAdapter(notificationList);
         recyclerView.setAdapter(adapter);
 
-        // Retrieve user device ID for database queries
-        if (getContext() != null) {
+        // Retrieve userId from arguments or settings
+        if (getArguments() != null) {
+            userId = getArguments().getString("userId");
+        }
+        if (userId == null && getContext() != null) {
             userId = Settings.Secure.getString(
                     requireContext().getContentResolver(),
                     Settings.Secure.ANDROID_ID
@@ -86,62 +81,20 @@ public class NotificationsFragment extends Fragment {
         }
 
         // Setup click listeners
-        btnOptOut.setOnClickListener(v -> toggleNotifications(false));
-        btnReEnable.setOnClickListener(v -> toggleNotifications(true));
-        clearAllButton.setOnClickListener(v -> clearAllNotifications());
+        markAllAsReadButton.setOnClickListener(v -> markAllNotificationsAsRead());
 
         view.findViewById(R.id.btn_notifications_back).setOnClickListener(v -> {
             if (getActivity() != null) getActivity().onBackPressed();
         });
 
-        // Initial check for notification preferences
-        checkNotificationPreference();
+        loadNotifications();
 
         return view;
     }
 
-    /**
-     * Updates the user's notification preference in Firestore.
-     */
-    private void toggleNotifications(boolean enabled) {
-        db.collection("profiles").document(userId)
-                .update("notificationsEnabled", enabled)
-                .addOnSuccessListener(aVoid -> {
-                    String msg = enabled ? "Notifications Enabled" : "Notifications Disabled";
-                    Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
-                    checkNotificationPreference();
-                });
-    }
-
-    /**
-     * Checks user's notification settings and either loads notifications or shows disabled state.
-     */
-    private void checkNotificationPreference() {
-        if (userId == null) return;
-        
-        db.collection("profiles").document(userId).get().addOnSuccessListener(doc -> {
-            Profile profile = doc.toObject(Profile.class);
-            boolean isEnabled = (profile == null) || profile.isNotificationsEnabled();
-
-            if (isEnabled) {
-                disabledContainer.setVisibility(View.GONE);
-                btnOptOut.setVisibility(View.VISIBLE);
-                loadNotifications();
-            } else {
-                recyclerView.setVisibility(View.GONE);
-                emptyView.setVisibility(View.GONE);
-                disabledContainer.setVisibility(View.VISIBLE);
-                btnOptOut.setVisibility(View.GONE);
-                notificationList.clear();
-                adapter.notifyDataSetChanged();
-            }
-        });
-    }
-
-    /**
-     * Fetches notifications from Firestore in real-time.
-     */
     private void loadNotifications() {
+        if (userId == null) return;
+
         db.collection("users")
                 .document(userId)
                 .collection("notifications")
@@ -153,55 +106,52 @@ public class NotificationsFragment extends Fragment {
                     }
 
                     notificationList.clear();
+                    int unreadCount = 0;
                     if (snapshot != null) {
                         for (QueryDocumentSnapshot doc : snapshot) {
                             Notification n = doc.toObject(Notification.class);
                             if (n != null) {
                                 n.setId(doc.getId());
                                 notificationList.add(n);
+                                if (!n.isRead()) unreadCount++;
                             }
                         }
                     }
 
                     adapter.notifyDataSetChanged();
-                    updateEmptyState();
+                    updateUI(unreadCount);
                 });
     }
 
-    /**
-     * Toggles between the list view and empty state view based on notification count.
-     */
-    private void updateEmptyState() {
+    private void updateUI(int unreadCount) {
         if (notificationList.isEmpty()) {
             recyclerView.setVisibility(View.GONE);
             emptyView.setVisibility(View.VISIBLE);
+            tvUnreadCount.setVisibility(View.GONE);
+            markAllAsReadButton.setVisibility(View.GONE);
         } else {
             recyclerView.setVisibility(View.VISIBLE);
             emptyView.setVisibility(View.GONE);
+            tvUnreadCount.setVisibility(View.VISIBLE);
+            markAllAsReadButton.setVisibility(View.VISIBLE);
+            tvUnreadCount.setText(unreadCount + " unread");
         }
     }
 
-    /**
-     * Deletes all notification documents for the current user from Firestore.
-     */
-    private void clearAllNotifications() {
+    private void markAllNotificationsAsRead() {
+        if (userId == null) return;
+
         db.collection("users")
                 .document(userId)
                 .collection("notifications")
+                .whereEqualTo("read", false)
                 .get()
                 .addOnSuccessListener(snapshot -> {
+                    if (snapshot.isEmpty()) return;
                     for (QueryDocumentSnapshot doc : snapshot) {
-                        doc.getReference().delete();
+                        doc.getReference().update("read", true);
                     }
-                    notificationList.clear();
-                    adapter.notifyDataSetChanged();
-                    updateEmptyState();
-                    if (getContext() != null) {
-                        Toast.makeText(getContext(), "All notifications cleared", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("FIREBASE", "Failed to clear notifications", e);
+                    Toast.makeText(getContext(), "All caught up!", Toast.LENGTH_SHORT).show();
                 });
     }
 }

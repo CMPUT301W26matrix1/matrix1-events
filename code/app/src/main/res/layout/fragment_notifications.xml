@@ -4,21 +4,25 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212">
+    android:background="#000000">
 
     <!-- Header -->
     <RelativeLayout
         android:id="@+id/rl_notifications_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:paddingHorizontal="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp">
 
         <ImageButton
             android:id="@+id/btn_notifications_back"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_media_previous"
+            android:src="@drawable/ic_arrow_back"
             android:contentDescription="Go Back"
             app:tint="#FFFFFF" />
 
@@ -31,35 +35,33 @@
             android:textSize="20sp"
             android:textStyle="bold" />
 
-        <LinearLayout
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/rl_notifications_sub_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/rl_notifications_header"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="12dp">
+
+        <TextView
+            android:id="@+id/tv_unread_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1 unread"
+            android:textColor="#666666"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/markAllAsReadButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <Button
-                android:id="@+id/btn_opt_out_notifications"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:layout_marginEnd="8dp"
-                android:backgroundTint="#FF4444"
-                android:text="Opt Out"
-                android:paddingHorizontal="12dp"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp" />
-
-            <TextView
-                android:id="@+id/clearAllButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Clear"
-                android:textColor="#4D5DFA"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+            android:text="Mark all as read"
+            android:textColor="#4CAF50"
+            android:textSize="14sp"
+            android:textStyle="bold" />
     </RelativeLayout>
 
     <!-- RecyclerView for notifications -->
@@ -67,66 +69,35 @@
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/rl_notifications_header"
+        android:layout_below="@id/rl_notifications_sub_header"
         android:paddingHorizontal="16dp"
         android:clipToPadding="false"
-        android:visibility="visible"
         tools:listitem="@layout/item_notification"/>
-
-    <!-- Status Message (for disabled notifications) -->
-    <LinearLayout
-        android:id="@+id/ll_disabled_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/rl_notifications_header"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="20dp"
-        android:visibility="gone">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Notifications are disabled"
-            android:textColor="#FF4444"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btn_re_enable_notifications"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:backgroundTint="#4CAF50"
-            android:text="Enable Notifications"
-            android:textColor="#FFFFFF" />
-    </LinearLayout>
 
     <!-- Empty state -->
     <LinearLayout
         android:id="@+id/emptyView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/rl_notifications_header"
+        android:layout_below="@id/rl_notifications_sub_header"
         android:gravity="center"
         android:orientation="vertical"
         android:visibility="gone">
 
         <ImageView
-            android:layout_width="120dp"
-            android:layout_height="120dp"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:src="@android:drawable/ic_popup_reminder"
-            android:contentDescription="Notification Bell"
-            app:tint="#FFFFFF" />
+            android:contentDescription="No notifications"
+            app:tint="#333333" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="No Notifications!"
-            android:textColor="#FFFFFF"
-            android:textSize="22sp"
-            android:textStyle="bold"/>
+            android:layout_marginTop="16dp"
+            android:text="No new notifications"
+            android:textColor="#666666"
+            android:textSize="16sp" />
     </LinearLayout>
 
 </RelativeLayout>
