@@ -11,11 +11,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Switch;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.eventflow.MainActivity;
@@ -29,7 +29,7 @@ import java.util.Calendar;
 public class EditProfileFragment extends Fragment {
 
     private EditText etName, etEmail, etPassword, etDOB;
-    private Switch switchGeoTracking, switchNotifications;
+    private SwitchCompat switchGeoTracking, switchNotifications;
     private Button btnUpdateProfile, btnDeleteProfile;
 
     private ProfileController profileController;
@@ -75,17 +75,24 @@ public class EditProfileFragment extends Fragment {
 
         loadCurrentProfile();
 
-        etDOB.setOnClickListener(v -> showDatePickerDialog());
+        if (etDOB != null) {
+            etDOB.setOnClickListener(v -> showDatePickerDialog());
+        }
 
-        btnUpdateProfile.setOnClickListener(v -> updateProfile());
+        if (btnUpdateProfile != null) {
+            btnUpdateProfile.setOnClickListener(v -> updateProfile());
+        }
 
-        btnDeleteProfile.setOnClickListener(v -> showDeleteConfirmationDialog());
+        if (btnDeleteProfile != null) {
+            btnDeleteProfile.setOnClickListener(v -> showDeleteConfirmationDialog());
+        }
         
-        view.findViewById(R.id.btnEditBack).setOnClickListener(v -> {
-            if (getParentFragment() instanceof ProfileContainerFragment) {
-                ((ProfileContainerFragment) getParentFragment()).showProfileView(null); 
-            }
-        });
+        View btnBack = view.findViewById(R.id.btnEditBack);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                getParentFragmentManager().popBackStack();
+            });
+        }
     }
 
     private void showDatePickerDialog() {
@@ -115,13 +122,14 @@ public class EditProfileFragment extends Fragment {
         profileRepository.getProfileByDeviceId(deviceId, new ProfileRepository.LoadProfileCallback() {
             @Override
             public void onSuccess(@NonNull Profile profile) {
+                if (!isAdded()) return;
                 String fullName = profile.getFirstName() + (TextUtils.isEmpty(profile.getLastName()) ? "" : " " + profile.getLastName());
-                etName.setText(fullName);
-                etEmail.setText(profile.getEmail());
-                if (profile.getDateOfBirth() != null) {
+                if (etName != null) etName.setText(fullName);
+                if (etEmail != null) etEmail.setText(profile.getEmail());
+                if (profile.getDateOfBirth() != null && etDOB != null) {
                     etDOB.setText(profile.getDateOfBirth());
                 }
-                switchNotifications.setChecked(profile.isNotificationsEnabled());
+                if (switchNotifications != null) switchNotifications.setChecked(profile.isNotificationsEnabled());
             }
 
             @Override
@@ -130,7 +138,9 @@ public class EditProfileFragment extends Fragment {
 
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(getContext(), "Failed to load profile", Toast.LENGTH_SHORT).show();
+                if (isAdded()) {
+                    Toast.makeText(getContext(), "Failed to load profile", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -139,7 +149,7 @@ public class EditProfileFragment extends Fragment {
         String name = etName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String dob = etDOB.getText().toString().trim();
-        boolean notificationsEnabled = switchNotifications.isChecked();
+        boolean notificationsEnabled = switchNotifications != null && switchNotifications.isChecked();
 
         String firstName = name;
         String lastName = "";
@@ -162,6 +172,7 @@ public class EditProfileFragment extends Fragment {
         profileRepository.updateProfile(updatedProfile, new ProfileRepository.SaveProfileCallback() {
             @Override
             public void onSuccess() {
+                if (!isAdded()) return;
                 Toast.makeText(requireContext(), "Profile updated successfully", Toast.LENGTH_SHORT).show();
                 if (getParentFragment() instanceof ProfileContainerFragment) {
                     ((ProfileContainerFragment) getParentFragment()).showProfileView(updatedProfile);
@@ -170,7 +181,9 @@ public class EditProfileFragment extends Fragment {
 
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(requireContext(), "Failed to update profile", Toast.LENGTH_LONG).show();
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), "Failed to update profile", Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
@@ -188,6 +201,7 @@ public class EditProfileFragment extends Fragment {
         profileRepository.deleteProfile(deviceId, new ProfileRepository.DeleteProfileCallback() {
             @Override
             public void onSuccess() {
+                if (!isAdded()) return;
                 Toast.makeText(requireContext(), "Profile deleted successfully", Toast.LENGTH_SHORT).show();
                 // Navigate back to MainActivity (which handles sign-in/profile creation)
                 Intent intent = new Intent(requireContext(), MainActivity.class);
@@ -197,7 +211,9 @@ public class EditProfileFragment extends Fragment {
 
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(requireContext(), "Failed to delete profile", Toast.LENGTH_LONG).show();
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), "Failed to delete profile", Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
