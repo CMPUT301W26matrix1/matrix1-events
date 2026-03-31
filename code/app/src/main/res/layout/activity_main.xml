@@ -114,39 +114,7 @@
                 android:textColor="#FFFFFF"
                 android:textSize="16sp" />
 
-            <Button
-                android:id="@+id/viewSelectedEntrantsButton"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="#2D2D6A"
-                android:text="Selected Entrants"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
-            <Button
-                android:id="@+id/viewWaitingListButton"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="#2D2D6A"
-                android:text="Waiting Lists"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
-            <Button
-                android:id="@+id/viewFinalEntrantsButton"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="#2D2D6A"
-                android:text="Final Entrants"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
+            <!-- Replaces Selected Entrants, Waiting Lists, Final Entrants -->
             <Button
                 android:id="@+id/btn_manage_entrants"
                 android:layout_width="match_parent"
@@ -185,8 +153,6 @@
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
-
-            <!-- Admin - Manage Profiles Button -->
             <Button
                 android:id="@+id/btn_manage_profiles"
                 android:layout_width="match_parent"
@@ -220,7 +186,6 @@
                 android:textColor="#FFFFFF"
                 android:textSize="16sp" />
 
-            <!-- Notification Logs Button -->
             <Button
                 android:id="@+id/btn_notification_logs"
                 android:layout_width="match_parent"

@@ -14,7 +14,6 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.example.eventflow.view.profile.SelectedEntrantsActivity;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
@@ -43,9 +42,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Organizer buttons
         Button createEventOrgButton = findViewById(R.id.btn_create_event_org);
-        Button selectedEntrantsButton = findViewById(R.id.viewSelectedEntrantsButton);
-        Button viewWaitingListButton = findViewById(R.id.viewWaitingListButton);
-        Button finalEntrantsButton = findViewById(R.id.viewFinalEntrantsButton);
         Button manageEntrantsButton = findViewById(R.id.btn_manage_entrants);
         Button btnManageMyEvents = findViewById(R.id.btn_manage_my_events);
 
@@ -91,27 +87,7 @@ public class MainActivity extends AppCompatActivity {
             createEventOrgButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, com.example.eventflow.org_event.OrgEventActivity.class)));
         }
 
-        // Selected Entrants button
-        if (selectedEntrantsButton != null) {
-            selectedEntrantsButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, SelectedEntrantsActivity.class)));
-        }
-
-        // View Waiting List button
-        if (viewWaitingListButton != null) {
-            viewWaitingListButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, WaitingListActivity.class)));
-        }
-
-        // Final Entrants button
-        if (finalEntrantsButton != null) {
-            finalEntrantsButton.setOnClickListener(v -> {
-                Intent intent = new Intent(MainActivity.this, OrganizerFinalEntrantsActivity.class);
-                intent.putExtra("eventId", "Tg34Yn6wNXvYAuvczoMA");
-                intent.putExtra("eventName", "Test Swimming Class");
-                startActivity(intent);
-            });
-        }
-
-        // Manage Entrants button
+        // Manage Entrants button — replaces Selected Entrants, Waiting Lists, Final Entrants
         if (manageEntrantsButton != null) {
             manageEntrantsButton.setOnClickListener(v -> {
                 Intent intent = new Intent(MainActivity.this, com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity.class);
