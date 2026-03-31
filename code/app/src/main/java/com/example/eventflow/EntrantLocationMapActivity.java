@@ -3,6 +3,7 @@ package com.example.eventflow;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -11,6 +12,8 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -30,7 +33,6 @@ import java.util.List;
 /**
  * Activity that displays entrant locations on a map for organizers.
  * Shows where entrants joined the waiting list from.
- *
  */
 public class EntrantLocationMapActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -43,11 +45,22 @@ public class EntrantLocationMapActivity extends AppCompatActivity implements OnM
     private String eventId;
     private String eventName;
     private List<EntrantLocation> entrantLocations = new ArrayList<>();
+    private boolean locationsLoaded = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_entrant_location_map);
+
+        // DEBUG: Check Google Play Services
+        int result = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this);
+        if (result != ConnectionResult.SUCCESS) {
+            Toast.makeText(this, "Google Play Services error: " + result, Toast.LENGTH_LONG).show();
+            Log.e("MapsDebug", "Google Play Services error code: " + result);
+        } else {
+            Toast.makeText(this, "Google Play Services OK", Toast.LENGTH_SHORT).show();
+            Log.d("MapsDebug", "Google Play Services is available");
+        }
 
         // Get event data from intent
         eventId = getIntent().getStringExtra("eventId");
@@ -78,8 +91,13 @@ public class EntrantLocationMapActivity extends AppCompatActivity implements OnM
                 .findFragmentById(R.id.map);
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
+            Log.d("MapsDebug", "Map fragment found, getMapAsync called");
+        } else {
+            Log.e("MapsDebug", "Map fragment is NULL!");
+            Toast.makeText(this, "Map fragment not found", Toast.LENGTH_SHORT).show();
         }
 
+        // Load entrant locations
         loadEntrantLocations();
     }
 
@@ -91,6 +109,7 @@ public class EntrantLocationMapActivity extends AppCompatActivity implements OnM
 
     private void loadEntrantLocations() {
         Toast.makeText(this, "Loading entrant locations...", Toast.LENGTH_SHORT).show();
+        Log.d("MapsDebug", "Loading entrant locations for event: " + eventId);
 
         // Get waiting list entrants from Firestore
         db.collection("events")
@@ -99,6 +118,7 @@ public class EntrantLocationMapActivity extends AppCompatActivity implements OnM
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     entrantLocations.clear();
+                    Log.d("MapsDebug", "Found " + queryDocumentSnapshots.size() + " waiting list entries");
 
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         Double lat = doc.getDouble("latitude");
@@ -106,20 +126,30 @@ public class EntrantLocationMapActivity extends AppCompatActivity implements OnM
                         String userName = doc.getString("userName");
                         String userId = doc.getId();
 
+                        Log.d("MapsDebug", "Entry: " + userId + ", lat=" + lat + ", lng=" + lng + ", name=" + userName);
+
                         if (lat != null && lng != null && userName != null) {
                             entrantLocations.add(new EntrantLocation(
                                     userName, userId, lat, lng));
                         }
                     }
 
+                    locationsLoaded = true;
+
                     if (entrantLocations.isEmpty()) {
                         Toast.makeText(this,
                                 "No location data available for entrants",
                                 Toast.LENGTH_LONG).show();
+                        Log.d("MapsDebug", "No entrant locations found");
                     } else {
                         Toast.makeText(this,
                                 "Found " + entrantLocations.size() + " entrant locations",
                                 Toast.LENGTH_SHORT).show();
+                        Log.d("MapsDebug", "Found " + entrantLocations.size() + " locations");
+                    }
+
+                    // If map is ready, add markers now
+                    if (mMap != null) {
                         addMarkersToMap();
                     }
                 })
@@ -127,13 +157,40 @@ public class EntrantLocationMapActivity extends AppCompatActivity implements OnM
                     Toast.makeText(this,
                             "Failed to load entrant locations: " + e.getMessage(),
                             Toast.LENGTH_LONG).show();
+                    Log.e("MapsDebug", "Error loading locations", e);
+                    locationsLoaded = true;
                 });
     }
 
     private void addMarkersToMap() {
-        if (mMap == null) return;
+        if (mMap == null) {
+            Log.d("MapsDebug", "addMarkersToMap called but mMap is null");
+            return;
+        }
+
+        Log.d("MapsDebug", "Adding markers to map, locations count: " + entrantLocations.size());
 
         mMap.clear();
+
+        // Set map type to NORMAL to show streets and buildings
+        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+
+        // ADD A TEST MARKER TO VERIFY MAP IS WORKING
+        LatLng edmonton = new LatLng(53.5461, -113.4938);
+        mMap.addMarker(new MarkerOptions()
+                .position(edmonton)
+                .title("Edmonton")
+                .snippet("Map is working!")
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+
+        // Move camera to Edmonton with zoom level
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(edmonton, 12f));
+
+        if (entrantLocations.isEmpty()) {
+            Log.d("MapsDebug", "No entrant locations, but test marker added");
+            Toast.makeText(this, "Test marker added. Add location data to see entrant markers.", Toast.LENGTH_LONG).show();
+            return;
+        }
 
         for (EntrantLocation location : entrantLocations) {
             LatLng position = new LatLng(location.latitude, location.longitude);
@@ -214,10 +271,15 @@ public class EntrantLocationMapActivity extends AppCompatActivity implements OnM
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        Log.d("MapsDebug", "onMapReady called, map is ready!");
+
+        // Set map type to show streets and buildings
+        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setCompassEnabled(true);
 
-        if (!entrantLocations.isEmpty()) {
+        // If locations are already loaded, add markers now
+        if (locationsLoaded) {
             addMarkersToMap();
         }
     }

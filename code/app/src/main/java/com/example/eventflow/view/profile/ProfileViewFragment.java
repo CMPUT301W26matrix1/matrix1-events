@@ -4,11 +4,13 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,6 +31,14 @@ public class ProfileViewFragment extends Fragment {
     private static final String ARG_EMAIL = "email";
     private static final String ARG_PHONE = "phone";
     private static final String ARG_DOB = "dob";
+
+    private LinearLayout btnSignOutLayout, btnDeleteProfileLayout;
+    private View btnBack;
+    private View cvEditProfile;
+    private TextView tvFullName, tvName, tvEmail, tvPhone, tvUserRole;
+    private ImageView ivProfilePic;
+
+    private Profile currentProfile;
 
     public ProfileViewFragment() {}
 
@@ -57,14 +67,18 @@ public class ProfileViewFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        TextView tvFullName = view.findViewById(R.id.tvFullName);
-        TextView tvUsername = view.findViewById(R.id.tvUsername);
-        TextView tvEmail = view.findViewById(R.id.tvEmail);
-        TextView tvDOB = view.findViewById(R.id.tvDOB);
+        // Initialize views
+        tvFullName = view.findViewById(R.id.tvFullName);
+        tvName = view.findViewById(R.id.tvName);
+        tvEmail = view.findViewById(R.id.tvEmail);
+        tvPhone = view.findViewById(R.id.tvPhone);
+        tvUserRole = view.findViewById(R.id.tvUserRole);
+        ivProfilePic = view.findViewById(R.id.iv_profile_pic);
 
-        View cvEditProfile = view.findViewById(R.id.cv_edit_profile);
-        Button btnDeleteProfile = view.findViewById(R.id.btnDeleteProfile);
-        Button btnSignOut = view.findViewById(R.id.btnSignOut);
+        btnSignOutLayout = view.findViewById(R.id.btnSignOutLayout);
+        btnDeleteProfileLayout = view.findViewById(R.id.btnDeleteProfileLayout);
+        cvEditProfile = view.findViewById(R.id.cv_edit_profile);
+        btnBack = view.findViewById(R.id.btnBack);
 
         Bundle args = getArguments();
         if (args != null) {
@@ -75,73 +89,90 @@ public class ProfileViewFragment extends Fragment {
             String phone = args.getString(ARG_PHONE, "");
             String dob = args.getString(ARG_DOB, "");
 
-            Profile currentProfile = new Profile(deviceId, firstName, lastName, email, phone);
+            // Create profile object
+            currentProfile = new Profile(deviceId, firstName, lastName, email, phone);
             currentProfile.setDateOfBirth(dob);
 
-            tvFullName.setText(firstName + " " + lastName);
-            tvUsername.setText("@" + (firstName + lastName).toLowerCase().replace(" ", ""));
-            tvEmail.setText(email);
-            tvDOB.setText("Date of Birth: " + (TextUtils.isEmpty(dob) ? "Not set" : dob));
+            // Set display name
+            String fullName = firstName + " " + lastName;
+            if (fullName.trim().isEmpty()) {
+                fullName = "User";
+            }
+            tvFullName.setText(fullName);
+            tvName.setText(fullName);
 
+            // Set email and phone
+            tvEmail.setText(email != null && !email.isEmpty() ? email : "Not set");
+            tvPhone.setText(phone != null && !phone.isEmpty() ? phone : "Not set");
+
+            // Set role badge
+            tvUserRole.setVisibility(View.GONE);
+
+            // Edit profile button - FIXED
             if (cvEditProfile != null) {
                 cvEditProfile.setOnClickListener(v -> {
                     if (getParentFragment() instanceof ProfileContainerFragment) {
                         ((ProfileContainerFragment) getParentFragment()).showEditProfile(currentProfile);
+                    } else {
+                        // Fallback: show toast if parent is not available
+                        Toast.makeText(getContext(), "Opening edit profile...", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
 
-            if (btnDeleteProfile != null) {
-                btnDeleteProfile.setOnClickListener(v -> showDeleteConfirmation(deviceId));
+            // Sign out button
+            if (btnSignOutLayout != null) {
+                btnSignOutLayout.setOnClickListener(v -> signOut());
             }
 
-            if (btnSignOut != null) {
-                btnSignOut.setOnClickListener(v -> {
-                    clearUserData();
-                    Intent intent = new Intent(getActivity(), MainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                });
+            // Delete account button
+            if (btnDeleteProfileLayout != null) {
+                btnDeleteProfileLayout.setOnClickListener(v -> showDeleteConfirmation(deviceId));
             }
-            
-            view.findViewById(R.id.btnBack).setOnClickListener(v -> {
-            });
+
+            // Back button
+            if (btnBack != null) {
+                btnBack.setOnClickListener(v -> requireActivity().finish());
+            }
         }
     }
 
+    private void signOut() {
+        clearUserData();
+        Intent intent = new Intent(getActivity(), MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        requireActivity().finish();
+        Toast.makeText(getContext(), "Signed out", Toast.LENGTH_SHORT).show();
+    }
+
     private void showDeleteConfirmation(String deviceId) {
-        new AlertDialog.Builder(getContext())
-                .setTitle("Delete Profile")
-                .setMessage("Are you sure you want to delete your profile?")
-                .setPositiveButton("Yes", (dialog, which) -> deleteProfile(deviceId))
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete Account")
+                .setMessage("Are you sure you want to delete your account?")
+                .setPositiveButton("Delete", (dialog, which) -> deleteAccount(deviceId))
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
-    private void deleteProfile(String deviceId) {
+    private void deleteAccount(String deviceId) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("profiles")
-                .whereEqualTo("deviceId", deviceId)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    if (!querySnapshot.isEmpty()) {
-                        querySnapshot.getDocuments().get(0).getReference().delete();
-                        Toast.makeText(getContext(), "Profile deleted", Toast.LENGTH_SHORT).show();
-                        clearUserData();
-                        Intent intent = new Intent(getActivity(), MainActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                        startActivity(intent);
-                    } else {
-                        Toast.makeText(getContext(), "Profile not found", Toast.LENGTH_SHORT).show();
-                    }
+        db.collection("users").document(deviceId).delete()
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(getContext(), "Account deleted", Toast.LENGTH_SHORT).show();
+                    clearUserData();
+                    Intent intent = new Intent(getActivity(), MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    requireActivity().finish();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Delete failed", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
     private void clearUserData() {
-        SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", getContext().MODE_PRIVATE);
+        SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", android.content.Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.clear();
         editor.apply();

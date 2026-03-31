@@ -11,11 +11,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Switch;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.eventflow.MainActivity;
@@ -29,8 +29,8 @@ import java.util.Calendar;
 public class EditProfileFragment extends Fragment {
 
     private EditText etName, etEmail, etPassword, etDOB;
-    private Switch switchGeoTracking, switchNotifications;
-    private Button btnUpdateProfile, btnDeleteProfile;
+    private SwitchCompat switchGeoTracking, switchNotifications;  // Changed to SwitchCompat
+    private Button btnUpdateProfile;
 
     private ProfileController profileController;
     private ProfileRepository profileRepository;
@@ -66,7 +66,6 @@ public class EditProfileFragment extends Fragment {
         switchGeoTracking = view.findViewById(R.id.switchEditGeoTracking);
         switchNotifications = view.findViewById(R.id.switchEditNotifications);
         btnUpdateProfile = view.findViewById(R.id.btnUpdateProfile);
-        btnDeleteProfile = view.findViewById(R.id.btnDeleteProfile);
 
         profileController = new ProfileController();
         profileRepository = new ProfileRepository();
@@ -79,11 +78,35 @@ public class EditProfileFragment extends Fragment {
 
         btnUpdateProfile.setOnClickListener(v -> updateProfile());
 
-        btnDeleteProfile.setOnClickListener(v -> showDeleteConfirmationDialog());
-        
-        view.findViewById(R.id.btnEditBack).setOnClickListener(v -> {
-            if (getParentFragment() instanceof ProfileContainerFragment) {
-                ((ProfileContainerFragment) getParentFragment()).showProfileView(null); 
+        // Back button
+        View btnBack = view.findViewById(R.id.btnEditBack);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> goBackToProfile());
+        }
+    }
+
+    private void goBackToProfile() {
+        profileRepository.getProfileByDeviceId(deviceId, new ProfileRepository.LoadProfileCallback() {
+            @Override
+            public void onSuccess(@NonNull Profile profile) {
+                if (getParentFragment() instanceof ProfileContainerFragment) {
+                    ((ProfileContainerFragment) getParentFragment()).showProfileView(profile);
+                }
+            }
+
+            @Override
+            public void onNotFound() {
+                if (getParentFragment() instanceof ProfileContainerFragment) {
+                    ((ProfileContainerFragment) getParentFragment()).showCreateProfile();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(requireContext(), "Failed to load profile", Toast.LENGTH_SHORT).show();
+                if (getParentFragment() instanceof ProfileContainerFragment) {
+                    ((ProfileContainerFragment) getParentFragment()).showCreateProfile();
+                }
             }
         });
     }
@@ -171,33 +194,6 @@ public class EditProfileFragment extends Fragment {
             @Override
             public void onFailure(@NonNull Exception e) {
                 Toast.makeText(requireContext(), "Failed to update profile", Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
-    private void showDeleteConfirmationDialog() {
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Delete Profile")
-                .setMessage("Are you sure you want to delete your profile? This action cannot be undone.")
-                .setPositiveButton("Delete", (dialog, which) -> deleteProfile())
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    private void deleteProfile() {
-        profileRepository.deleteProfile(deviceId, new ProfileRepository.DeleteProfileCallback() {
-            @Override
-            public void onSuccess() {
-                Toast.makeText(requireContext(), "Profile deleted successfully", Toast.LENGTH_SHORT).show();
-                // Navigate back to MainActivity (which handles sign-in/profile creation)
-                Intent intent = new Intent(requireContext(), MainActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-            }
-
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Toast.makeText(requireContext(), "Failed to delete profile", Toast.LENGTH_LONG).show();
             }
         });
     }
