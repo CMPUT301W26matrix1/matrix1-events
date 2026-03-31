@@ -138,29 +138,6 @@
                 android:textColorHint="#666666"
                 android:textSize="16sp" />
 
-            <!-- Password Field -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="Password"
-                android:textColor="#999999"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <EditText
-                android:id="@+id/etEditPassword"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_profile_input"
-                android:hint="Password"
-                android:inputType="textPassword"
-                android:paddingHorizontal="16dp"
-                android:textColor="#FFFFFF"
-                android:textColorHint="#666666"
-                android:textSize="16sp" />
-
             <!-- Date of Birth Field -->
             <TextView
                 android:layout_width="wrap_content"
@@ -183,7 +160,7 @@
                     android:layout_height="match_parent"
                     android:background="@android:color/transparent"
                     android:focusable="false"
-                    android:hint="Select Date Of Birth"
+                    android:hint="Select DOB"
                     android:inputType="none"
                     android:paddingHorizontal="16dp"
                     android:textColor="#FFFFFF"
@@ -249,7 +226,7 @@
                     android:trackTint="#666666" />
             </RelativeLayout>
 
-            <!-- Save Changes Button - Smaller -->
+            <!-- Save Changes Button -->
             <Button
                 android:id="@+id/btnUpdateProfile"
                 android:layout_width="wrap_content"
@@ -263,6 +240,37 @@
                 android:textSize="14sp"
                 android:paddingHorizontal="32dp"
                 android:paddingVertical="12dp" />
+
+            <!-- Change Password Link -->
+            <TextView
+                android:id="@+id/tvChangePassword"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_gravity="center"
+                android:text="Change Password"
+                android:textColor="#4CAF50"
+                android:textSize="14sp"
+                android:padding="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground" />
+
+            <!-- Delete Profile Button (hidden by default, can be shown if needed) -->
+            <Button
+                android:id="@+id/btnDeleteProfile"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_marginTop="12dp"
+                android:layout_gravity="center"
+                android:background="@android:color/transparent"
+                android:text="Delete Profile"
+                android:textAllCaps="false"
+                android:textColor="#F44336"
+                android:textSize="14sp"
+                android:paddingHorizontal="32dp"
+                android:paddingVertical="12dp"
+                android:visibility="gone" />
 
         </LinearLayout>
     </ScrollView>

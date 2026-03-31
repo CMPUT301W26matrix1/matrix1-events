@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -23,14 +24,19 @@ import com.example.eventflow.R;
 import com.example.eventflow.controller.ProfileController;
 import com.example.eventflow.model.entities.Profile;
 import com.example.eventflow.model.repositories.ProfileRepository;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.EmailAuthProvider;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Calendar;
 
 public class EditProfileFragment extends Fragment {
 
-    private EditText etName, etEmail, etPassword, etDOB;
-    private SwitchCompat switchGeoTracking, switchNotifications;  // Changed to SwitchCompat
-    private Button btnUpdateProfile;
+    private EditText etName, etEmail, etDOB;
+    private SwitchCompat switchGeoTracking, switchNotifications;
+    private Button btnUpdateProfile, btnDeleteProfile;
+    private TextView tvChangePassword;
 
     private ProfileController profileController;
     private ProfileRepository profileRepository;
@@ -61,11 +67,12 @@ public class EditProfileFragment extends Fragment {
 
         etName = view.findViewById(R.id.etEditName);
         etEmail = view.findViewById(R.id.etEditEmail);
-        etPassword = view.findViewById(R.id.etEditPassword);
         etDOB = view.findViewById(R.id.etEditDOB);
         switchGeoTracking = view.findViewById(R.id.switchEditGeoTracking);
         switchNotifications = view.findViewById(R.id.switchEditNotifications);
         btnUpdateProfile = view.findViewById(R.id.btnUpdateProfile);
+        btnDeleteProfile = view.findViewById(R.id.btnDeleteProfile);
+        tvChangePassword = view.findViewById(R.id.tvChangePassword);
 
         profileController = new ProfileController();
         profileRepository = new ProfileRepository();
@@ -74,14 +81,102 @@ public class EditProfileFragment extends Fragment {
 
         loadCurrentProfile();
 
-        etDOB.setOnClickListener(v -> showDatePickerDialog());
+        if (etDOB != null) {
+            etDOB.setOnClickListener(v -> showDatePickerDialog());
+        }
 
-        btnUpdateProfile.setOnClickListener(v -> updateProfile());
+        if (btnUpdateProfile != null) {
+            btnUpdateProfile.setOnClickListener(v -> updateProfile());
+        }
+
+        if (btnDeleteProfile != null) {
+            btnDeleteProfile.setOnClickListener(v -> showDeleteConfirmationDialog());
+        }
+
+        if (tvChangePassword != null) {
+            tvChangePassword.setOnClickListener(v -> showChangePasswordDialog());
+        }
 
         // Back button
         View btnBack = view.findViewById(R.id.btnEditBack);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> goBackToProfile());
+        }
+    }
+
+    private void showChangePasswordDialog() {
+        // Create dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.change_password, null);
+        builder.setView(dialogView);
+
+        EditText etCurrentPassword = dialogView.findViewById(R.id.etCurrentPassword);
+        EditText etNewPassword = dialogView.findViewById(R.id.etNewPassword);
+        EditText etConfirmPassword = dialogView.findViewById(R.id.etConfirmPassword);
+        Button btnChangePassword = dialogView.findViewById(R.id.btnChangePassword);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+
+        AlertDialog dialog = builder.create();
+        dialog.setCancelable(true);
+
+        btnChangePassword.setOnClickListener(v -> {
+            String currentPassword = etCurrentPassword.getText().toString().trim();
+            String newPassword = etNewPassword.getText().toString().trim();
+            String confirmPassword = etConfirmPassword.getText().toString().trim();
+
+            // Validate
+            if (currentPassword.isEmpty()) {
+                Toast.makeText(getContext(), "Enter current password", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (newPassword.isEmpty()) {
+                Toast.makeText(getContext(), "Enter new password", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (newPassword.length() < 6) {
+                Toast.makeText(getContext(), "Password must be at least 6 characters", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!newPassword.equals(confirmPassword)) {
+                Toast.makeText(getContext(), "Passwords do not match", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            updatePassword(currentPassword, newPassword, dialog);
+        });
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+    }
+
+    private void updatePassword(String currentPassword, String newPassword, AlertDialog dialog) {
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        FirebaseUser user = auth.getCurrentUser();
+
+        if (user != null && user.getEmail() != null) {
+            // Re-authenticate first
+            AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), currentPassword);
+            user.reauthenticate(credential)
+                    .addOnSuccessListener(aVoid -> {
+                        // Update password
+                        user.updatePassword(newPassword)
+                                .addOnSuccessListener(aVoid2 -> {
+                                    Toast.makeText(getContext(), "Password changed successfully", Toast.LENGTH_SHORT).show();
+                                    dialog.dismiss();
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(getContext(), "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                });
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(getContext(), "Current password is incorrect", Toast.LENGTH_SHORT).show();
+                    });
+        } else {
+            Toast.makeText(getContext(), "User not authenticated", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -120,7 +215,9 @@ public class EditProfileFragment extends Fragment {
         DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(),
                 (view, year1, monthOfYear, dayOfMonth) -> {
                     String date = dayOfMonth + "/" + (monthOfYear + 1) + "/" + year1;
-                    etDOB.setText(date);
+                    if (etDOB != null) {
+                        etDOB.setText(date);
+                    }
                 }, year, month, day);
 
         Calendar minDate = Calendar.getInstance();
@@ -138,13 +235,14 @@ public class EditProfileFragment extends Fragment {
         profileRepository.getProfileByDeviceId(deviceId, new ProfileRepository.LoadProfileCallback() {
             @Override
             public void onSuccess(@NonNull Profile profile) {
+                if (!isAdded()) return;
                 String fullName = profile.getFirstName() + (TextUtils.isEmpty(profile.getLastName()) ? "" : " " + profile.getLastName());
-                etName.setText(fullName);
-                etEmail.setText(profile.getEmail());
-                if (profile.getDateOfBirth() != null) {
+                if (etName != null) etName.setText(fullName);
+                if (etEmail != null) etEmail.setText(profile.getEmail());
+                if (profile.getDateOfBirth() != null && etDOB != null) {
                     etDOB.setText(profile.getDateOfBirth());
                 }
-                switchNotifications.setChecked(profile.isNotificationsEnabled());
+                if (switchNotifications != null) switchNotifications.setChecked(profile.isNotificationsEnabled());
             }
 
             @Override
@@ -153,7 +251,9 @@ public class EditProfileFragment extends Fragment {
 
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(getContext(), "Failed to load profile", Toast.LENGTH_SHORT).show();
+                if (isAdded()) {
+                    Toast.makeText(getContext(), "Failed to load profile", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -162,7 +262,7 @@ public class EditProfileFragment extends Fragment {
         String name = etName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String dob = etDOB.getText().toString().trim();
-        boolean notificationsEnabled = switchNotifications.isChecked();
+        boolean notificationsEnabled = switchNotifications != null && switchNotifications.isChecked();
 
         String firstName = name;
         String lastName = "";
@@ -185,6 +285,7 @@ public class EditProfileFragment extends Fragment {
         profileRepository.updateProfile(updatedProfile, new ProfileRepository.SaveProfileCallback() {
             @Override
             public void onSuccess() {
+                if (!isAdded()) return;
                 Toast.makeText(requireContext(), "Profile updated successfully", Toast.LENGTH_SHORT).show();
                 if (getParentFragment() instanceof ProfileContainerFragment) {
                     ((ProfileContainerFragment) getParentFragment()).showProfileView(updatedProfile);
@@ -193,7 +294,38 @@ public class EditProfileFragment extends Fragment {
 
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(requireContext(), "Failed to update profile", Toast.LENGTH_LONG).show();
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), "Failed to update profile", Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+    }
+
+    private void showDeleteConfirmationDialog() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete Profile")
+                .setMessage("Are you sure you want to delete your profile? This action cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> deleteProfile())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void deleteProfile() {
+        profileRepository.deleteProfile(deviceId, new ProfileRepository.DeleteProfileCallback() {
+            @Override
+            public void onSuccess() {
+                if (!isAdded()) return;
+                Toast.makeText(requireContext(), "Profile deleted successfully", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(requireContext(), MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), "Failed to delete profile", Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
