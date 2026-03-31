@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -13,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.eventflow.EventDetailActivity;
 import com.example.eventflow.R;
 import com.example.eventflow.model.entities.Event;
+import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -98,6 +100,19 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             }
         }
 
+        // Load event poster image
+        if (holder.ivEventImage != null) {
+            String posterUrl = event.getPosterUrl();
+            if (posterUrl != null && !posterUrl.isEmpty()) {
+                Picasso.get().load(posterUrl)
+                        .placeholder(R.drawable.ic_placeholder)
+                        .error(R.drawable.ic_placeholder)
+                        .into(holder.ivEventImage);
+            } else {
+                holder.ivEventImage.setImageResource(R.drawable.ic_placeholder);
+            }
+        }
+
         boolean alreadyJoined = event.getWaitingList() != null
                 && event.getWaitingList().contains(deviceId);
         boolean registrationOpen = event.isRegistrationOpen();
@@ -140,6 +155,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         TextView tvEventName, tvEventDescription, tvEventLocation,
                 tvEventDate, tvRegistrationEnd, tvWaitingListCount;
         Button btnJoinLeave, deleteEventButton;
+        ImageView ivEventImage;
 
         EventViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -151,6 +167,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             tvWaitingListCount = itemView.findViewById(R.id.tvWaitingListCount);
             btnJoinLeave       = itemView.findViewById(R.id.btnJoinLeave);
             deleteEventButton  = itemView.findViewById(R.id.deleteEventButton);
+            ivEventImage       = itemView.findViewById(R.id.ivEventImage);
         }
     }
 }
