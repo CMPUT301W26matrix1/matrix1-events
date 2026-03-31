@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -46,10 +47,11 @@ public class EventImageAdapter extends BaseAdapter {
 
         ImageView imageView = convertView.findViewById(R.id.iv_event_image);
         TextView eventName = convertView.findViewById(R.id.tv_event_name);
+        ImageButton deleteButton = convertView.findViewById(R.id.btn_delete_event_image);
 
         AdminImageManagementActivity.EventImage eventImage = eventImages.get(position);
 
-        eventName.setText(eventImage.eventName);
+        eventName.setText(eventImage.eventName != null ? eventImage.eventName : "Untitled Event");
 
         // Load image using Picasso
         if (eventImage.posterUrl != null && !eventImage.posterUrl.isEmpty()) {
@@ -57,9 +59,16 @@ public class EventImageAdapter extends BaseAdapter {
                     .placeholder(R.drawable.ic_placeholder)
                     .error(R.drawable.ic_placeholder)
                     .into(imageView);
+            deleteButton.setVisibility(View.VISIBLE);
         } else {
             imageView.setImageResource(R.drawable.ic_placeholder);
+            deleteButton.setVisibility(View.GONE); // Hide delete button if no image
         }
+
+        // Click on delete button
+        deleteButton.setOnClickListener(v -> {
+            context.showDeleteConfirmation(eventImage, position);
+        });
 
         // Click on the whole card to view event details
         convertView.setOnClickListener(v -> {

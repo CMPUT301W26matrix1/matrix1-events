@@ -1,22 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212">
+    android:background="#000000">
 
-    <androidx.core.widget.NestedScrollView
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
-        android:layout_marginBottom="60dp">
+        android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Hero Image Section -->
+            <!-- Hero Header Section -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="320dp">
@@ -26,203 +27,197 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:scaleType="centerCrop"
-                    android:src="@android:drawable/ic_menu_gallery" />
+                    android:src="@drawable/ic_placeholder" />
 
-                <!-- Back Button -->
-                <ImageButton
-                    android:id="@+id/btn_detail_back"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_margin="16dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@android:drawable/ic_media_previous"
-                    app:tint="#FFFFFF" />
+                <!-- Gradient Overlay for better text readability -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/rounded_sheet"
+                    android:alpha="0.2" />
 
-                <!-- DELETE IMAGE BUTTON (Admin only) -->
-                <ImageButton
-                    android:id="@+id/btn_delete_image"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_margin="16dp"
-                    android:layout_alignParentEnd="true"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_delete"
-                    app:tint="#D32F2F"
-                    android:visibility="gone"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
+                <!-- Toolbar Content (Back and Delete) -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_centerHorizontal="true"
-                    android:layout_marginTop="20dp"
-                    android:text="Event Details"
-                    android:textColor="#FFFFFF"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+                    android:padding="16dp">
+
+                    <ImageButton
+                        android:id="@+id/btn_detail_back"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/circle_bg_dark"
+                        android:src="@drawable/ic_arrow_back"
+                        android:padding="8dp"
+                        app:tint="#FFFFFF"
+                        android:contentDescription="Back" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerInParent="true"
+                        android:text="Event Details"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <ImageButton
+                        android:id="@+id/btn_delete_image"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_alignParentEnd="true"
+                        android:background="@drawable/circle_bg_dark"
+                        android:src="@drawable/ic_trash"
+                        android:padding="8dp"
+                        app:tint="#FF5555"
+                        android:visibility="gone"
+                        android:contentDescription="Delete" />
+                </RelativeLayout>
             </RelativeLayout>
 
-            <!-- Details Card -->
-            <LinearLayout
+            <!-- Sleek Overlapping Content Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="-40dp"
-                android:background="@drawable/bg_profile_card"
-                android:orientation="vertical"
-                android:padding="24dp">
+                android:layout_marginTop="-50dp"
+                app:cardBackgroundColor="#0F0F0F"
+                app:cardCornerRadius="32dp"
+                app:cardElevation="12dp"
+                app:strokeColor="#1A1A1A"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:orientation="vertical"
+                    android:padding="24dp">
 
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        app:cardBackgroundColor="#2D2D2D"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="0dp">
+                    <!-- Title and Location Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/circle_bg_dark" />
 
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:layout_gravity="center"
-                            android:src="@android:drawable/ic_dialog_map"
+                            android:layout_marginStart="-36dp"
+                            android:src="@drawable/ic_location"
                             app:tint="#4D5DFA" />
-                    </androidx.cardview.widget.CardView>
 
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/tv_detail_name"
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="Event Name"
-                            android:textColor="#FFFFFF"
-                            android:textSize="20sp"
-                            android:textStyle="bold" />
+                            android:layout_marginStart="28dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
 
-                        <TextView
-                            android:id="@+id/tv_event_location"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Location"
-                            android:textColor="#888888"
-                            android:textSize="13sp" />
+                            <TextView
+                                android:id="@+id/tv_detail_name"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Event Name"
+                                android:textColor="#FFFFFF"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tv_event_location"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Location"
+                                android:textColor="#666666"
+                                android:textSize="14sp" />
+                        </LinearLayout>
                     </LinearLayout>
-                </LinearLayout>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        app:cardCornerRadius="20dp"
-                        app:cardElevation="0dp">
-
-                        <ImageView
-                            android:id="@+id/iv_organizer_pic"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:scaleType="centerCrop"
-                            android:src="@android:drawable/ic_menu_myplaces" />
-                    </androidx.cardview.widget.CardView>
-
+                    <!-- About Section -->
                     <TextView
-                        android:id="@+id/tv_organizer_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="Organizer"
-                        android:textColor="#FFFFFF"
-                        android:textSize="14sp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="28dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
+                        android:layout_marginTop="32dp"
                         android:text="About Event"
                         android:textColor="#FFFFFF"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
-                    <LinearLayout
-                        android:id="@+id/btn_share_event"
+                    <TextView
+                        android:id="@+id/tv_detail_description"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:lineSpacingExtra="6sp"
+                        android:text="Loading description..."
+                        android:textColor="#BBBBBB"
+                        android:textSize="15sp" />
+
+                    <!-- Lottery Guidelines -->
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="4dp">
+                        android:layout_marginTop="32dp"
+                        android:text="Lottery Guidelines"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
 
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@android:drawable/ic_menu_share"
-                            app:tint="#FFFFFF" />
+                    <TextView
+                        android:id="@+id/tv_lottery_guidelines"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:lineSpacingExtra="4sp"
+                        android:text="Entrants are selected randomly from the waiting list once the registration period ends."
+                        android:textColor="#666666"
+                        android:textSize="14sp" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:text="Share"
-                            android:textColor="#FFFFFF"
-                            android:textSize="14sp" />
-                    </LinearLayout>
+                    <!-- Actions -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_join_now"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:layout_marginTop="40dp"
+                        android:backgroundTint="#4D5DFA"
+                        android:text="Join Waiting List"
+                        android:textAllCaps="false"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        app:cornerRadius="16dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_view_entrant_map"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:layout_marginTop="12dp"
+                        android:backgroundTint="#1B4321"
+                        android:text="View Locations Map"
+                        android:textAllCaps="false"
+                        android:textColor="#4CAF50"
+                        android:textStyle="bold"
+                        app:cornerRadius="16dp" />
+
                 </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                <TextView
-                    android:id="@+id/tv_detail_description"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:lineSpacingExtra="6sp"
-                    android:text="Event description..."
-                    android:textColor="#BBBBBB"
-                    android:textSize="14sp" />
+            <!-- Comments Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="24dp"
+                android:paddingBottom="40dp">
 
-                <!-- Lottery Guidelines Section -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:text="Lottery Guidelines"
-                    android:textColor="#FFFFFF"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tv_lottery_guidelines"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:lineSpacingExtra="4sp"
-                    android:text="Entrants are selected randomly from the waiting list once the registration period ends. If a selected participant declines or is disqualified, a new entrant will be randomly drawn from the remaining waiting list until all spots are filled."
-                    android:textColor="#BBBBBB"
-                    android:textSize="14sp" />
-
-                <!-- Comments Section -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
+                    android:layout_marginTop="32dp"
                     android:text="Comments"
                     android:textColor="#FFFFFF"
                     android:textSize="18sp"
@@ -233,21 +228,25 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:background="@android:color/transparent"
+                    android:background="@drawable/edittext_bg_dark"
                     android:hint="Write a comment..."
-                    android:padding="12dp"
+                    android:padding="16dp"
                     android:textColor="#FFFFFF"
-                    android:textColorHint="#888888" />
+                    android:textColorHint="#444444"
+                    android:minHeight="100dp"
+                    android:gravity="top"/>
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnPostComment"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
+                    android:layout_gravity="end"
                     android:backgroundTint="#4D5DFA"
                     android:text="Post Comment"
                     android:textAllCaps="false"
-                    android:textColor="#FFFFFF" />
+                    android:textColor="#FFFFFF"
+                    app:cornerRadius="8dp" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvComments"
@@ -255,53 +254,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:nestedScrollingEnabled="false" />
-
-                <Button
-                    android:id="@+id/btn_join_now"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:layout_marginTop="32dp"
-                    android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_profile_button"
-                    android:backgroundTint="#4D5DFA"
-                    android:text="Join Now"
-                    android:textAllCaps="false"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <!-- View Map Button -->
-                <Button
-                    android:id="@+id/btn_view_entrant_map"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_profile_button"
-                    android:backgroundTint="#4CAF50"
-                    android:text="VIEW ENTRANT LOCATIONS ON MAP"
-                    android:textAllCaps="false"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
             </LinearLayout>
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
 
-    <!-- Bottom Nav Bar (Placeholder) -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_alignParentBottom="true"
-        android:background="#121212"
-        android:gravity="center"
-        android:orientation="horizontal">
-        <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:src="@android:drawable/ic_menu_compass" app:tint="#4D5DFA"/>
-        <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:src="@android:drawable/ic_menu_today" app:tint="#888888"/>
-        <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:src="@android:drawable/ic_menu_search" app:tint="#888888"/>
-        <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:src="@android:drawable/ic_dialog_map" app:tint="#888888"/>
-        <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:src="@android:drawable/ic_menu_myplaces" app:tint="#888888"/>
-    </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
 
 </RelativeLayout>

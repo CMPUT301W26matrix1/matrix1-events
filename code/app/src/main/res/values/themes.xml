@@ -1,11 +1,10 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.ListyCityLab3" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.EventFlow" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">#7B61FF</item>
+        <item name="android:statusBarColor">#000000</item>
     </style>
-
-    <style name="Theme.ListyCityLab3" parent="Base.Theme.ListyCityLab3" />
 
     <style name="CompactNavButton" parent="Widget.MaterialComponents.Button">
         <item name="android:layout_width">0dp</item>
