@@ -2,6 +2,7 @@ package com.example.eventflow;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.KeyEvent;
 import android.widget.Button;
 import android.widget.EditText;
@@ -101,21 +102,28 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
         loadRecentScans();
     }
 
-    private void handleScanResult(String eventId) {
+    private void handleScanResult(String rawResult) {
         // Pause scanning to avoid multiple triggers
         barcodeScannerView.pause();
         
-        db.collection("events").document(eventId).get().addOnSuccessListener(documentSnapshot -> {
+        String eventId = rawResult;
+        // Check if it's a URL format used in MainActivity
+        if (rawResult.startsWith("eventflow://details?id=")) {
+            eventId = rawResult.substring("eventflow://details?id=".length());
+        }
+        
+        final String finalEventId = eventId;
+        db.collection("events").document(finalEventId).get().addOnSuccessListener(documentSnapshot -> {
             if (documentSnapshot.exists()) {
                 Event event = documentSnapshot.toObject(Event.class);
                 if (event != null) {
                     event.setEventId(documentSnapshot.getId());
                     // Add to recent if not already there
                     addToRecent(event);
-                    navigateToEventDetails(eventId);
+                    navigateToEventDetails(finalEventId);
                 }
             } else {
-                Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Event not found: " + finalEventId, Toast.LENGTH_SHORT).show();
                 barcodeScannerView.resume();
             }
         }).addOnFailureListener(e -> {
@@ -126,7 +134,6 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
 
     private void addToRecent(Event event) {
         // Simple in-memory recent list for now. 
-        // In a real app, this should be persisted (e.g., SharedPreferences or local DB)
         for (int i = 0; i < recentEvents.size(); i++) {
             if (recentEvents.get(i).getEventId().equals(event.getEventId())) {
                 recentEvents.remove(i);
@@ -141,7 +148,6 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
     }
 
     private void loadRecentScans() {
-        // In a real app, load from local storage
         updateRecentUI();
     }
 
@@ -157,9 +163,15 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
     }
 
     private void navigateToEventDetails(String eventId) {
-        // Navigate to EventDetailsActivity
-        Intent intent = new Intent(this, com.example.eventflow.org_event.EventDetailsActivity.class);
-        intent.putExtra("EVENT_ID", eventId);
+        // Use the Entrant view: EventDetailActivity
+        Intent intent = new Intent(this, EventDetailActivity.class);
+        intent.putExtra("eventId", eventId);
+        
+        // Pass necessary extras that EventDetailActivity expects
+        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        intent.putExtra("userId", deviceId);
+        intent.putExtra("userRole", "entrant");
+        
         startActivity(intent);
     }
 
@@ -195,7 +207,6 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
     @Override
     public void onTorchOn() {
         isFlashOn = true;
-        // Use an appropriate icon if you have one, or just update text
     }
 
     @Override

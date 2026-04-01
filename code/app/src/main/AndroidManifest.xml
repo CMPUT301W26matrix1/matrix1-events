@@ -14,7 +14,7 @@
         android:label="EventFlow"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
 
         <!-- Add Google Maps API Key -->
         <meta-data
@@ -136,7 +136,7 @@
             android:name=".CustomScannerActivity"
             android:screenOrientation="portrait"
             android:stateNotNeeded="true"
-            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             android:windowSoftInputMode="stateAlwaysHidden" />
 
     </application>
