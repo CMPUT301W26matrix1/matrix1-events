@@ -14,6 +14,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
@@ -89,10 +90,14 @@ public class MainActivity extends AppCompatActivity {
             createEventOrgButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, com.example.eventflow.org_event.OrgEventActivity.class)));
         }
 
-        // Manage Entrants button
+        // Manage Entrants button - FIXED: Now opens EntrantDashboardActivity
         if (manageEntrantsButton != null) {
             manageEntrantsButton.setOnClickListener(v -> {
-                Intent intent = new Intent(MainActivity.this, OrganizerEventsActivity.class);
+                // For now, open with a default event ID
+                // TODO: You should let the user select an event first, or get the event ID from somewhere
+                Intent intent = new Intent(MainActivity.this, EntrantDashboardActivity.class);
+                intent.putExtra("eventId", "Tg34Yn6wNXvYAuvczoMA"); // Replace with actual event ID
+                intent.putExtra("eventName", "Tech Summit 2026"); // Replace with actual event name
                 startActivity(intent);
             });
         }
