@@ -78,6 +78,8 @@ public class MainActivity extends AppCompatActivity {
                 options.setPrompt("Scan an event QR code");
                 options.setBeepEnabled(true);
                 options.setOrientationLocked(false);
+                // Use our custom scanner activity
+                options.setCaptureActivity(CustomScannerActivity.class);
                 barcodeLauncher.launch(options);
             });
         }
@@ -87,12 +89,10 @@ public class MainActivity extends AppCompatActivity {
             createEventOrgButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, com.example.eventflow.org_event.OrgEventActivity.class)));
         }
 
-        // Manage Entrants button — replaces Selected Entrants, Waiting Lists, Final Entrants
+        // Manage Entrants button
         if (manageEntrantsButton != null) {
             manageEntrantsButton.setOnClickListener(v -> {
-                Intent intent = new Intent(MainActivity.this, com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity.class);
-                intent.putExtra("eventId", "Tg34Yn6wNXvYAuvczoMA");
-                intent.putExtra("eventName", "Tech Summit 2026");
+                Intent intent = new Intent(MainActivity.this, OrganizerEventsActivity.class);
                 startActivity(intent);
             });
         }

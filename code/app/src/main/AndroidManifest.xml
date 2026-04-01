@@ -14,12 +14,12 @@
         android:label="EventFlow"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.EventFlow">
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
         <!-- Add Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="${mapsApiKey}" />
+            android:value="YOUR_GOOGLE_MAPS_API_KEY" />
 
         <activity
             android:name=".SplashActivity"
@@ -97,7 +97,7 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- Map Activity for viewing entrant locations -->
+        <!-- NEW: Map Activity for viewing entrant locations -->
         <activity
             android:name=".EntrantLocationMapActivity"
             android:label="Entrant Locations" />
@@ -112,12 +112,12 @@
             android:name=".AdminProfileListActivity"
             android:label="Manage Profiles" />
 
-        <!-- Manage Images -->
+        <!--Manage Images -->
         <activity
             android:name=".AdminImageManagementActivity"
             android:label="Manage Images" />
 
-        <!-- Profile detail -->
+        <!--Profile detail -->
         <activity
             android:name=".ProfileDetailActivity"
             android:label="Profile Details" />
@@ -126,15 +126,18 @@
             android:name=".FullscreenImageActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
 
-        <!-- Admin Notification Logs (US 03.08.01) -->
-        <activity
-            android:name=".AdminNotificationLogsActivity"
-            android:label="Notification Logs" />
-
-        <!-- Organizer Events List (Fixes crash) -->
+        <!-- Organizer Events List -->
         <activity
             android:name=".OrganizerEventsActivity"
             android:label="My Events" />
+
+        <!-- Custom QR Scanner -->
+        <activity
+            android:name=".CustomScannerActivity"
+            android:screenOrientation="portrait"
+            android:stateNotNeeded="true"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:windowSoftInputMode="stateAlwaysHidden" />
 
     </application>
 
