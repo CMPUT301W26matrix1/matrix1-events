@@ -2,80 +2,80 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="#1E1E1E"
-    android:paddingBottom="8dp">
+    android:layout_height="72dp"
+    android:background="#0A0A0A"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:paddingTop="8dp">
 
+    <!-- Dashboard -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:id="@+id/nav_dashboard"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginHorizontal="12dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="12dp">
-
-        <Button
-            android:id="@+id/btn_delete_event"
-            android:layout_width="90dp"
-            android:layout_height="45dp"
-            android:backgroundTint="#B3261E"
-            android:text="Delete"
-            android:textColor="#FFFFFF"
-            android:textAllCaps="false"
-            android:textSize="12sp"
-            app:cornerRadius="8dp" />
-
-        <Button
-            android:id="@+id/btn_update_event"
-            android:layout_width="0dp"
-            android:layout_height="45dp"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:backgroundTint="#7B61FF"
-            android:text="Update Event"
-            android:textColor="#FFFFFF"
-            android:textAllCaps="false"
-            android:textSize="13sp"
-            app:cornerRadius="8dp" />
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true">
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_dialog_dialer"
+            app:tint="#666666" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Dashboard"
+            android:textColor="#666666"
+            android:textSize="10sp"
+            android:layout_marginTop="4dp" />
     </LinearLayout>
 
+    <!-- Create (Active) -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="55dp"
-        android:orientation="horizontal"
-        android:layout_marginHorizontal="8dp"
-        android:gravity="center">
-
-        <Button
-            android:id="@+id/nav_explore"
-            style="@style/CompactNavButton"
-            android:text="Explore"
-            android:backgroundTint="#2A2A2A" />
-
-        <Button
-            android:id="@+id/nav_events"
-            style="@style/CompactNavButton"
-            android:text="Events"
-            android:backgroundTint="#2A2A2A" />
-
-        <Button
-            android:id="@+id/nav_search"
-            style="@style/CompactNavButton"
-            android:text="Search"
-            android:backgroundTint="#2A2A2A" />
-
-        <Button
-            android:id="@+id/nav_map"
-            style="@style/CompactNavButton"
-            android:text="Map"
-            android:backgroundTint="#2A2A2A" />
-
-        <Button
-            android:id="@+id/nav_profile"
-            style="@style/CompactNavButton"
-            android:text="Profile"
-            android:backgroundTint="#2A2A2A" />
-
+        android:id="@+id/nav_create"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_input_add"
+            app:tint="#4CAF50" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create"
+            android:textColor="#4CAF50"
+            android:textSize="10sp"
+            android:layout_marginTop="4dp" />
     </LinearLayout>
+
+    <!-- Profile -->
+    <LinearLayout
+        android:id="@+id/nav_profile"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true">
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_menu_myplaces"
+            app:tint="#666666" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Profile"
+            android:textColor="#666666"
+            android:textSize="10sp"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
 </LinearLayout>
