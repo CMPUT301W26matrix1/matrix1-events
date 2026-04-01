@@ -40,7 +40,7 @@ public class SplashActivity extends AppCompatActivity {
             public void onSuccess(@NonNull Profile profile) {
                 // Profile exists, recognized via device ID
                 Log.d(TAG, "Profile found for device ID: " + deviceId);
-                navigateToMain();
+                navigateToRoleSelection();
             }
 
             @Override
@@ -53,34 +53,31 @@ public class SplashActivity extends AppCompatActivity {
             @Override
             public void onFailure(@NonNull Exception e) {
                 Log.e(TAG, "Error loading profile", e);
-                // Even on failure, we should let the user in, maybe to retry or use limited features
-                navigateToMain();
+                navigateToRoleSelection();
             }
         });
     }
 
     private void createDefaultProfile(String deviceId) {
-        // Create a basic profile with just the device ID. 
-        // User can fill in details later in ProfileActivity.
         Profile newProfile = new Profile(deviceId, "New", "User", "", "");
         
         profileRepository.saveProfile(newProfile, new ProfileRepository.SaveProfileCallback() {
             @Override
             public void onSuccess() {
                 Log.d(TAG, "Default profile created successfully");
-                navigateToMain();
+                navigateToRoleSelection();
             }
 
             @Override
             public void onFailure(@NonNull Exception e) {
                 Log.e(TAG, "Failed to create default profile", e);
-                navigateToMain();
+                navigateToRoleSelection();
             }
         });
     }
 
-    private void navigateToMain() {
-        Intent intent = new Intent(SplashActivity.this, MainActivity.class);
+    private void navigateToRoleSelection() {
+        Intent intent = new Intent(SplashActivity.this, RoleSelectionActivity.class);
         startActivity(intent);
         finish();
     }

@@ -16,25 +16,10 @@ import com.example.eventflow.R;
 import com.example.eventflow.model.entities.Event;
 import com.squareup.picasso.Picasso;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 /**
- * RecyclerView adapter responsible for rendering a browsable list of
- * {@link Event} instances and wiring join/leave waiting-list actions.
- *
- * <p>The adapter delegates business logic to an {@link EventActionListener}
- * (implemented by the hosting UI) and keeps only presentation concerns here.</p>
- *
- * <p><b>Outstanding issues:</b>
- * <ul>
- *   <li>No list-diffing (e.g., {@code ListAdapter}) for more efficient updates.</li>
- *   <li>No visual empty-state handling inside the list.</li>
- *   <li>Device ID is passed in as a raw string; could be wrapped in a value object.</li>
- * </ul>
- * </p>
+ * Updated RecyclerView adapter for the redesigned Browse Events screen.
  */
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
 
@@ -46,8 +31,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     private final List<Event> events;
     private final EventActionListener listener;
     private final String deviceId;
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
 
     public EventAdapter(List<Event> events, EventActionListener listener, String deviceId) {
         this.events = events;
@@ -67,36 +50,41 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = events.get(position);
 
-        if (holder.tvEventName != null) holder.tvEventName.setText(event.getName());
-        if (holder.tvEventDescription != null) holder.tvEventDescription.setText(event.getDescription());
-        if (holder.tvEventLocation != null) holder.tvEventLocation.setText("📍 " + event.getLocation());
+        if (holder.tvEventName != null) {
+            holder.tvEventName.setText(event.getName());
+        }
 
-        if (holder.tvEventDate != null) {
-            if (event.getEventDate() != null) {
-                Date date = event.getEventDate().toDate();
-                holder.tvEventDate.setText("📅 " + dateFormat.format(date));
+        if (holder.tvEventLocation != null) {
+            holder.tvEventLocation.setText(event.getLocation());
+        }
+
+        // Set category tag
+        if (holder.tvEventCategory != null) {
+            List<String> interests = event.getInterests();
+            if (interests != null && !interests.isEmpty()) {
+                holder.tvEventCategory.setText(interests.get(0));
+                holder.tvEventCategory.setVisibility(View.VISIBLE);
             } else {
-                holder.tvEventDate.setText("📅 Date TBD");
+                holder.tvEventCategory.setVisibility(View.GONE);
             }
         }
 
-        if (holder.tvRegistrationEnd != null) {
-            if (event.getRegistrationEnd() != null) {
-                Date regEnd = event.getRegistrationEnd().toDate();
-                holder.tvRegistrationEnd.setText("⏰ Register by: " + dateFormat.format(regEnd));
-            } else {
-                holder.tvRegistrationEnd.setText("⏰ Register by: TBD");
-            }
+        // Joined badge vs Join button
+        boolean alreadyJoined = event.getWaitingList() != null
+                && event.getWaitingList().contains(deviceId);
+        
+        if (holder.tvJoinedBadge != null) {
+            holder.tvJoinedBadge.setVisibility(alreadyJoined ? View.VISIBLE : View.GONE);
         }
 
-        // US 01.05.04 — Show waiting list count
-        if (holder.tvWaitingListCount != null) {
-            int waitingCount = event.getWaitingListCount();
-            int limit = event.getWaitingListLimit();
-            if (limit > 0) {
-                holder.tvWaitingListCount.setText("👥 " + waitingCount + " / " + limit + " on waiting list");
+        if (holder.btnJoinLeave != null) {
+            if (alreadyJoined) {
+                holder.btnJoinLeave.setVisibility(View.GONE);
             } else {
-                holder.tvWaitingListCount.setText("👥 " + waitingCount + " on waiting list");
+                holder.btnJoinLeave.setVisibility(View.VISIBLE);
+                holder.btnJoinLeave.setText("Join");
+                // The green color is set in the layout XML via backgroundTint
+                holder.btnJoinLeave.setOnClickListener(v -> listener.onJoinWaitingList(event));
             }
         }
 
@@ -110,31 +98,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
                         .into(holder.ivEventImage);
             } else {
                 holder.ivEventImage.setImageResource(R.drawable.ic_placeholder);
-            }
-        }
-
-        boolean alreadyJoined = event.getWaitingList() != null
-                && event.getWaitingList().contains(deviceId);
-        boolean registrationOpen = event.isRegistrationOpen();
-
-        // Toggle button state
-        if (holder.btnJoinLeave != null) {
-            if (!registrationOpen) {
-                holder.btnJoinLeave.setText("Registration Closed");
-                holder.btnJoinLeave.setEnabled(false);
-                holder.btnJoinLeave.setOnClickListener(null);
-            } else if (alreadyJoined) {
-                holder.btnJoinLeave.setText("Leave Waiting List");
-                holder.btnJoinLeave.setEnabled(true);
-                holder.btnJoinLeave.setOnClickListener(v -> listener.onLeaveWaitingList(event));
-            } else if (event.isWaitingListFull()) {
-                holder.btnJoinLeave.setText("Waiting List Full");
-                holder.btnJoinLeave.setEnabled(false);
-                holder.btnJoinLeave.setOnClickListener(null);
-            } else {
-                holder.btnJoinLeave.setText("Join Waiting List");
-                holder.btnJoinLeave.setEnabled(true);
-                holder.btnJoinLeave.setOnClickListener(v -> listener.onJoinWaitingList(event));
             }
         }
 
@@ -152,21 +115,17 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     }
 
     static class EventViewHolder extends RecyclerView.ViewHolder {
-        TextView tvEventName, tvEventDescription, tvEventLocation,
-                tvEventDate, tvRegistrationEnd, tvWaitingListCount;
-        Button btnJoinLeave, deleteEventButton;
+        TextView tvEventName, tvEventLocation, tvEventCategory, tvJoinedBadge;
+        Button btnJoinLeave;
         ImageView ivEventImage;
 
         EventViewHolder(@NonNull View itemView) {
             super(itemView);
             tvEventName        = itemView.findViewById(R.id.tvEventName);
-            tvEventDescription = itemView.findViewById(R.id.tvEventDescription);
             tvEventLocation    = itemView.findViewById(R.id.tvEventLocation);
-            tvEventDate        = itemView.findViewById(R.id.tvEventDate);
-            tvRegistrationEnd  = itemView.findViewById(R.id.tvRegistrationEnd);
-            tvWaitingListCount = itemView.findViewById(R.id.tvWaitingListCount);
+            tvEventCategory    = itemView.findViewById(R.id.tvEventCategory);
+            tvJoinedBadge      = itemView.findViewById(R.id.tvJoinedBadge);
             btnJoinLeave       = itemView.findViewById(R.id.btnJoinLeave);
-            deleteEventButton  = itemView.findViewById(R.id.deleteEventButton);
             ivEventImage       = itemView.findViewById(R.id.ivEventImage);
         }
     }

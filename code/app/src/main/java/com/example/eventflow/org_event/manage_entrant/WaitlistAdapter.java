@@ -1,22 +1,23 @@
 package com.example.eventflow.org_event.manage_entrant;
 
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.eventflow.R;
-import com.google.android.material.button.MaterialButton;
 
 import java.util.List;
 
 public class WaitlistAdapter extends RecyclerView.Adapter<WaitlistAdapter.WaitlistViewHolder> {
 
-    // 1. Define a Callback Interface to talk back to the Activity
     public interface OnItemDeletedListener {
         void onItemDeleted();
     }
@@ -24,7 +25,6 @@ public class WaitlistAdapter extends RecyclerView.Adapter<WaitlistAdapter.Waitli
     private List<Entrant> entrantList;
     private OnItemDeletedListener deleteListener;
 
-    // 2. Updated Constructor to include the listener
     public WaitlistAdapter(List<Entrant> entrantList, OnItemDeletedListener deleteListener) {
         this.entrantList = entrantList;
         this.deleteListener = deleteListener;
@@ -43,27 +43,41 @@ public class WaitlistAdapter extends RecyclerView.Adapter<WaitlistAdapter.Waitli
         Entrant entrant = entrantList.get(position);
 
         holder.tvName.setText(entrant.getName());
-        holder.tvDate.setText("Invited on " + entrant.getInviteDate());
+        holder.tvEmail.setText(entrant.getEmail());
+        
+        String name = entrant.getName();
+        if (name != null && !name.isEmpty()) {
+            holder.tvAvatarLetter.setText(String.valueOf(name.charAt(0)));
+        }
 
-        // Handle Remove Button Click
-        holder.btnRemove.setOnClickListener(v -> {
+        String status = entrant.getStatus();
+        holder.tvStatusBadge.setText(status);
+        
+        // Dynamic styling for badges based on status
+        if ("Selected".equalsIgnoreCase(status) || "Accepted".equalsIgnoreCase(status)) {
+            holder.tvStatusBadge.setTextColor(Color.parseColor("#4CAF50"));
+            holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1A4CAF50")));
+        } else if ("Waiting".equalsIgnoreCase(status)) {
+            holder.tvStatusBadge.setTextColor(Color.parseColor("#FF9800"));
+            holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1AFF9800")));
+        } else if ("Cancelled".equalsIgnoreCase(status) || "Not selected".equalsIgnoreCase(status)) {
+            holder.tvStatusBadge.setTextColor(Color.parseColor("#F44336"));
+            holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1AF44336")));
+        } else if ("Declined".equalsIgnoreCase(status)) {
+            holder.tvStatusBadge.setTextColor(Color.parseColor("#666666"));
+            holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1A666666")));
+        }
+
+        holder.ivActionIcon.setOnClickListener(v -> {
             int currentPosition = holder.getAdapterPosition();
-
             if (currentPosition != RecyclerView.NO_POSITION) {
                 String removedName = entrantList.get(currentPosition).getName();
-
-                // Remove from local list
                 entrantList.remove(currentPosition);
-
-                // Notify UI for animations
                 notifyItemRemoved(currentPosition);
                 notifyItemRangeChanged(currentPosition, entrantList.size());
-
-                // 3. Trigger the callback to update the Count in the Activity
                 if (deleteListener != null) {
                     deleteListener.onItemDeleted();
                 }
-
                 Toast.makeText(v.getContext(), "Removed " + removedName, Toast.LENGTH_SHORT).show();
             }
         });
@@ -75,14 +89,16 @@ public class WaitlistAdapter extends RecyclerView.Adapter<WaitlistAdapter.Waitli
     }
 
     public static class WaitlistViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvDate;
-        MaterialButton btnRemove;
+        TextView tvName, tvEmail, tvAvatarLetter, tvStatusBadge;
+        ImageView ivActionIcon;
 
         public WaitlistViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tvEntrantName);
-            tvDate = itemView.findViewById(R.id.tvJoinDate);
-            btnRemove = itemView.findViewById(R.id.btnCancelEntrant);
+            tvEmail = itemView.findViewById(R.id.tvEntrantEmail);
+            tvAvatarLetter = itemView.findViewById(R.id.tvAvatarLetter);
+            tvStatusBadge = itemView.findViewById(R.id.tvStatusBadge);
+            ivActionIcon = itemView.findViewById(R.id.ivActionIcon);
         }
     }
 }
