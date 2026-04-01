@@ -2,4 +2,14 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="background_black">#000000</color>
+    <color name="surface_dark">#121212</color>
+    <color name="search_bg">#1E1E1E</color>
+    <color name="accent_blue">#4D5DFA</color>
+    <color name="accent_green">#66BB6A</color>
+    <color name="accent_orange">#FFA726</color>
+    <color name="accent_purple">#AB47BC</color>
+    <color name="text_grey">#999999</color>
+    <color name="chip_selected">#3D5AFE</color>
+    <color name="chip_unselected">#1E1E1E</color>
 </resources>

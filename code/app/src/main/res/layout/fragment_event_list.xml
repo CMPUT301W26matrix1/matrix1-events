@@ -3,88 +3,277 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212">
+    android:background="@color/background_black">
 
-    <!-- Header -->
+    <!-- Header: EventFlow and Notification -->
     <RelativeLayout
-        android:id="@+id/rl_search_header"
+        android:id="@+id/rl_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <ImageButton
-            android:id="@+id/btn_search_back"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_media_previous"
-            android:contentDescription="Back"
-            app:tint="#FFFFFF" />
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:text="Search"
-            android:textColor="#FFFFFF"
-            android:textSize="20sp"
+            android:text="EventFlow"
+            android:textColor="@color/white"
+            android:textSize="24sp"
             android:textStyle="bold" />
+
+        <RelativeLayout
+            android:id="@+id/rl_notification_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true">
+
+            <ImageButton
+                android:id="@+id/btn_notifications"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_notification"
+                app:tint="@color/white" />
+
+            <!-- Red Dot -->
+            <View
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:layout_alignTop="@id/btn_notifications"
+                android:layout_alignEnd="@id/btn_notifications"
+                android:background="@drawable/badge_red_rounded" />
+        </RelativeLayout>
     </RelativeLayout>
 
-    <!-- Search Bar -->
+    <!-- Search and Filter Bar -->
     <LinearLayout
-        android:id="@+id/ll_search_bar"
+        android:id="@+id/ll_search_filter"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/rl_search_header"
+        android:layout_below="@id/rl_header"
         android:layout_marginHorizontal="16dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
         <RelativeLayout
             android:layout_width="0dp"
-            android:layout_height="48dp"
+            android:layout_height="50dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_profile_input"
-            android:paddingHorizontal="12dp">
+            android:background="@drawable/search_bar_bg"
+            android:paddingHorizontal="16dp">
 
             <ImageView
                 android:id="@+id/iv_search_icon"
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:layout_centerVertical="true"
-                android:src="@android:drawable/ic_menu_search"
-                app:tint="#4D5DFA" />
+                android:src="@drawable/ic_search"
+                app:tint="@color/text_grey" />
 
             <EditText
                 android:id="@+id/etSearchEvents"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="12dp"
                 android:layout_toEndOf="@id/iv_search_icon"
                 android:background="@null"
-                android:hint="Search..."
-                android:textColorHint="#555555"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
+                android:hint="Search events..."
+                android:textColorHint="@color/text_grey"
+                android:textColor="@color/white"
+                android:textSize="16sp"
                 android:imeOptions="actionSearch"
                 android:inputType="text" />
         </RelativeLayout>
 
-        <Button
-            android:id="@+id/btnFilterEvents"
-            android:layout_width="wrap_content"
-            android:layout_height="32dp"
+        <ImageButton
+            android:id="@+id/btnFilterToggle"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_marginStart="12dp"
-            android:background="@drawable/bg_profile_button"
-            android:backgroundTint="#4D5DFA"
-            android:text="Filters"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:paddingHorizontal="16dp" />
+            android:background="@drawable/search_bar_bg"
+            android:src="@android:drawable/ic_menu_sort_alphabetically"
+            app:tint="@color/text_grey" />
     </LinearLayout>
+
+    <!-- Filter Options Section (Hidden by default) -->
+    <LinearLayout
+        android:id="@+id/ll_filter_options"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/ll_search_filter"
+        android:layout_margin="16dp"
+        android:background="@drawable/rounded_card_bg"
+        android:backgroundTint="#1A1A1A"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Filter by"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="AVAILABILITY"
+            android:textColor="@color/text_grey"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:scrollbars="none">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/cgAvailability"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleSelection="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_avail_all"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="All"
+                    android:textColor="@color/white"
+                    app:chipBackgroundColor="@color/chip_unselected" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_avail_available"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Available"
+                    android:textColor="@color/white"
+                    app:chipBackgroundColor="@color/chip_unselected" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_avail_waitlist"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Waitlist Only"
+                    android:textColor="@color/white"
+                    app:chipBackgroundColor="@color/chip_unselected" />
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/ll_filter_options">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Upcoming Events Section -->
+            <RelativeLayout
+                android:id="@+id/rl_upcoming_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Upcoming Events"
+                    android:textColor="@color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_event_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:text="0 events"
+                    android:textColor="@color/text_grey"
+                    android:textSize="14sp" />
+            </RelativeLayout>
+
+            <!-- Category Chips -->
+            <HorizontalScrollView
+                android:id="@+id/hsv_categories"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:scrollbars="none">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/cgCategories"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_cat_all"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="All"
+                        android:textColor="@color/white"
+                        app:chipBackgroundColor="@color/accent_blue" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_cat_music"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Music"
+                        android:textColor="@color/white"
+                        app:chipBackgroundColor="@color/chip_unselected" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_cat_tech"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tech"
+                        android:textColor="@color/white"
+                        app:chipBackgroundColor="@color/chip_unselected" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_cat_food"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Food"
+                        android:textColor="@color/white"
+                        app:chipBackgroundColor="@color/chip_unselected" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_cat_sport"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sport"
+                        android:textColor="@color/white"
+                        app:chipBackgroundColor="@color/chip_unselected" />
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewEvents"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:paddingHorizontal="16dp"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -93,13 +282,16 @@
         android:layout_centerInParent="true"
         android:visibility="gone" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewEvents"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/ll_search_bar"
-        android:layout_marginTop="16dp"
-        android:paddingHorizontal="16dp"
-        android:clipToPadding="false" />
+    <!-- QR Scan FAB -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_qr_scan"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="24dp"
+        android:src="@drawable/ic_explore"
+        app:backgroundTint="@color/accent_green"
+        app:tint="@color/background_black" />
 
 </RelativeLayout>
