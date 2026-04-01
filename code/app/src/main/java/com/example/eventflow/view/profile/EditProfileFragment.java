@@ -13,6 +13,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.graphics.Color;
+import android.content.res.ColorStateList;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -34,6 +36,7 @@ import java.util.Calendar;
 public class EditProfileFragment extends Fragment {
 
     private EditText etName, etEmail, etDOB;
+    private TextView tvRole;  // ADD THIS for displaying role
     private SwitchCompat switchGeoTracking, switchNotifications;
     private Button btnUpdateProfile, btnDeleteProfile;
     private TextView tvChangePassword;
@@ -41,6 +44,7 @@ public class EditProfileFragment extends Fragment {
     private ProfileController profileController;
     private ProfileRepository profileRepository;
     private String deviceId;
+    private String currentRole;  // ADD THIS to store current role
 
     public EditProfileFragment() {}
 
@@ -51,6 +55,7 @@ public class EditProfileFragment extends Fragment {
         args.putString("lastName", profile.getLastName());
         args.putString("email", profile.getEmail());
         args.putString("dob", profile.getDateOfBirth());
+        args.putString("role", profile.getRole());  // ADD THIS
         fragment.setArguments(args);
         return fragment;
     }
@@ -68,16 +73,59 @@ public class EditProfileFragment extends Fragment {
         etName = view.findViewById(R.id.etEditName);
         etEmail = view.findViewById(R.id.etEditEmail);
         etDOB = view.findViewById(R.id.etEditDOB);
+        tvRole = view.findViewById(R.id.tvEditRole);  // ADD THIS - make sure you have this TextView in your XML
         switchGeoTracking = view.findViewById(R.id.switchEditGeoTracking);
         switchNotifications = view.findViewById(R.id.switchEditNotifications);
         btnUpdateProfile = view.findViewById(R.id.btnUpdateProfile);
         btnDeleteProfile = view.findViewById(R.id.btnDeleteProfile);
         tvChangePassword = view.findViewById(R.id.tvChangePassword);
 
+        // Set toggle buttons - Green when ON, Dark Gray when OFF
+        if (switchGeoTracking != null) {
+            // Create color state list for thumb (changes based on checked state)
+            ColorStateList thumbColorList = new ColorStateList(
+                    new int[][]{
+                            new int[]{android.R.attr.state_checked},  // When ON
+                            new int[]{-android.R.attr.state_checked}, // When OFF
+                    },
+                    new int[]{
+                            Color.parseColor("#006A4E"),  // Green when ON
+                            Color.parseColor("#333333"),  // Dark Gray when OFF
+                    }
+            );
+            switchGeoTracking.setThumbTintList(thumbColorList);
+            // Track color (background)
+            switchGeoTracking.setTrackTintList(ColorStateList.valueOf(Color.parseColor("#666666")));
+            switchGeoTracking.jumpDrawablesToCurrentState();
+        }
+
+        if (switchNotifications != null) {
+            // Create color state list for thumb (changes based on checked state)
+            ColorStateList thumbColorList = new ColorStateList(
+                    new int[][]{
+                            new int[]{android.R.attr.state_checked},  // When ON
+                            new int[]{-android.R.attr.state_checked}, // When OFF
+                    },
+                    new int[]{
+                            Color.parseColor("#006A4E"),  // Green when ON
+                            Color.parseColor("#333333"),  // Dark Gray when OFF
+                    }
+            );
+            switchNotifications.setThumbTintList(thumbColorList);
+            // Track color (background)
+            switchNotifications.setTrackTintList(ColorStateList.valueOf(Color.parseColor("#666666")));
+            switchNotifications.jumpDrawablesToCurrentState();
+        }
+
         profileController = new ProfileController();
         profileRepository = new ProfileRepository();
 
         deviceId = Settings.Secure.getString(requireContext().getContentResolver(), Settings.Secure.ANDROID_ID);
+
+        // Get role from arguments if available
+        if (getArguments() != null) {
+            currentRole = getArguments().getString("role");
+        }
 
         loadCurrentProfile();
 
@@ -87,6 +135,7 @@ public class EditProfileFragment extends Fragment {
 
         if (btnUpdateProfile != null) {
             btnUpdateProfile.setOnClickListener(v -> updateProfile());
+            btnUpdateProfile.setBackgroundTintList(null);
         }
 
         if (btnDeleteProfile != null) {
@@ -115,6 +164,16 @@ public class EditProfileFragment extends Fragment {
         EditText etConfirmPassword = dialogView.findViewById(R.id.etConfirmPassword);
         Button btnChangePassword = dialogView.findViewById(R.id.btnChangePassword);
         Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+
+        // Set Cancel button
+        if (btnCancel != null) {
+            btnCancel.setBackgroundTintList(null);
+        }
+
+        // Set Change button to green
+        if (btnChangePassword != null) {
+            btnChangePassword.setBackgroundTintList(null);
+        }
 
         AlertDialog dialog = builder.create();
         dialog.setCancelable(true);
@@ -243,6 +302,18 @@ public class EditProfileFragment extends Fragment {
                     etDOB.setText(profile.getDateOfBirth());
                 }
                 if (switchNotifications != null) switchNotifications.setChecked(profile.isNotificationsEnabled());
+
+                // Display role (read-only)
+                if (tvRole != null) {
+                    String role = profile.getRole();
+                    if (role != null && !role.isEmpty()) {
+                        String roleText = "Role: " + role.substring(0, 1).toUpperCase() + role.substring(1).toLowerCase();
+                        tvRole.setText(roleText);
+                        tvRole.setVisibility(View.VISIBLE);
+                    } else {
+                        tvRole.setVisibility(View.GONE);
+                    }
+                }
             }
 
             @Override
@@ -281,6 +352,7 @@ public class EditProfileFragment extends Fragment {
         Profile updatedProfile = new Profile(deviceId, firstName, lastName, email, "");
         updatedProfile.setDateOfBirth(dob);
         updatedProfile.setNotificationsEnabled(notificationsEnabled);
+        updatedProfile.setRole(currentRole);  // Preserve the role
 
         profileRepository.updateProfile(updatedProfile, new ProfileRepository.SaveProfileCallback() {
             @Override
@@ -304,7 +376,7 @@ public class EditProfileFragment extends Fragment {
     private void showDeleteConfirmationDialog() {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Delete Profile")
-                .setMessage("Are you sure you want to delete your profile? This action cannot be undone.")
+                .setMessage("Are you sure you want to delete your profile?")
                 .setPositiveButton("Delete", (dialog, which) -> deleteProfile())
                 .setNegativeButton("Cancel", null)
                 .show();

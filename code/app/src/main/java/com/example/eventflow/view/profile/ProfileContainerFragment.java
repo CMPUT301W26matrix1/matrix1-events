@@ -96,8 +96,9 @@ public class ProfileContainerFragment extends Fragment {
     }
 
     public void showEventHistory() {
+        String deviceId = getDeviceId();
         FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
-        transaction.replace(R.id.profile_container, new EventHistoryFragment());
+        transaction.replace(R.id.profile_container, FullHistoryFragment.newInstance(deviceId));
         transaction.addToBackStack(null);
         transaction.commit();
     }

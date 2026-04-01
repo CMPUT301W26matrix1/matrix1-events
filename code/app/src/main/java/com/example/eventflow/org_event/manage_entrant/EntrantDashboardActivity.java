@@ -11,7 +11,6 @@ import com.example.eventflow.NotificationsActivity;
 import com.example.eventflow.OrganizerFinalEntrantsActivity;
 import com.example.eventflow.R;
 import com.example.eventflow.WaitingListActivity;
-import com.example.eventflow.view.profile.SelectedEntrantsActivity;
 
 public class EntrantDashboardActivity extends AppCompatActivity {
 
@@ -35,19 +34,22 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         View cardEnrolled      = findViewById(R.id.cardEnrolled);
         View cardNotifications = findViewById(R.id.cardNotifications);
 
-        // Cancelled Entrants → was Selected Entrants button
+        // Cancelled Entrants → Open CancelledEntrantsActivity
         if (cardCancelled != null) {
-            cardCancelled.setOnClickListener(v ->
-                    startActivity(new Intent(this, SelectedEntrantsActivity.class)));
+            cardCancelled.setOnClickListener(v -> {
+                Intent intent = new Intent(this, CancelledEntrantsActivity.class);
+                intent.putExtra("eventId", eventId != null ? eventId : "Tg34Yn6wNXvYAuvczoMA");
+                startActivity(intent);
+            });
         }
 
-        // Manage Waitlist → was Waiting Lists button
+        // Manage Waitlist → Waiting Lists button
         if (cardWaitlist != null) {
             cardWaitlist.setOnClickListener(v ->
                     startActivity(new Intent(this, WaitingListActivity.class)));
         }
 
-        // Final Enrolled Entrants → was Final Entrants button
+        // Final Enrolled Entrants → Final Entrants button
         if (cardEnrolled != null) {
             cardEnrolled.setOnClickListener(v -> {
                 Intent intent = new Intent(this, OrganizerFinalEntrantsActivity.class);
