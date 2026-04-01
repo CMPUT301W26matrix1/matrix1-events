@@ -1,83 +1,122 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingVertical="12dp"
-    android:paddingHorizontal="16dp">
+    android:layout_marginBottom="12dp"
+    app:cardBackgroundColor="#121212"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp">
 
-    <!-- Profile Picture -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/cv_profile_avatar"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_centerVertical="true"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="0dp">
-
-        <ImageView
-            android:id="@+id/iv_profile_pic"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            android:src="@drawable/ic_profile_placeholder" />
-    </androidx.cardview.widget.CardView>
-
-    <!-- Profile Info -->
-    <LinearLayout
-        android:layout_width="wrap_content"
+    <RelativeLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_marginStart="12dp"
-        android:layout_toEndOf="@id/cv_profile_avatar"
-        android:layout_toStartOf="@+id/ll_delete"
-        android:orientation="vertical">
+        android:padding="16dp">
 
-        <TextView
-            android:id="@+id/profileName"
+        <!-- Avatar Placeholder -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cv_avatar"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:cardCornerRadius="24dp"
+            app:cardBackgroundColor="#1A1A1A"
+            app:cardElevation="0dp">
+            <TextView
+                android:id="@+id/tv_avatar_initial"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="A"
+                android:textColor="#444444"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+            <ImageView
+                android:id="@+id/iv_profile_pic"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:visibility="gone"/>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Profile Info -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="User Name"
-            android:textSize="16sp"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"/>
+            android:layout_centerVertical="true"
+            android:layout_marginStart="16dp"
+            android:layout_toEndOf="@id/cv_avatar"
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/profileEmail"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="email@example.com"
-            android:textSize="12sp"
-            android:textColor="#888888"
-            android:layout_marginTop="2dp"/>
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-    </LinearLayout>
+                <TextView
+                    android:id="@+id/profileName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Alex Johnson"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
 
-    <!-- Delete Button -->
-    <LinearLayout
-        android:id="@+id/ll_delete"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:clickable="true"
-        android:focusable="true">
+                <!-- Role Badge -->
+                <LinearLayout
+                    android:id="@+id/ll_role_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/badge_blue_rounded"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:gravity="center">
+                    <ImageView
+                        android:id="@+id/iv_role_icon"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:src="@drawable/ic_person"
+                        app:tint="#4D5DFA" />
+                    <TextView
+                        android:id="@+id/tv_role_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="2dp"
+                        android:text="Entrant"
+                        android:textColor="#4D5DFA"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
 
+            <TextView
+                android:id="@+id/profileEmail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="alex.j@email.com"
+                android:textColor="#666666"
+                android:textSize="12sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Joined Jan 2025 • 5 events"
+                android:textColor="#444444"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Options Menu (3 dots) -->
         <ImageView
+            android:id="@+id/ll_delete"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/ic_delete"
-            app:tint="#F44336" />
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_more_vert"
+            app:tint="#333333" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Remove"
-            android:textColor="#F44336"
-            android:textSize="10sp" />
-
-    </LinearLayout>
-
-</RelativeLayout>
+    </RelativeLayout>
+</androidx.cardview.widget.CardView>

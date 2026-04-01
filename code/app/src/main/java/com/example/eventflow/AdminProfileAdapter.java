@@ -1,6 +1,7 @@
 package com.example.eventflow;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,7 +19,8 @@ public class AdminProfileAdapter extends BaseAdapter {
     private List<String> profileNames;
     private List<String> profileIds;
     private List<String> profileEmails;
-    private List<String> profileImages; // ADD THIS - list of profile image URLs
+    private List<String> profileImages;
+    private List<String> profileRoles; // Added to support dynamic badges
     private OnProfileDeleteListener deleteListener;
 
     public interface OnProfileDeleteListener {
@@ -27,11 +29,13 @@ public class AdminProfileAdapter extends BaseAdapter {
 
     public AdminProfileAdapter(List<String> profileNames, List<String> profileIds,
                                List<String> profileEmails, List<String> profileImages,
+                               List<String> profileRoles,
                                OnProfileDeleteListener deleteListener) {
         this.profileNames = profileNames;
         this.profileIds = profileIds;
         this.profileEmails = profileEmails;
-        this.profileImages = profileImages; // ADD THIS
+        this.profileImages = profileImages;
+        this.profileRoles = profileRoles;
         this.deleteListener = deleteListener;
     }
 
@@ -59,48 +63,55 @@ public class AdminProfileAdapter extends BaseAdapter {
 
         TextView profileName = convertView.findViewById(R.id.profileName);
         TextView profileEmail = convertView.findViewById(R.id.profileEmail);
-        LinearLayout deleteButton = convertView.findViewById(R.id.ll_delete);
         ImageView profilePic = convertView.findViewById(R.id.iv_profile_pic);
+        TextView tvAvatarInitial = convertView.findViewById(R.id.tv_avatar_initial);
+        View cvAvatar = convertView.findViewById(R.id.cv_avatar);
+        
+        // Role Badge UI
+        LinearLayout roleBadge = convertView.findViewById(R.id.ll_role_badge);
+        TextView tvRoleName = convertView.findViewById(R.id.tv_role_name);
+        ImageView ivRoleIcon = convertView.findViewById(R.id.iv_role_icon);
 
         String name = profileNames.get(position);
         String email = profileEmails.get(position);
         String userId = profileIds.get(position);
-        String imageUrl = profileImages != null && position < profileImages.size() ? profileImages.get(position) : null;
+        String imageUrl = profileImages.get(position);
+        String role = profileRoles.get(position);
 
         profileName.setText(name);
-
-        // Set email (show "No email" if empty)
-        if (email != null && !email.isEmpty()) {
-            profileEmail.setText(email);
-        } else {
-            profileEmail.setText("No email");
+        profileEmail.setText(email != null && !email.isEmpty() ? email : "No email");
+        
+        // Set Avatar Initial
+        if (name != null && !name.isEmpty()) {
+            tvAvatarInitial.setText(name.substring(0, 1).toUpperCase());
         }
 
-        // Load profile picture
+        // Set Role Badge (Dynamic)
+        if ("Organizer".equalsIgnoreCase(role)) {
+            roleBadge.setBackgroundResource(R.drawable.badge_red_rounded); // Use red for organizer
+            tvRoleName.setText("Organizer");
+            tvRoleName.setTextColor(Color.parseColor("#F44336"));
+            ivRoleIcon.setImageResource(R.drawable.ic_edit);
+            ivRoleIcon.setColorFilter(Color.parseColor("#F44336"));
+        } else {
+            roleBadge.setBackgroundResource(R.drawable.badge_blue_rounded);
+            tvRoleName.setText("Entrant");
+            tvRoleName.setTextColor(Color.parseColor("#4D5DFA"));
+            ivRoleIcon.setImageResource(R.drawable.ic_person);
+            ivRoleIcon.setColorFilter(Color.parseColor("#4D5DFA"));
+        }
+
         if (imageUrl != null && !imageUrl.isEmpty()) {
-            Picasso.get().load(imageUrl)
-                    .placeholder(R.drawable.ic_profile_placeholder)
-                    .error(R.drawable.ic_profile_placeholder)
-                    .into(profilePic);
+            profilePic.setVisibility(View.VISIBLE);
+            tvAvatarInitial.setVisibility(View.GONE);
+            Picasso.get().load(imageUrl).into(profilePic);
         } else {
-            profilePic.setImageResource(R.drawable.ic_profile_placeholder);
+            profilePic.setVisibility(View.GONE);
+            tvAvatarInitial.setVisibility(View.VISIBLE);
         }
 
-        // DELETE button click
-        deleteButton.setOnClickListener(v -> {
-            if (deleteListener != null) {
-                deleteListener.onDelete(userId, name);
-            }
-        });
-
-        // Click on the whole card to view profile details
-        convertView.setOnClickListener(v -> {
-            Intent intent = new Intent(parent.getContext(), ProfileDetailActivity.class);
-            intent.putExtra("userId", userId);
-            intent.putExtra("userName", name);
-            intent.putExtra("userEmail", email);
-            intent.putExtra("profileImage", imageUrl);
-            parent.getContext().startActivity(intent);
+        convertView.findViewById(R.id.ll_delete).setOnClickListener(v -> {
+            if (deleteListener != null) deleteListener.onDelete(userId, name);
         });
 
         return convertView;

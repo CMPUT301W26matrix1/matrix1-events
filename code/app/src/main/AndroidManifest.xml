@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Internet permission (existing) -->
+    <!-- Internet permission -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- Add these for location and maps -->
@@ -16,7 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.EventFlow">
 
-        <!-- Add Google Maps API Key -->
+        <!-- Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${mapsApiKey}" />
@@ -45,7 +45,10 @@
         <!-- Waiting List Screen -->
         <activity android:name=".WaitingListActivity" />
 
+        <activity android:name=".AdminDashboardActivity" android:label="Admin Panel" />
         <activity android:name=".AdminBrowseEventsActivity" />
+        <activity android:name=".AdminManageEventsActivity" android:label="Manage Events" />
+
         <activity android:name=".view.profile.SelectedEntrantsActivity" />
         <activity android:name=".EventDetailActivity" />
 
@@ -86,7 +89,6 @@
             android:name=".org_event.manage_entrant.NotificationsActivity"
             android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
 
-        <!-- to upload as CSV -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.example.eventflow.fileprovider"
@@ -97,27 +99,22 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- Map Activity for viewing entrant locations -->
         <activity
             android:name=".EntrantLocationMapActivity"
             android:label="Entrant Locations" />
 
-        <!-- Location Picker Activity (US 02.01.05) -->
         <activity
             android:name=".LocationPickerActivity"
             android:label="Pick Location" />
 
-        <!-- Admin Profile Management Activity (US 03.01.01) -->
         <activity
             android:name=".AdminProfileListActivity"
             android:label="Manage Profiles" />
 
-        <!-- Manage Images -->
         <activity
             android:name=".AdminImageManagementActivity"
             android:label="Manage Images" />
 
-        <!-- Profile detail -->
         <activity
             android:name=".ProfileDetailActivity"
             android:label="Profile Details" />
@@ -126,12 +123,10 @@
             android:name=".FullscreenImageActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
 
-        <!-- Admin Notification Logs (US 03.08.01) -->
         <activity
             android:name=".AdminNotificationLogsActivity"
             android:label="Notification Logs" />
 
-        <!-- Organizer Events List (Fixes crash) -->
         <activity
             android:name=".OrganizerEventsActivity"
             android:label="My Events" />
