@@ -3,14 +3,9 @@ package com.example.eventflow;
 import com.google.firebase.Timestamp;
 
 /**
- * Notification
- *
- * Model class representing an in-app notification stored in Firebase Firestore.
- * A notification includes message text, event information, timestamp,
- * read state, and optional response state such as accepted or declined.
- *
- * - Firestore model for entrant notifications
- * - Used by organizer notification sending and entrant notification display
+ * Model class representing a notification within the EventFlow system.
+ * Notifications inform users about lottery results, event invitations, 
+ * and administrative updates.
  */
 public class Notification {
     private String id;
@@ -22,24 +17,39 @@ public class Notification {
     private String eventId;
     private Timestamp timestamp;
     private boolean isRead;
-
     private boolean accepted;
     private boolean declined;
 
-    //notification type constants
+    // Notification type constants
     public static final String TYPE_PRIVATE_INVITE = "PRIVATE_INVITE";
     public static final String TYPE_CO_ORGANIZER = "CO_ORGANIZER";
     public static final String TYPE_SELECTED = "SELECTED";
     public static final String TYPE_LOST_LOTTERY = "LOST_LOTTERY";
 
+    /**
+     * Default constructor required for Firestore deserialization.
+     */
     public Notification() {
         // required for Firestore
     }
 
+    /**
+     * Constructs a new Notification with basic message details.
+     * @param message   The primary text of the notification.
+     * @param eventName The name of the event associated with this notification.
+     * @param details   Additional context or instructions.
+     */
     public Notification(String message, String eventName, String details) {
         this(message, eventName, details, "GENERAL");
     }
 
+    /**
+     * Constructs a new Notification with a specific type.
+     * @param message   The primary text of the notification.
+     * @param eventName The name of the event.
+     * @param details   Additional context.
+     * @param type      The classification of the notification (e.g., SELECTED).
+     */
     public Notification(String message, String eventName, String details, String type) {
         this.message = message;
         this.eventName = eventName;
@@ -51,7 +61,14 @@ public class Notification {
         this.declined = false;
     }
 
-    // additional constructor for private invite
+    /**
+     * Constructs a new Notification linked to a specific event.
+     * @param message   The primary text.
+     * @param eventName The event name.
+     * @param details   Additional details.
+     * @param type      The notification type.
+     * @param eventId   The unique ID of the event.
+     */
     public Notification(String message, String eventName, String details, String type, String eventId) {
         this.message = message;
         this.eventName = eventName;
@@ -64,103 +81,53 @@ public class Notification {
         this.declined = false;
     }
 
-    public String getId() {
-        return id;
-    }
+    /** @return Unique ID of the notification. */
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    /** @return The message body. */
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
 
-    /**
-     * Returns the notification message.
-     **/
-    public String getMessage() {
-        return message;
-    }
+    /** @return Name of the related event. */
+    public String getEventName() { return eventName; }
+    public void setEventName(String eventName) { this.eventName = eventName; }
 
-    /**
-     * Sets the notification message.
-     **/
-    public void setMessage(String message) {
-        this.message = message;
-    }
+    /** @return Extra details for the user. */
+    public String getDetails() { return details; }
+    public void setDetails(String details) { this.details = details; }
 
-    public String getEventName() {
-        return eventName;
-    }
+    /** @return ID of the user this notification is intended for. */
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 
-    public void setEventName(String eventName) {
-        this.eventName = eventName;
-    }
+    /** @return The notification type string. */
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
 
-    public String getDetails() {
-        return details;
-    }
+    /** @return The ID of the event this notification references. */
+    public String getEventId() { return eventId; }
+    public void setEventId(String eventId) { this.eventId = eventId; }
 
-    public String getUserId() {
-        return userId;
-    }
+    /** @return Creation timestamp. */
+    public Timestamp getTimestamp() { return timestamp; }
+    public void setTimestamp(Timestamp timestamp) { this.timestamp = timestamp; }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
+    /** @return True if the user has viewed this notification. */
+    public boolean isRead() { return isRead; }
+    public void setRead(boolean read) { isRead = read; }
 
-    public void setDetails(String details) {
-        this.details = details;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public String getEventId() {
-        return eventId;
-    }
-
-    public void setEventId(String eventId) {
-        this.eventId = eventId;
-    }
-
-    public Timestamp getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(Timestamp timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public boolean isRead() {
-        return isRead;
-    }
-
-    public void setRead(boolean read) {
-        isRead = read;
-    }
-
-    public boolean isAccepted() {
-        return accepted;
-    }
-
+    /** @return True if the invitation was accepted. */
+    public boolean isAccepted() { return accepted; }
     public void setAccepted(boolean accepted) {
         this.accepted = accepted;
-        if (accepted) {
-            this.declined = false;
-        }
+        if (accepted) this.declined = false;
     }
 
-    public boolean isDeclined() {
-        return declined;
-    }
-
+    /** @return True if the invitation was declined. */
+    public boolean isDeclined() { return declined; }
     public void setDeclined(boolean declined) {
         this.declined = declined;
-        if (declined) {
-            this.accepted = false;
-        }
+        if (declined) this.accepted = false;
     }
 }
