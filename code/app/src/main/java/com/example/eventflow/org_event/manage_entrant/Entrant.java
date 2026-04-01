@@ -8,10 +8,17 @@ public class Entrant {
     private String name;
     private String date; // Used for "Invited on" or "Cancelled on"
     private String email;
+    private String status; // Added for different statuses (Selected, Waiting, Accepted, etc.)
     private String phoneNumber;
     private String acceptDate; // NEW: Specific for Enrolled Entrants
 
-    // 1. Constructor for the Waitlist (Only needs Name and Date)
+    // 1. Constructor for the Waitlist
+    public Entrant(String name, String email, String status) {
+        this.name = name;
+        this.email = email;
+        this.status = status;
+    }
+
     public Entrant(String name, String date) {
         this.name = name;
         this.date = date;
@@ -37,6 +44,7 @@ public class Entrant {
     // --- Getters ---
     public String getName() { return name; }
     public String getEmail() { return email; }
+    public String getStatus() { return status; }
     public String getPhoneNumber() { return phoneNumber; }
 
     // Date getters (naming them clearly to avoid confusion)
