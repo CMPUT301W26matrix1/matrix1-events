@@ -4,163 +4,65 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingHorizontal="16dp"
-    android:layout_marginBottom="16dp">
+    android:paddingHorizontal="24dp">
 
+    <!-- Event Name -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Event Name"
-        android:textColor="#888888"
-        android:textSize="12sp"
-        android:layout_marginBottom="6dp" />
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp" />
 
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="52dp"
         app:cardBackgroundColor="#121212"
-        app:cardCornerRadius="10dp"
-        android:layout_marginBottom="16dp">
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        android:layout_marginBottom="20dp">
 
-        <EditText
-            android:id="@+id/et_event_name"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:background="@null"
-            android:hint="ETLC Basement Meetup"
-            android:paddingHorizontal="16dp"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#888888"
-            android:singleLine="true" />
-    </androidx.cardview.widget.CardView>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Event Location"
-        android:textColor="#888888"
-        android:textSize="12sp"
-        android:layout_marginBottom="6dp" />
-
-    <androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:cardBackgroundColor="#121212"
-        app:cardCornerRadius="10dp"
-        android:layout_marginBottom="16dp">
-
-        <EditText
-            android:id="@+id/et_event_location"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:background="@null"
-            android:hint="ETLC, Edmonton"
-            android:paddingHorizontal="16dp"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#888888"
-            android:singleLine="true" />
-    </androidx.cardview.widget.CardView>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Registration Period (Start - End)"
-        android:textColor="#888888"
-        android:textSize="12sp"
-        android:layout_marginBottom="6dp" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
-
-        <androidx.cardview.widget.CardView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            app:cardBackgroundColor="#121212"
-            app:cardCornerRadius="10dp"
-            android:layout_marginEnd="4dp">
-
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_edit"
+                app:tint="#666666" />
             <EditText
-                android:id="@+id/et_reg_start"
+                android:id="@+id/et_event_name"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:layout_height="match_parent"
                 android:background="@null"
-                android:hint="Start Date"
-                android:paddingHorizontal="16dp"
+                android:hint="Enter event name..."
+                android:layout_marginStart="12dp"
                 android:textColor="#FFFFFF"
-                android:textColorHint="#888888"
-                android:singleLine="true"
-                android:focusable="false"
-                android:clickable="true" />
-        </androidx.cardview.widget.CardView>
-
-        <androidx.cardview.widget.CardView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            app:cardBackgroundColor="#121212"
-            app:cardCornerRadius="10dp"
-            android:layout_marginStart="4dp">
-
-            <EditText
-                android:id="@+id/et_reg_end"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:background="@null"
-                android:hint="End Date"
-                android:paddingHorizontal="16dp"
-                android:textColor="#FFFFFF"
-                android:textColorHint="#888888"
-                android:singleLine="true"
-                android:focusable="false"
-                android:clickable="true" />
-        </androidx.cardview.widget.CardView>
-    </LinearLayout>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Event Date"
-        android:textColor="#888888"
-        android:textSize="12sp"
-        android:layout_marginBottom="6dp" />
-
-    <androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:cardBackgroundColor="#121212"
-        app:cardCornerRadius="10dp"
-        android:layout_marginBottom="16dp">
-
-        <EditText
-            android:id="@+id/et_event_date"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:background="@null"
-            android:hint="12th March, 2026"
-            android:paddingHorizontal="16dp"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#888888"
-            android:singleLine="true" />
+                android:textColorHint="#666666"
+                android:textSize="15sp"
+                android:singleLine="true" />
+        </LinearLayout>
     </androidx.cardview.widget.CardView>
 
+    <!-- Description -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Event Description"
-        android:textColor="#888888"
-        android:textSize="12sp"
-        android:layout_marginBottom="6dp" />
+        android:text="Description"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp" />
 
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
-        android:layout_height="140dp"
+        android:layout_height="120dp"
         app:cardBackgroundColor="#121212"
-        app:cardCornerRadius="10dp"
-        android:layout_marginBottom="8dp">
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        android:layout_marginBottom="20dp">
 
         <EditText
             android:id="@+id/et_event_description"
@@ -168,10 +70,245 @@
             android:layout_height="match_parent"
             android:background="@null"
             android:gravity="top|start"
-            android:hint="Add description"
+            android:hint="Describe your event..."
             android:padding="16dp"
             android:textColor="#FFFFFF"
-            android:textColorHint="#555555" />
+            android:textColorHint="#666666"
+            android:textSize="15sp" />
+    </androidx.cardview.widget.CardView>
+
+    <!-- Date & Time Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="20dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginEnd="8dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Date"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp" />
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                app:cardBackgroundColor="#121212"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@android:drawable/ic_menu_my_calendar"
+                        app:tint="#666666" />
+                    <EditText
+                        android:id="@+id/et_event_date"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@null"
+                        android:hint="dd/mm/yyyy"
+                        android:layout_marginStart="8dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#666666"
+                        android:textSize="14sp"
+                        android:focusable="false" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="8dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Time"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp" />
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                app:cardBackgroundColor="#121212"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@android:drawable/ic_menu_recent_history"
+                        app:tint="#666666" />
+                    <EditText
+                        android:id="@+id/et_event_time"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@null"
+                        android:hint="--:--"
+                        android:layout_marginStart="8dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#666666"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Registration Period -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Registration Period"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="20dp">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_weight="1"
+            app:cardBackgroundColor="#121212"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            android:layout_marginEnd="8dp">
+            <EditText
+                android:id="@+id/et_reg_start"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@null"
+                android:hint="dd/mm/yyyy"
+                android:paddingHorizontal="16dp"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#666666"
+                android:textSize="14sp"
+                android:focusable="false" />
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_weight="1"
+            app:cardBackgroundColor="#121212"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            android:layout_marginStart="8dp">
+            <EditText
+                android:id="@+id/et_reg_end"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@null"
+                android:hint="dd/mm/yyyy"
+                android:paddingHorizontal="16dp"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#666666"
+                android:textSize="14sp"
+                android:focusable="false" />
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
+
+    <!-- Capacity -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Capacity"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp" />
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        app:cardBackgroundColor="#121212"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        android:layout_marginBottom="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_myplaces"
+                app:tint="#666666" />
+            <EditText
+                android:id="@+id/et_max_attendees"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@null"
+                android:hint="Maximum attendees"
+                android:layout_marginStart="12dp"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#666666"
+                android:textSize="15sp"
+                android:inputType="number" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Location -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Location"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp" />
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        app:cardBackgroundColor="#121212"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        android:layout_marginBottom="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_dialog_map"
+                app:tint="#666666" />
+            <EditText
+                android:id="@+id/et_event_location"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@null"
+                android:hint="Event location"
+                android:layout_marginStart="12dp"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#666666"
+                android:textSize="15sp" />
+        </LinearLayout>
     </androidx.cardview.widget.CardView>
 
 </LinearLayout>

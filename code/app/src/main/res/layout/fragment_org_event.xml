@@ -1,17 +1,196 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#1E1E1E">
+    android:background="#000000">
 
-    <FrameLayout
-        android:id="@+id/header_container"
+    <!-- Header -->
+    <include
+        android:id="@+id/header"
+        layout="@layout/fragment_event_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true">
-        <include layout="@layout/fragment_event_header" />
-    </FrameLayout>
+        android:layout_alignParentTop="true" />
 
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_nav_container"
+        android:layout_below="@id/header"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="32dp">
+
+            <!-- Upload Image Section -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cv_upload_image"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="#121212"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Upload Image"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="PNG, JPG up to 5MB"
+                        android:textColor="#666666"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/iv_event_poster"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone" />
+            </androidx.cardview.widget.CardView>
+
+            <!-- Input Fields -->
+            <include
+                layout="@layout/fragment_event_inputs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp" />
+
+            <!-- Enable Geolocation Switch -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_profile_input"
+                android:padding="16dp">
+
+                <ImageView
+                    android:id="@+id/iv_geo_icon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_centerVertical="true"
+                    android:src="@android:drawable/ic_dialog_map"
+                    app:tint="#3B82F6" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="16dp"
+                    android:layout_toEndOf="@id/iv_geo_icon"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Enable Geolocation"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Show on nearby events map"
+                        android:textColor="#666666"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchGeolocationRequired"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+
+            <!-- Private Event Switch -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginBottom="32dp"
+                android:background="@drawable/bg_profile_input"
+                android:padding="16dp">
+
+                <ImageView
+                    android:id="@+id/iv_private_icon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_centerVertical="true"
+                    android:src="@android:drawable/ic_lock_lock"
+                    app:tint="#A855F7" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="16dp"
+                    android:layout_toEndOf="@id/iv_private_icon"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Private Event"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Only visible with invite"
+                        android:textColor="#666666"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/cb_private_event"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+
+            <!-- Action Button -->
+            <Button
+                android:id="@+id/btn_header_action"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginHorizontal="24dp"
+                android:backgroundTint="#4CAF50"
+                android:text="Create Event &amp; Generate QR"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="12dp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Bottom Nav -->
     <FrameLayout
         android:id="@+id/bottom_nav_container"
         android:layout_width="match_parent"
@@ -19,177 +198,5 @@
         android:layout_alignParentBottom="true">
         <include layout="@layout/fragment_event_bottom" />
     </FrameLayout>
-
-    <ScrollView
-        android:id="@+id/form_scroller"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/header_container"
-        android:layout_above="@id/bottom_nav_container"
-        android:fillViewport="true">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingTop="16dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingHorizontal="16dp"
-                android:layout_marginBottom="16dp"
-                android:baselineAligned="false">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center">
-                    <include layout="@layout/fragment_event_image" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center">
-
-                    <include layout="@layout/fragment_attendance_limit" />
-
-                    <!-- US 02.01.02 — Private Event Checkbox -->
-                    <CheckBox
-                        android:id="@+id/cb_private_event"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="Private Event"
-                        android:textColor="#FFFFFF"
-                        android:buttonTint="#3B82F6"
-                        android:textSize="13sp"/>
-
-                    <!-- US 02.01.03 — Invite Entrants Button (hidden until Private is checked) -->
-                    <Button
-                        android:id="@+id/btn_invite_entrants"
-                        android:layout_width="wrap_content"
-                        android:layout_height="35dp"
-                        android:layout_marginTop="8dp"
-                        android:backgroundTint="#10B981"
-                        android:text="Invite Entrants"
-                        android:textAllCaps="false"
-                        android:textColor="#FFFFFF"
-                        android:textSize="10sp"
-                        android:visibility="gone"/>
-
-                    <Button
-                        android:id="@+id/btn_upload_qr"
-                        android:layout_width="wrap_content"
-                        android:layout_height="35dp"
-                        android:layout_marginTop="12dp"
-                        android:backgroundTint="#3B82F6"
-                        android:text="Upload Existing QR"
-                        android:textAllCaps="false"
-                        android:textSize="10sp"/>
-
-                </LinearLayout>
-            </LinearLayout>
-
-            <!--GEOLOCATION REQUIREMENT UI - MOVED ABOVE EVENT DESCRIPTION -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="16dp"
-                android:background="@drawable/bg_profile_card">
-
-                <Switch
-                    android:id="@+id/switchGeolocationRequired"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Require Geolocation for Entrants"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    android:padding="12dp"/>
-
-                <LinearLayout
-                    android:id="@+id/layoutLocationSettings"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone"
-                    android:layout_marginTop="12dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Event Location"
-                        android:textColor="#FFFFFF"
-                        android:textSize="14sp"
-                        android:textStyle="bold"/>
-
-                    <EditText
-                        android:id="@+id/etLocationAddress"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Enter address or click on map"
-                        android:textColor="#FFFFFF"
-                        android:textColorHint="#888888"
-                        android:padding="12dp"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_profile_button"/>
-
-                    <Button
-                        android:id="@+id/btnPickLocation"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Pick Location on Map"
-                        android:backgroundTint="#4CAF50"
-                        android:textColor="#FFFFFF"
-                        android:layout_marginTop="8dp"
-                        android:padding="12dp"/>
-
-                    <TextView
-                        android:id="@+id/tvSelectedLocation"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="No location selected"
-                        android:textColor="#888888"
-                        android:layout_marginTop="8dp"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Radius (meters)"
-                        android:textColor="#FFFFFF"
-                        android:textSize="14sp"
-                        android:layout_marginTop="16dp"/>
-
-                    <SeekBar
-                        android:id="@+id/sbRadius"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:max="5000"
-                        android:progress="500"/>
-
-                    <TextView
-                        android:id="@+id/tvRadiusValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="500 meters"
-                        android:textColor="#4CAF50"
-                        android:layout_marginTop="4dp"/>
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <include layout="@layout/fragment_event_inputs" />
-
-        </LinearLayout>
-    </ScrollView>
 
 </RelativeLayout>
