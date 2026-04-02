@@ -20,21 +20,19 @@ public class BrowseEventsActivity extends AppCompatActivity {
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         if (bottomNav != null) {
-            bottomNav.setSelectedItemId(R.id.nav_events);
+            bottomNav.setSelectedItemId(R.id.nav_dashboard);
             bottomNav.setOnItemSelectedListener(item -> {
                 int id = item.getItemId();
                 if (id == R.id.nav_profile) {
                     startActivity(new Intent(this, ProfileActivity.class));
                     return true;
                 } else if (id == R.id.nav_dashboard) {
-                    startActivity(new Intent(this, MainActivity.class));
-                    finish();
+                    Intent intent = new Intent(this, MainActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
                     return true;
-                } else if (id == R.id.nav_events) {
-                    // Already on events
-                    return true;
-                } else if (id == R.id.nav_my_events) {
-                    startActivity(new Intent(this, OrganizerEventsActivity.class));
+                } else if (id == R.id.nav_admin) {
+                    startActivity(new Intent(this, AdminDashboardActivity.class));
                     return true;
                 }
                 return true;

@@ -3,19 +3,13 @@ package com.example.eventflow;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
-
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
-
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-/**
- * AdminDashboardActivity - Central hub for administrative tasks.
- */
 public class AdminDashboardActivity extends AppCompatActivity {
 
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private TextView tvEventCount, tvUserCount;
 
     @Override
@@ -32,71 +26,57 @@ public class AdminDashboardActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        CardView manageEvents = findViewById(R.id.card_manage_events);
-        CardView manageUsers = findViewById(R.id.card_manage_users);
-        CardView manageImages = findViewById(R.id.card_manage_images);
-        CardView systemLogs = findViewById(R.id.card_system_logs);
-        CardView entrantView = findViewById(R.id.card_entrant);
-        CardView organizerView = findViewById(R.id.card_organizer);
+        findViewById(R.id.card_manage_events).setOnClickListener(v -> 
+            startActivity(new Intent(this, AdminManageEventsActivity.class)));
+        
+        findViewById(R.id.card_manage_users).setOnClickListener(v -> 
+            startActivity(new Intent(this, AdminProfileListActivity.class)));
+        
+        findViewById(R.id.card_manage_images).setOnClickListener(v -> 
+            startActivity(new Intent(this, AdminImageManagementActivity.class)));
+        
+        findViewById(R.id.card_system_logs).setOnClickListener(v -> 
+            startActivity(new Intent(this, AdminNotificationLogsActivity.class)));
 
-        manageEvents.setOnClickListener(v -> {
-            startActivity(new Intent(this, AdminManageEventsActivity.class));
-        });
-
-        manageUsers.setOnClickListener(v -> {
-            startActivity(new Intent(this, AdminProfileListActivity.class));
-        });
-
-        manageImages.setOnClickListener(v -> {
-            startActivity(new Intent(this, AdminImageManagementActivity.class));
-        });
-
-        systemLogs.setOnClickListener(v -> {
-            startActivity(new Intent(this, AdminNotificationLogsActivity.class));
-        });
-
-        // FIXED: Now takes you to the list of Entrants (Users) as per your Figma design
-        entrantView.setOnClickListener(v -> {
-            Intent intent = new Intent(this, AdminProfileListActivity.class);
-            intent.putExtra("filter", "Entrant");
+        findViewById(R.id.card_entrant).setOnClickListener(v -> {
+            Intent intent = new Intent(this, BrowseEventsActivity.class);
             startActivity(intent);
         });
 
-        // FIXED: Now takes you to the list of Organizers (Users)
-        organizerView.setOnClickListener(v -> {
-            Intent intent = new Intent(this, AdminProfileListActivity.class);
-            intent.putExtra("filter", "Organizer");
+        findViewById(R.id.card_organizer).setOnClickListener(v -> {
+            Intent intent = new Intent(this, OrganizerEventsActivity.class);
             startActivity(intent);
         });
     }
 
     private void setupBottomNavigation() {
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
-        bottomNav.setSelectedItemId(R.id.nav_admin);
-
-        bottomNav.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_dashboard) {
-                startActivity(new Intent(this, MainActivity.class));
-                finish();
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.nav_admin);
+            bottomNav.setOnItemSelectedListener(item -> {
+                int id = item.getItemId();
+                if (id == R.id.nav_dashboard) {
+                    Intent intent = new Intent(this, MainActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                    return true;
+                } else if (id == R.id.nav_profile) {
+                    startActivity(new Intent(this, ProfileActivity.class));
+                    return true;
+                } else if (id == R.id.nav_admin) {
+                    return true;
+                }
                 return true;
-            } else if (itemId == R.id.nav_admin) {
-                return true;
-            } else if (itemId == R.id.nav_profile) {
-                startActivity(new Intent(this, ProfileActivity.class));
-                return true;
-            }
-            return false;
-        });
+            });
+        }
     }
 
     private void loadStats() {
-        db.collection("events").get().addOnSuccessListener(queryDocumentSnapshots -> {
-            if (tvEventCount != null) tvEventCount.setText(queryDocumentSnapshots.size() + " total events");
+        db.collection("events").get().addOnSuccessListener(snapshots -> {
+            if (tvEventCount != null) tvEventCount.setText(snapshots.size() + " total events");
         });
-
-        db.collection("profiles").get().addOnSuccessListener(queryDocumentSnapshots -> {
-            if (tvUserCount != null) tvUserCount.setText(queryDocumentSnapshots.size() + " registered users");
+        db.collection("profiles").get().addOnSuccessListener(snapshots -> {
+            if (tvUserCount != null) tvUserCount.setText(snapshots.size() + " registered users");
         });
     }
 }
