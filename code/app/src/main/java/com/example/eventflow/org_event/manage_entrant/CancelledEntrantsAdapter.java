@@ -7,6 +7,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.eventflow.R;
+import com.example.eventflow.model.entities.Entrant;
 import java.util.List;
 
 public class CancelledEntrantsAdapter extends RecyclerView.Adapter<CancelledEntrantsAdapter.CancelledViewHolder> {
@@ -36,8 +37,38 @@ public class CancelledEntrantsAdapter extends RecyclerView.Adapter<CancelledEntr
 
         holder.tvName.setText(entrant.getName());
         holder.tvEmail.setText(entrant.getEmail());
-        holder.tvPhone.setText(entrant.getPhoneNumber());
-        holder.tvDate.setText("Cancelled on " + entrant.getInviteDate());
+
+        // Handle phone (if available)
+        if (entrant.getPhoneNumber() != null && !entrant.getPhoneNumber().isEmpty()) {
+            holder.tvPhone.setText(entrant.getPhoneNumber());
+            holder.tvPhone.setVisibility(View.VISIBLE);
+        } else {
+            holder.tvPhone.setVisibility(View.GONE);
+        }
+
+        // Handle date - using simple concatenation (no strings.xml needed)
+        if (entrant.getInviteDate() != null && !entrant.getInviteDate().isEmpty()) {
+            holder.tvDate.setText("Cancelled on " + entrant.getInviteDate());
+            holder.tvDate.setVisibility(View.VISIBLE);
+        } else {
+            holder.tvDate.setVisibility(View.GONE);
+        }
+
+        // Set status text
+        String status = entrant.getStatus();
+        if (status != null && !status.isEmpty()) {
+            holder.tvStatus.setVisibility(View.VISIBLE);
+            holder.tvStatus.setText(status);
+
+            // Change status color based on status
+            if (status.equalsIgnoreCase("Cancelled")) {
+                holder.tvStatus.setBackgroundResource(R.drawable.badge_red_rounded);
+            } else if (status.equalsIgnoreCase("Declined")) {
+                holder.tvStatus.setBackgroundResource(R.drawable.badge_status_waiting);
+            }
+        } else {
+            holder.tvStatus.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -46,7 +77,7 @@ public class CancelledEntrantsAdapter extends RecyclerView.Adapter<CancelledEntr
     }
 
     public static class CancelledViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvEmail, tvPhone, tvDate;
+        TextView tvName, tvEmail, tvPhone, tvDate, tvStatus;
 
         public CancelledViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -54,6 +85,7 @@ public class CancelledEntrantsAdapter extends RecyclerView.Adapter<CancelledEntr
             tvEmail = itemView.findViewById(R.id.tvCancelledEmail);
             tvPhone = itemView.findViewById(R.id.tvCancelledPhone);
             tvDate = itemView.findViewById(R.id.tvCancelledDate);
+            tvStatus = itemView.findViewById(R.id.tvCancelledStatus);
         }
     }
 }

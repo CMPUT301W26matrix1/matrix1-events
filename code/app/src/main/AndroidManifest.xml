@@ -14,12 +14,12 @@
         android:label="EventFlow"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.EventFlow">
+        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
 
         <!-- Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="${mapsApiKey}" />
+            android:value="YOUR_GOOGLE_MAPS_API_KEY" />
 
         <activity
             android:name=".SplashActivity"
@@ -29,6 +29,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".RoleSelectionActivity"
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"
@@ -99,6 +103,7 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <!-- NEW: Map Activity for viewing entrant locations -->
         <activity
             android:name=".EntrantLocationMapActivity"
             android:label="Entrant Locations" />
@@ -111,10 +116,12 @@
             android:name=".AdminProfileListActivity"
             android:label="Manage Profiles" />
 
+        <!--Manage Images -->
         <activity
             android:name=".AdminImageManagementActivity"
             android:label="Manage Images" />
 
+        <!--Profile detail -->
         <activity
             android:name=".ProfileDetailActivity"
             android:label="Profile Details" />
@@ -127,9 +134,18 @@
             android:name=".AdminNotificationLogsActivity"
             android:label="Notification Logs" />
 
+        <!-- Organizer Events List -->
         <activity
             android:name=".OrganizerEventsActivity"
             android:label="My Events" />
+
+        <!-- Custom QR Scanner -->
+        <activity
+            android:name=".CustomScannerActivity"
+            android:screenOrientation="portrait"
+            android:stateNotNeeded="true"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            android:windowSoftInputMode="stateAlwaysHidden" />
 
     </application>
 

@@ -53,11 +53,11 @@
 
                 <androidx.cardview.widget.CardView
                     android:id="@+id/cv_edit_avatar"
-                    android:layout_width="160dp"
-                    android:layout_height="160dp"
-                    app:cardCornerRadius="80dp"
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    app:cardCornerRadius="70dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="#2A2A2A">
+                    app:cardBackgroundColor="#1A2D1A">
 
                     <ImageView
                         android:id="@+id/iv_edit_profile_pic"
@@ -88,7 +88,7 @@
                         android:layout_gravity="center"
                         android:src="@android:drawable/ic_menu_camera"
                         android:contentDescription="Change Picture"
-                        app:tint="#4CAF50" />
+                        app:tint="#999999" />
                 </androidx.cardview.widget.CardView>
             </RelativeLayout>
 
@@ -175,8 +175,31 @@
                     android:layout_marginEnd="16dp"
                     android:src="@android:drawable/arrow_down_float"
                     android:contentDescription="Dropdown"
-                    app:tint="#4CAF50" />
+                    app:tint="#999999" />
             </RelativeLayout>
+
+            <!-- Role Field (Read-only) - ADD THIS SECTION -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="Role"
+                android:textColor="#999999"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvEditRole"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:padding="16dp"
+                android:text="Loading..."
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:background="@drawable/bg_profile_input"
+                android:enabled="false"
+                android:focusable="false" />
 
             <!-- Geo-location Switch -->
             <RelativeLayout
@@ -198,8 +221,8 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
                     android:checked="true"
-                    android:thumbTint="#4CAF50"
-                    android:trackTint="#666666" />
+                    app:thumbTint="#006A4E"
+                    app:trackTint="#333333" />
             </RelativeLayout>
 
             <!-- Notifications Switch -->
@@ -222,8 +245,8 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
                     android:checked="true"
-                    android:thumbTint="#4CAF50"
-                    android:trackTint="#666666" />
+                    app:thumbTint="#006A4E"
+                    app:trackTint="#333333" />
             </RelativeLayout>
 
             <!-- Save Changes Button -->
@@ -234,6 +257,7 @@
                 android:layout_marginTop="40dp"
                 android:layout_gravity="center"
                 android:background="@drawable/bg_profile_button"
+                android:backgroundTint="@null"
                 android:text="Save Changes"
                 android:textAllCaps="false"
                 android:textColor="#FFFFFF"

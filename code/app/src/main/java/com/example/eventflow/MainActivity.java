@@ -1,80 +1,157 @@
 package com.example.eventflow;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
+import com.journeyapps.barcodescanner.ScanContract;
+import com.journeyapps.barcodescanner.ScanOptions;
 
 /**
- * MainActivity - Now serves as a Role Selection hub.
- * Navigates users to Entrant, Organizer, or Admin dashboards.
+ * MainActivity
+ * Acts as the Role Selection hub (Entrant, Organizer, Admin).
  */
 public class MainActivity extends AppCompatActivity {
 
+    private ImageView ivEntrant, ivOrganizer, ivAdmin;
     private String selectedRole = "";
+
+    private final ActivityResultLauncher<ScanOptions> barcodeLauncher = registerForActivityResult(new ScanContract(),
+            result -> {
+                if (result.getContents() == null) {
+                    Toast.makeText(MainActivity.this, "Cancelled", Toast.LENGTH_LONG).show();
+                } else {
+                    handleScanResult(result.getContents());
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        // --- UI INITIALIZATION ---
         CardView cardEntrant = findViewById(R.id.card_entrant);
         CardView cardOrganizer = findViewById(R.id.card_organizer);
         CardView cardAdmin = findViewById(R.id.card_admin);
+        
+        ivEntrant = findViewById(R.id.iv_entrant_icon);
+        ivOrganizer = findViewById(R.id.iv_organizer_icon);
+        ivAdmin = findViewById(R.id.iv_admin_icon);
+        
         Button btnContinue = findViewById(R.id.btn_continue);
 
-        // Selection Logic
-        cardEntrant.setOnClickListener(v -> {
-            selectedRole = "entrant";
-            updateSelectionUI(cardEntrant, cardOrganizer, cardAdmin);
-        });
+        // --- ROLE SELECTION LISTENERS ---
+        if (cardEntrant != null) cardEntrant.setOnClickListener(v -> selectRole("entrant"));
+        if (cardOrganizer != null) cardOrganizer.setOnClickListener(v -> selectRole("organizer"));
+        if (cardAdmin != null) cardAdmin.setOnClickListener(v -> selectRole("admin"));
 
-        cardOrganizer.setOnClickListener(v -> {
-            selectedRole = "organizer";
-            updateSelectionUI(cardOrganizer, cardEntrant, cardAdmin);
-        });
-
-        cardAdmin.setOnClickListener(v -> {
-            selectedRole = "admin";
-            updateSelectionUI(cardAdmin, cardEntrant, cardOrganizer);
-        });
-
-        // Navigation Logic
-        btnContinue.setOnClickListener(v -> {
-            if (selectedRole.isEmpty()) {
-                Toast.makeText(this, "Please select a role first", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            Intent intent;
-            switch (selectedRole) {
-                case "entrant":
-                    intent = new Intent(MainActivity.this, BrowseEventsActivity.class);
-                    break;
-                case "organizer":
-                    intent = new Intent(MainActivity.this, OrganizerEventsActivity.class);
-                    break;
-                case "admin":
-                    intent = new Intent(MainActivity.this, AdminDashboardActivity.class);
-                    break;
-                default:
+        if (btnContinue != null) {
+            btnContinue.setOnClickListener(v -> {
+                if (selectedRole.isEmpty()) {
+                    Toast.makeText(this, "Please select a role first", Toast.LENGTH_SHORT).show();
                     return;
-            }
-            startActivity(intent);
-        });
+                }
+                navigateToRoleDashboard();
+            });
+        }
+
+        // Handle window insets for Edge-to-Edge
+        View mainView = findViewById(R.id.main);
+        if (mainView != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+                return insets;
+            });
+        }
     }
 
-    /**
-     * Simple UI feedback for selection (Highlights the selected card)
-     */
-    private void updateSelectionUI(CardView selected, CardView other1, CardView other2) {
-        selected.setCardBackgroundColor(0xFF2D2D2D); // Dark grey highlight
-        other1.setCardBackgroundColor(0xFF121212);  // Reset others to default
-        other2.setCardBackgroundColor(0xFF121212);
+    private void selectRole(String role) {
+        selectedRole = role;
+        resetIcons();
         
-        // Optional: Change icon tints or add borders here to match your design exactly
+        // Highlight logic
+        switch (role) {
+            case "entrant":
+                if (ivEntrant != null) {
+                    ivEntrant.setBackgroundResource(R.drawable.circle_bg_green);
+                    ivEntrant.setColorFilter(ContextCompat.getColor(this, R.color.white));
+                }
+                break;
+            case "organizer":
+                if (ivOrganizer != null) {
+                    ivOrganizer.setBackgroundResource(R.drawable.circle_bg_green);
+                    ivOrganizer.setColorFilter(ContextCompat.getColor(this, R.color.white));
+                }
+                break;
+            case "admin":
+                if (ivAdmin != null) {
+                    ivAdmin.setBackgroundResource(R.drawable.circle_bg_green);
+                    ivAdmin.setColorFilter(ContextCompat.getColor(this, R.color.white));
+                }
+                break;
+        }
+    }
+
+    private void resetIcons() {
+        applyInactiveStyle(ivEntrant);
+        applyInactiveStyle(ivOrganizer);
+        applyInactiveStyle(ivAdmin);
+    }
+
+    private void applyInactiveStyle(ImageView iv) {
+        if (iv != null) {
+            iv.setBackgroundResource(R.drawable.circle_bg_dark);
+            iv.setColorFilter(android.graphics.Color.parseColor("#666666"));
+        }
+    }
+
+    private void navigateToRoleDashboard() {
+        Intent intent;
+        switch (selectedRole) {
+            case "entrant":
+                intent = new Intent(this, BrowseEventsActivity.class);
+                break;
+            case "organizer":
+                intent = new Intent(this, OrganizerEventsActivity.class);
+                break;
+            case "admin":
+                intent = new Intent(this, AdminDashboardActivity.class);
+                break;
+            default:
+                return;
+        }
+        startActivity(intent);
+    }
+
+    private void handleScanResult(String contents) {
+        if (contents.startsWith("eventflow://details?id=")) {
+            Uri uri = Uri.parse(contents);
+            String eventId = uri.getQueryParameter("id");
+            if (eventId != null && !eventId.isEmpty()) {
+                Intent intent = new Intent(MainActivity.this, EventDetailActivity.class);
+                intent.putExtra("eventId", eventId);
+                String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+                intent.putExtra("userId", deviceId);
+                intent.putExtra("userRole", "entrant");
+                startActivity(intent);
+            }
+        }
     }
 }
