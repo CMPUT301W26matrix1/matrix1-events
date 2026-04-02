@@ -1,5 +1,6 @@
 package com.example.eventflow;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
@@ -47,6 +48,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
     private EditText searchBar;
 
     private TextView tvFilterAll, tvFilterEntrant, tvFilterOrganizer, tvFilterAdmin;
+    private TextView tabEvents, tabUsers, tabImages;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +71,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
         tvFilterAdmin = findViewById(R.id.tv_filter_admin);
 
         setupFilterListeners();
+        setupTabNavigation();
 
         // Check for initial filter (e.g., from Dashboard)
         String roleFromIntent = getIntent().getStringExtra("filter");
@@ -99,6 +102,24 @@ public class AdminProfileListActivity extends AppCompatActivity {
                 @Override public void afterTextChanged(Editable s) {}
             });
         }
+    }
+
+    private void setupTabNavigation() {
+        tabEvents = findViewById(R.id.tab_events);
+        tabUsers = findViewById(R.id.tab_users);
+        tabImages = findViewById(R.id.tab_images);
+
+        tabEvents.setOnClickListener(v -> {
+            startActivity(new Intent(this, AdminManageEventsActivity.class));
+            finish();
+            overridePendingTransition(0, 0);
+        });
+
+        tabImages.setOnClickListener(v -> {
+            startActivity(new Intent(this, AdminImageManagementActivity.class));
+            finish();
+            overridePendingTransition(0, 0);
+        });
     }
 
     private void setupFilterListeners() {
@@ -162,7 +183,6 @@ public class AdminProfileListActivity extends AppCompatActivity {
                         String email = doc.getString("email");
                         String img = doc.getString("profileImageUrl");
                         
-                        // Default to Entrant if role is missing
                         String role = doc.getString("role");
                         if (role == null || role.isEmpty()) role = "Entrant";
                         

@@ -40,32 +40,38 @@ public class AdminDashboardActivity extends AppCompatActivity {
         CardView organizerView = findViewById(R.id.card_organizer);
 
         manageEvents.setOnClickListener(v -> {
-            startActivity(new Intent(this, AdminManageEventsActivity.class));
+            Intent intent = new Intent(this, AdminManageEventsActivity.class);
+            intent.putExtra("tab", "events");
+            startActivity(intent);
         });
 
         manageUsers.setOnClickListener(v -> {
-            startActivity(new Intent(this, AdminProfileListActivity.class));
+            Intent intent = new Intent(this, AdminProfileListActivity.class);
+            intent.putExtra("tab", "users");
+            startActivity(intent);
         });
 
         manageImages.setOnClickListener(v -> {
-            startActivity(new Intent(this, AdminImageManagementActivity.class));
+            Intent intent = new Intent(this, AdminImageManagementActivity.class);
+            intent.putExtra("tab", "images");
+            startActivity(intent);
         });
 
         systemLogs.setOnClickListener(v -> {
             startActivity(new Intent(this, AdminNotificationLogsActivity.class));
         });
 
-        // FIXED: Now takes you to the list of Entrants (Users) as per your Figma design
         entrantView.setOnClickListener(v -> {
             Intent intent = new Intent(this, AdminProfileListActivity.class);
             intent.putExtra("filter", "Entrant");
+            intent.putExtra("tab", "users");
             startActivity(intent);
         });
 
-        // FIXED: Now takes you to the list of Organizers (Users)
         organizerView.setOnClickListener(v -> {
             Intent intent = new Intent(this, AdminProfileListActivity.class);
             intent.putExtra("filter", "Organizer");
+            intent.putExtra("tab", "users");
             startActivity(intent);
         });
     }

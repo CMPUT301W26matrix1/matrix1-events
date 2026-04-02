@@ -29,16 +29,17 @@ public class AdminImageManagementActivity extends AppCompatActivity {
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private FirebaseStorage storage = FirebaseStorage.getInstance();
 
+    private TextView tabEvents, tabUsers, tabImages;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin_image_management);
 
         ImageButton btnBack = findViewById(R.id.btn_back);
-        btnBack.setOnClickListener(v -> finish());
+        if (btnBack != null) btnBack.setOnClickListener(v -> finish());
 
-        TextView title = findViewById(R.id.tv_title);
-        title.setText("Manage Events");
+        setupTabNavigation();
 
         gridView = findViewById(R.id.gridView);
         adapter = new EventImageAdapter(this, eventImages);
@@ -47,8 +48,25 @@ public class AdminImageManagementActivity extends AppCompatActivity {
         loadEventsWithImages();
     }
 
+    private void setupTabNavigation() {
+        tabEvents = findViewById(R.id.tab_events);
+        tabUsers = findViewById(R.id.tab_users);
+        tabImages = findViewById(R.id.tab_images);
+
+        tabEvents.setOnClickListener(v -> {
+            startActivity(new Intent(this, AdminManageEventsActivity.class));
+            finish();
+            overridePendingTransition(0, 0);
+        });
+
+        tabUsers.setOnClickListener(v -> {
+            startActivity(new Intent(this, AdminProfileListActivity.class));
+            finish();
+            overridePendingTransition(0, 0);
+        });
+    }
+
     private void loadEventsWithImages() {
-        // Get ALL events from Firestore (not just those with posterUrl)
         db.collection("events")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
@@ -58,7 +76,7 @@ public class AdminImageManagementActivity extends AppCompatActivity {
                         String eventName = doc.getString("name");
                         String posterUrl = doc.getString("posterUrl");
 
-                        // Add ALL events, regardless of whether they have a posterUrl
+                        // Add event to list if it has an image or for moderation purposes
                         eventImages.add(new EventImage(eventId, eventName, posterUrl));
                     }
                     adapter.notifyDataSetChanged();
@@ -73,7 +91,6 @@ public class AdminImageManagementActivity extends AppCompatActivity {
     }
 
     public void showDeleteConfirmation(EventImage eventImage, int position) {
-        // Only show delete confirmation if there's an image to delete
         if (eventImage.posterUrl == null || eventImage.posterUrl.isEmpty()) {
             Toast.makeText(this, "This event has no image to delete", Toast.LENGTH_SHORT).show();
             return;
@@ -90,19 +107,12 @@ public class AdminImageManagementActivity extends AppCompatActivity {
     private void deleteImage(EventImage eventImage, int position) {
         String posterUrl = eventImage.posterUrl;
 
-        // Check if it's a Firebase Storage URL
         if (posterUrl != null && posterUrl.contains("firebasestorage.googleapis.com")) {
-            // Delete from Firebase Storage
             StorageReference imageRef = storage.getReferenceFromUrl(posterUrl);
             imageRef.delete()
-                    .addOnSuccessListener(aVoid -> {
-                        updateFirestoreAndUI(eventImage, position);
-                    })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Failed to delete from Storage: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
+                    .addOnSuccessListener(aVoid -> updateFirestoreAndUI(eventImage, position))
+                    .addOnFailureListener(e -> Toast.makeText(this, "Failed to delete from Storage", Toast.LENGTH_SHORT).show());
         } else {
-            // For external/test URLs, just update Firestore
             updateFirestoreAndUI(eventImage, position);
         }
     }
@@ -116,9 +126,7 @@ public class AdminImageManagementActivity extends AppCompatActivity {
                     adapter.notifyDataSetChanged();
                     Toast.makeText(this, "Image removed successfully", Toast.LENGTH_SHORT).show();
                 })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to update: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to update Firestore", Toast.LENGTH_SHORT).show());
     }
 
     public static class EventImage {

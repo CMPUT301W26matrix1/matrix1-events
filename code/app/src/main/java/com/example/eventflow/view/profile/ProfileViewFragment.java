@@ -186,6 +186,11 @@ public class ProfileViewFragment extends Fragment {
                 .collection("event_participations")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
+                    // Check if fragment is still attached to activity and view is not null
+                    if (!isAdded() || getView() == null) {
+                        return;
+                    }
+
                     LinearLayout llEventsList = getView().findViewById(R.id.llEventsList);
                     TextView tvSelectedCount = getView().findViewById(R.id.tvSelectedCount);
                     TextView tvWaitingCount = getView().findViewById(R.id.tvWaitingCount);
@@ -226,11 +231,15 @@ public class ProfileViewFragment extends Fragment {
 
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Failed to load events: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (isAdded() && getContext() != null) {
+                        Toast.makeText(getContext(), "Failed to load events: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                 });
     }
 
     private void addEventToHistory(String eventName, String eventDate, String status) {
+        if (!isAdded() || getView() == null) return;
+        
         LinearLayout llEventsList = getView().findViewById(R.id.llEventsList);
         if (llEventsList == null || getContext() == null) return;
 
@@ -279,6 +288,7 @@ public class ProfileViewFragment extends Fragment {
     }
 
     private void signOut() {
+        if (getContext() == null) return;
         clearUserData();
         Intent intent = new Intent(getActivity(), MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -288,6 +298,7 @@ public class ProfileViewFragment extends Fragment {
     }
 
     private void showDeleteConfirmation() {
+        if (getContext() == null) return;
         new AlertDialog.Builder(requireContext())
                 .setTitle("Delete Account")
                 .setMessage("Are you sure you want to delete your account? This action cannot be undone.")
@@ -297,24 +308,30 @@ public class ProfileViewFragment extends Fragment {
     }
 
     private void deleteAccount() {
+        if (getContext() == null) return;
         String deviceId = Settings.Secure.getString(requireContext().getContentResolver(), Settings.Secure.ANDROID_ID);
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         db.collection("users").document(deviceId).delete()
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(getContext(), "Account deleted", Toast.LENGTH_SHORT).show();
-                    clearUserData();
-                    Intent intent = new Intent(getActivity(), MainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    requireActivity().finish();
+                    if (isAdded() && getContext() != null) {
+                        Toast.makeText(getContext(), "Account deleted", Toast.LENGTH_SHORT).show();
+                        clearUserData();
+                        Intent intent = new Intent(getActivity(), MainActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                        requireActivity().finish();
+                    }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (isAdded() && getContext() != null) {
+                        Toast.makeText(getContext(), "Delete failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                 });
     }
 
     private void clearUserData() {
+        if (getContext() == null) return;
         SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", android.content.Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.clear();

@@ -1,10 +1,12 @@
 package com.example.eventflow;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,6 +32,8 @@ public class AdminManageEventsActivity extends AppCompatActivity {
     private final List<Event> allEvents = new ArrayList<>();
     private final List<Event> filteredEvents = new ArrayList<>();
 
+    private TextView tabEvents, tabUsers, tabImages;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,6 +55,8 @@ public class AdminManageEventsActivity extends AppCompatActivity {
             });
         }
 
+        setupTabNavigation();
+
         // RecyclerView setup
         recyclerView = findViewById(R.id.eventsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -59,6 +65,24 @@ public class AdminManageEventsActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
 
         loadEvents();
+    }
+
+    private void setupTabNavigation() {
+        tabEvents = findViewById(R.id.tab_events);
+        tabUsers = findViewById(R.id.tab_users);
+        tabImages = findViewById(R.id.tab_images);
+
+        tabUsers.setOnClickListener(v -> {
+            startActivity(new Intent(this, AdminProfileListActivity.class));
+            finish();
+            overridePendingTransition(0, 0);
+        });
+
+        tabImages.setOnClickListener(v -> {
+            startActivity(new Intent(this, AdminImageManagementActivity.class));
+            finish();
+            overridePendingTransition(0, 0);
+        });
     }
 
     /**
