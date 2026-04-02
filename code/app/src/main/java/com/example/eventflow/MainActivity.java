@@ -4,12 +4,16 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -18,7 +22,14 @@ import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
+/**
+ * MainActivity
+ * Acts as the Role Selection hub (Entrant, Organizer, Admin).
+ */
 public class MainActivity extends AppCompatActivity {
+
+    private ImageView ivEntrant, ivOrganizer, ivAdmin;
+    private String selectedRole = "";
 
     private final ActivityResultLauncher<ScanOptions> barcodeLauncher = registerForActivityResult(new ScanContract(),
             result -> {
@@ -35,104 +46,99 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // General buttons
-        Button profileButton = findViewById(R.id.profileButton);
-        Button notificationsButton = findViewById(R.id.notificationsButton);
-        Button eventsButton = findViewById(R.id.eventsButton);
-        Button scanQrButton = findViewById(R.id.btn_scan_qr);
+        // --- UI INITIALIZATION ---
+        CardView cardEntrant = findViewById(R.id.card_entrant);
+        CardView cardOrganizer = findViewById(R.id.card_organizer);
+        CardView cardAdmin = findViewById(R.id.card_admin);
+        
+        ivEntrant = findViewById(R.id.iv_entrant_icon);
+        ivOrganizer = findViewById(R.id.iv_organizer_icon);
+        ivAdmin = findViewById(R.id.iv_admin_icon);
+        
+        Button btnContinue = findViewById(R.id.btn_continue);
 
-        // Organizer buttons
-        Button createEventOrgButton = findViewById(R.id.btn_create_event_org);
-        Button manageEntrantsButton = findViewById(R.id.btn_manage_entrants);
-        Button btnManageMyEvents = findViewById(R.id.btn_manage_my_events);
+        // --- ROLE SELECTION LISTENERS ---
+        if (cardEntrant != null) cardEntrant.setOnClickListener(v -> selectRole("entrant"));
+        if (cardOrganizer != null) cardOrganizer.setOnClickListener(v -> selectRole("organizer"));
+        if (cardAdmin != null) cardAdmin.setOnClickListener(v -> selectRole("admin"));
 
-        // Admin buttons
-        Button adminBrowseEventsButton = findViewById(R.id.adminBrowseEventsButton);
-        Button manageProfilesButton = findViewById(R.id.btn_manage_profiles);
-        Button manageImagesButton = findViewById(R.id.btn_manage_images);
-        Button notificationLogsButton = findViewById(R.id.btn_notification_logs);
-
-        // Profile button
-        if (profileButton != null) {
-            profileButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, ProfileActivity.class)));
-        }
-
-        // Notifications button
-        if (notificationsButton != null) {
-            notificationsButton.setOnClickListener(v -> {
-                String userId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
-                Intent intent = new Intent(MainActivity.this, NotificationsActivity.class);
-                intent.putExtra("userId", userId);
-                startActivity(intent);
+        if (btnContinue != null) {
+            btnContinue.setOnClickListener(v -> {
+                if (selectedRole.isEmpty()) {
+                    Toast.makeText(this, "Please select a role first", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                navigateToRoleDashboard();
             });
         }
 
-        // Events button
-        if (eventsButton != null) {
-            eventsButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, BrowseEventsActivity.class)));
-        }
-
-        // Scan QR button
-        if (scanQrButton != null) {
-            scanQrButton.setOnClickListener(v -> {
-                ScanOptions options = new ScanOptions();
-                options.setPrompt("Scan an event QR code");
-                options.setBeepEnabled(true);
-                options.setOrientationLocked(false);
-                // Use our custom scanner activity
-                options.setCaptureActivity(CustomScannerActivity.class);
-                barcodeLauncher.launch(options);
+        // Handle window insets for Edge-to-Edge
+        View mainView = findViewById(R.id.main);
+        if (mainView != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+                return insets;
             });
         }
+    }
 
-        // Create Event button
-        if (createEventOrgButton != null) {
-            createEventOrgButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, com.example.eventflow.org_event.OrgEventActivity.class)));
+    private void selectRole(String role) {
+        selectedRole = role;
+        resetIcons();
+        
+        // Highlight logic
+        switch (role) {
+            case "entrant":
+                if (ivEntrant != null) {
+                    ivEntrant.setBackgroundResource(R.drawable.circle_bg_green);
+                    ivEntrant.setColorFilter(ContextCompat.getColor(this, R.color.white));
+                }
+                break;
+            case "organizer":
+                if (ivOrganizer != null) {
+                    ivOrganizer.setBackgroundResource(R.drawable.circle_bg_green);
+                    ivOrganizer.setColorFilter(ContextCompat.getColor(this, R.color.white));
+                }
+                break;
+            case "admin":
+                if (ivAdmin != null) {
+                    ivAdmin.setBackgroundResource(R.drawable.circle_bg_green);
+                    ivAdmin.setColorFilter(ContextCompat.getColor(this, R.color.white));
+                }
+                break;
         }
+    }
 
-        // Manage Entrants button - FIXED: Now opens EntrantDashboardActivity
-        if (manageEntrantsButton != null) {
-            manageEntrantsButton.setOnClickListener(v -> {
-                // For now, open with a default event ID
-                // TODO: You should let the user select an event first, or get the event ID from somewhere
-                Intent intent = new Intent(MainActivity.this, EntrantDashboardActivity.class);
-                intent.putExtra("eventId", "Tg34Yn6wNXvYAuvczoMA"); // Replace with actual event ID
-                intent.putExtra("eventName", "Tech Summit 2026"); // Replace with actual event name
-                startActivity(intent);
-            });
+    private void resetIcons() {
+        applyInactiveStyle(ivEntrant);
+        applyInactiveStyle(ivOrganizer);
+        applyInactiveStyle(ivAdmin);
+    }
+
+    private void applyInactiveStyle(ImageView iv) {
+        if (iv != null) {
+            iv.setBackgroundResource(R.drawable.circle_bg_dark);
+            iv.setColorFilter(android.graphics.Color.parseColor("#666666"));
         }
+    }
 
-        // Manage My Events button
-        if (btnManageMyEvents != null) {
-            btnManageMyEvents.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, OrganizerEventsActivity.class)));
+    private void navigateToRoleDashboard() {
+        Intent intent;
+        switch (selectedRole) {
+            case "entrant":
+                intent = new Intent(this, BrowseEventsActivity.class);
+                break;
+            case "organizer":
+                intent = new Intent(this, OrganizerEventsActivity.class);
+                break;
+            case "admin":
+                intent = new Intent(this, AdminDashboardActivity.class);
+                break;
+            default:
+                return;
         }
-
-        // Admin Browse Events button
-        if (adminBrowseEventsButton != null) {
-            adminBrowseEventsButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, AdminBrowseEventsActivity.class)));
-        }
-
-        // Manage Profiles button
-        if (manageProfilesButton != null) {
-            manageProfilesButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, AdminProfileListActivity.class)));
-        }
-
-        // Manage Images button
-        if (manageImagesButton != null) {
-            manageImagesButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, AdminImageManagementActivity.class)));
-        }
-
-        // Notification Logs button
-        if (notificationLogsButton != null) {
-            notificationLogsButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, AdminNotificationLogsActivity.class)));
-        }
-
-        // Handle edge-to-edge window insets
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        startActivity(intent);
     }
 
     private void handleScanResult(String contents) {
@@ -146,11 +152,7 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra("userId", deviceId);
                 intent.putExtra("userRole", "entrant");
                 startActivity(intent);
-            } else {
-                Toast.makeText(this, "Invalid QR code: Missing event ID", Toast.LENGTH_LONG).show();
             }
-        } else {
-            Toast.makeText(this, "Unrecognized QR code format", Toast.LENGTH_LONG).show();
         }
     }
 }

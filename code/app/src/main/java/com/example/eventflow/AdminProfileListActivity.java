@@ -1,5 +1,6 @@
 package com.example.eventflow;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -7,6 +8,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
@@ -18,55 +20,130 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * AdminProfileListActivity - Manages and displays the list of users (Profiles).
+ * Supports filtering by role (All, Entrant, Organizer, Admin) and search by name.
+ */
 public class AdminProfileListActivity extends AppCompatActivity {
 
     private ListView listView;
     private AdminProfileAdapter adapter;
-    private List<String> allProfileNames = new ArrayList<>();
-    private List<String> allProfileIds = new ArrayList<>();
-    private List<String> allProfileEmails = new ArrayList<>();
-    private List<String> allProfileImages = new ArrayList<>();  // ADDED
-    private List<String> filteredProfileNames = new ArrayList<>();
-    private List<String> filteredProfileIds = new ArrayList<>();
-    private List<String> filteredProfileEmails = new ArrayList<>();
-    private List<String> filteredProfileImages = new ArrayList<>();  // ADDED
+    
+    // Data lists
+    private final List<String> allProfileNames = new ArrayList<>();
+    private final List<String> allProfileIds = new ArrayList<>();
+    private final List<String> allProfileEmails = new ArrayList<>();
+    private final List<String> allProfileImages = new ArrayList<>();
+    private final List<String> allProfileRoles = new ArrayList<>();
+    
+    private final List<String> filteredProfileNames = new ArrayList<>();
+    private final List<String> filteredProfileIds = new ArrayList<>();
+    private final List<String> filteredProfileEmails = new ArrayList<>();
+    private final List<String> filteredProfileImages = new ArrayList<>();
+    private final List<String> filteredProfileRoles = new ArrayList<>();
+    
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private String currentRoleFilter = "All";
+    private EditText searchBar;
+
+    private TextView tvFilterAll, tvFilterEntrant, tvFilterOrganizer, tvFilterAdmin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin_profile_list);
 
-        // Back button
+        // Header and Navigation
         ImageButton btnBack = findViewById(R.id.btn_back);
-        btnBack.setOnClickListener(v -> finish());
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
 
-        // Search bar
-        EditText searchBar = findViewById(R.id.searchBar);
+        searchBar = findViewById(R.id.searchBar);
         listView = findViewById(R.id.profileListView);
 
-        // UPDATED adapter with emails and images
-        adapter = new AdminProfileAdapter(filteredProfileNames, filteredProfileIds,
-                filteredProfileEmails, filteredProfileImages, (userId, userName) -> {
-            confirmDelete(userId, userName);
-        });
+        // Filter Tabs
+        tvFilterAll = findViewById(R.id.tv_filter_all);
+        tvFilterEntrant = findViewById(R.id.tv_filter_entrant);
+        tvFilterOrganizer = findViewById(R.id.tv_filter_organizer);
+        tvFilterAdmin = findViewById(R.id.tv_filter_admin);
+
+        setupFilterListeners();
+
+        // Check for initial filter (e.g., from Dashboard)
+        String roleFromIntent = getIntent().getStringExtra("filter");
+        if (roleFromIntent != null && !roleFromIntent.isEmpty()) {
+            currentRoleFilter = roleFromIntent;
+        }
+
+        // Initialize Adapter
+        adapter = new AdminProfileAdapter(
+                filteredProfileNames, 
+                filteredProfileIds,
+                filteredProfileEmails, 
+                filteredProfileImages, 
+                filteredProfileRoles, 
+                (userId, userName) -> confirmDelete(userId, userName)
+        );
         listView.setAdapter(adapter);
 
         loadProfiles();
 
-        // Search functionality
-        searchBar.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        // Search Bar Logic
+        if (searchBar != null) {
+            searchBar.addTextChangedListener(new TextWatcher() {
+                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    filterProfiles(s.toString());
+                }
+                @Override public void afterTextChanged(Editable s) {}
+            });
+        }
+    }
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterProfiles(s.toString());
-            }
+    private void setupFilterListeners() {
+        View.OnClickListener filterClick = v -> {
+            if (v.getId() == R.id.tv_filter_all) currentRoleFilter = "All";
+            else if (v.getId() == R.id.tv_filter_entrant) currentRoleFilter = "Entrant";
+            else if (v.getId() == R.id.tv_filter_organizer) currentRoleFilter = "Organizer";
+            else if (v.getId() == R.id.tv_filter_admin) currentRoleFilter = "Admin";
+            
+            updateFilterUI();
+            filterProfiles(searchBar != null ? searchBar.getText().toString() : "");
+        };
 
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
+        if (tvFilterAll != null) tvFilterAll.setOnClickListener(filterClick);
+        if (tvFilterEntrant != null) tvFilterEntrant.setOnClickListener(filterClick);
+        if (tvFilterOrganizer != null) tvFilterOrganizer.setOnClickListener(filterClick);
+        if (tvFilterAdmin != null) tvFilterAdmin.setOnClickListener(filterClick);
+        
+        updateFilterUI();
+    }
+
+    private void updateFilterUI() {
+        resetStyle(tvFilterAll);
+        resetStyle(tvFilterEntrant);
+        resetStyle(tvFilterOrganizer);
+        resetStyle(tvFilterAdmin);
+
+        if (currentRoleFilter.equalsIgnoreCase("All")) highlight(tvFilterAll);
+        else if (currentRoleFilter.equalsIgnoreCase("Entrant")) highlight(tvFilterEntrant);
+        else if (currentRoleFilter.equalsIgnoreCase("Organizer")) highlight(tvFilterOrganizer);
+        else if (currentRoleFilter.equalsIgnoreCase("Admin")) highlight(tvFilterAdmin);
+    }
+
+    private void resetStyle(TextView tv) {
+        if (tv != null) {
+            tv.setTextColor(Color.parseColor("#888888"));
+            tv.setBackground(null);
+        }
+    }
+
+    private void highlight(TextView tv) {
+        if (tv != null) {
+            tv.setTextColor(Color.WHITE);
+            tv.setBackgroundResource(R.drawable.badge_blue_rounded);
+        }
     }
 
     private void loadProfiles() {
@@ -76,38 +153,33 @@ public class AdminProfileListActivity extends AppCompatActivity {
                     allProfileNames.clear();
                     allProfileIds.clear();
                     allProfileEmails.clear();
-                    allProfileImages.clear();  // ADDED
+                    allProfileImages.clear();
+                    allProfileRoles.clear();
 
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        String firstName = doc.getString("firstName");
-                        String lastName = doc.getString("lastName");
+                        String fName = doc.getString("firstName");
+                        String lName = doc.getString("lastName");
                         String email = doc.getString("email");
-                        String phone = doc.getString("phoneNumber");
-                        String imageUrl = doc.getString("profileImageUrl"); // profile picture URL
+                        String img = doc.getString("profileImageUrl");
+                        
+                        // Default to Entrant if role is missing
+                        String role = doc.getString("role");
+                        if (role == null || role.isEmpty()) role = "Entrant";
+                        
                         String userId = doc.getId();
+                        String name = (fName != null ? fName : "") + " " + (lName != null ? lName : "");
+                        if (name.trim().isEmpty()) name = "User " + userId.substring(0, 5);
 
-                        // Combine first and last name
-                        String displayName = "";
-                        if (firstName != null && !firstName.isEmpty()) {
-                            displayName = firstName;
-                        }
-                        if (lastName != null && !lastName.isEmpty()) {
-                            displayName = displayName + " " + lastName;
-                        }
-                        if (displayName.trim().isEmpty()) {
-                            displayName = email != null ? email : "User " + userId.substring(0, 8);
-                        }
-
-                        allProfileNames.add(displayName);
+                        allProfileNames.add(name.trim());
                         allProfileIds.add(userId);
-                        allProfileEmails.add(email != null ? email : "");
-                        allProfileImages.add(imageUrl != null ? imageUrl : "");  // ADDED
+                        allProfileEmails.add(email != null ? email : "No email");
+                        allProfileImages.add(img != null ? img : "");
+                        allProfileRoles.add(role);
                     }
-
-                    filterProfiles("");
+                    filterProfiles(searchBar != null ? searchBar.getText().toString() : "");
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to load profiles: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Failed to load profiles", Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -115,58 +187,37 @@ public class AdminProfileListActivity extends AppCompatActivity {
         filteredProfileNames.clear();
         filteredProfileIds.clear();
         filteredProfileEmails.clear();
-        filteredProfileImages.clear();  // ADDED
+        filteredProfileImages.clear();
+        filteredProfileRoles.clear();
 
-        if (query == null || query.trim().isEmpty()) {
-            filteredProfileNames.addAll(allProfileNames);
-            filteredProfileIds.addAll(allProfileIds);
-            filteredProfileEmails.addAll(allProfileEmails);
-            filteredProfileImages.addAll(allProfileImages);  // ADDED
-        } else {
-            String lowerQuery = query.toLowerCase().trim();
-            for (int i = 0; i < allProfileNames.size(); i++) {
-                if (allProfileNames.get(i).toLowerCase().contains(lowerQuery)) {
-                    filteredProfileNames.add(allProfileNames.get(i));
-                    filteredProfileIds.add(allProfileIds.get(i));
-                    filteredProfileEmails.add(allProfileEmails.get(i));
-                    filteredProfileImages.add(allProfileImages.get(i));  // ADDED
-                }
+        String lowerQuery = query.toLowerCase().trim();
+        for (int i = 0; i < allProfileNames.size(); i++) {
+            String role = allProfileRoles.get(i);
+            
+            boolean roleMatches = currentRoleFilter.equalsIgnoreCase("All") || role.equalsIgnoreCase(currentRoleFilter);
+            boolean nameMatches = lowerQuery.isEmpty() || allProfileNames.get(i).toLowerCase().contains(lowerQuery);
+
+            if (roleMatches && nameMatches) {
+                filteredProfileNames.add(allProfileNames.get(i));
+                filteredProfileIds.add(allProfileIds.get(i));
+                filteredProfileEmails.add(allProfileEmails.get(i));
+                filteredProfileImages.add(allProfileImages.get(i));
+                filteredProfileRoles.add(role);
             }
         }
-
         adapter.notifyDataSetChanged();
-
-        if (filteredProfileNames.isEmpty()) {
-            Toast.makeText(this, "No profiles found", Toast.LENGTH_SHORT).show();
-        }
     }
 
     private void confirmDelete(String userId, String userName) {
         new AlertDialog.Builder(this)
                 .setTitle("Delete Profile")
-                .setMessage("Are you sure you want to delete " + userName + "'s profile?")
-                .setPositiveButton("Delete", (dialog, which) -> deleteProfile(userId, userName))
+                .setMessage("Are you sure you want to delete " + userName + "?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    db.collection("profiles").document(userId).delete()
+                            .addOnSuccessListener(aVoid -> loadProfiles())
+                            .addOnFailureListener(e -> Toast.makeText(this, "Failed to delete", Toast.LENGTH_SHORT).show());
+                })
                 .setNegativeButton("Cancel", null)
                 .show();
-    }
-
-    private void deleteProfile(String userId, String userName) {
-        db.collection("profiles").document(userId)
-                .delete()
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, userName + " profile deleted", Toast.LENGTH_SHORT).show();
-                    // Remove from lists
-                    int index = allProfileIds.indexOf(userId);
-                    if (index != -1) {
-                        allProfileNames.remove(index);
-                        allProfileIds.remove(index);
-                        allProfileEmails.remove(index);
-                        allProfileImages.remove(index);  // ADDED
-                    }
-                    filterProfiles("");
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to delete profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
     }
 }

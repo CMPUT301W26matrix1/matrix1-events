@@ -20,14 +20,21 @@ public class BrowseEventsActivity extends AppCompatActivity {
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         if (bottomNav != null) {
-            bottomNav.setSelectedItemId(R.id.nav_home);
+            bottomNav.setSelectedItemId(R.id.nav_events);
             bottomNav.setOnItemSelectedListener(item -> {
                 int id = item.getItemId();
                 if (id == R.id.nav_profile) {
                     startActivity(new Intent(this, ProfileActivity.class));
                     return true;
+                } else if (id == R.id.nav_dashboard) {
+                    startActivity(new Intent(this, MainActivity.class));
+                    finish();
+                    return true;
+                } else if (id == R.id.nav_events) {
+                    // Already on events
+                    return true;
                 } else if (id == R.id.nav_my_events) {
-                    // For now, stay here or go to a specific "My Events" filter
+                    startActivity(new Intent(this, OrganizerEventsActivity.class));
                     return true;
                 }
                 return true;

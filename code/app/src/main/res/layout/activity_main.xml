@@ -1,203 +1,222 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8F9FA">
-
-    <TextView
-        android:id="@+id/main_header"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="EventFlow"
-        android:textColor="#333333"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    android:background="#000000">
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/main_header">
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_nav"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:paddingHorizontal="32dp"
+            android:paddingTop="60dp">
 
-            <TextView
-                android:id="@+id/eventTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginBottom="24dp"
-                android:text="Control Panel"
-                android:textColor="#666666"
-                android:textSize="16sp" />
-
-            <!-- General Actions -->
-            <Button
-                android:id="@+id/profileButton"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="#4D5DFA"
-                android:text="My Profile"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
-            <Button
-                android:id="@+id/notificationsButton"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="#4D5DFA"
-                android:text="Notifications"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
-            <Button
-                android:id="@+id/eventsButton"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="#4D5DFA"
-                android:text="Browse Events"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
-            <Button
-                android:id="@+id/btn_scan_qr"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="#4D5DFA"
-                android:text="Scan QR Code"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="16dp"
-                android:background="#E0E0E0" />
-
-            <!-- Organizer Actions -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:text="Organizer Actions"
-                android:textColor="#999999"
-                android:textSize="12sp"
+                android:text="Select Your Role"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
                 android:textStyle="bold" />
 
-            <Button
-                android:id="@+id/btn_create_event_org"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="#2D2D6A"
-                android:text="Create New Event"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
-            <!-- Replaces Selected Entrants, Waiting Lists, Final Entrants -->
-            <Button
-                android:id="@+id/btn_manage_entrants"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="#2D2D6A"
-                android:text="Manage Entrants"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
-            <Button
-                android:id="@+id/btn_manage_my_events"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="#2D2D6A"
-                android:text="Manage My Event Details"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="16dp"
-                android:background="#E0E0E0" />
-
-            <!-- Admin Actions -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:text="Admin Actions"
-                android:textColor="#999999"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:layout_marginTop="8dp"
+                android:text="Choose how you want to use EventFlow"
+                android:textColor="#888888"
+                android:textSize="14sp" />
+
+            <!-- Entrant Role Card -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/card_entrant"
+                android:layout_width="match_parent"
+                android:layout_height="84dp"
+                android:layout_marginTop="40dp"
+                app:cardBackgroundColor="#121212"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingHorizontal="20dp">
+
+                    <ImageView
+                        android:id="@+id/iv_entrant_icon"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/circle_bg_dark"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_person"
+                        app:tint="#666666" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="16dp"
+                        android:layout_toEndOf="@id/iv_entrant_icon"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Entrant"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Join and participate in events"
+                            android:textColor="#666666"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </RelativeLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Organizer Role Card -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/card_organizer"
+                android:layout_width="match_parent"
+                android:layout_height="84dp"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="#121212"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingHorizontal="20dp">
+
+                    <ImageView
+                        android:id="@+id/iv_organizer_icon"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/circle_bg_dark"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_edit"
+                        app:tint="#666666" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="16dp"
+                        android:layout_toEndOf="@id/iv_organizer_icon"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Organizer"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Create and manage events"
+                            android:textColor="#666666"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </RelativeLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Admin Role Card -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/card_admin"
+                android:layout_width="match_parent"
+                android:layout_height="84dp"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="#121212"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingHorizontal="20dp">
+
+                    <ImageView
+                        android:id="@+id/iv_admin_icon"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/circle_bg_dark"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_info"
+                        app:tint="#666666" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="16dp"
+                        android:layout_toEndOf="@id/iv_admin_icon"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Admin"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Full system access"
+                            android:textColor="#666666"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </RelativeLayout>
+            </androidx.cardview.widget.CardView>
 
             <Button
-                android:id="@+id/btn_manage_profiles"
+                android:id="@+id/btn_continue"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:layout_marginBottom="32dp"
-                android:backgroundTint="#8B2D2D"
-                android:text="Manage Profile"
+                android:layout_marginTop="48dp"
+                android:backgroundTint="#4CAF50"
+                android:text="Continue"
                 android:textAllCaps="false"
                 android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
-            <Button
-                android:id="@+id/btn_manage_images"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="32dp"
-                android:backgroundTint="#8B2D2D"
-                android:text="Manage Events"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
-            <Button
-                android:id="@+id/adminBrowseEventsButton"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="32dp"
-                android:backgroundTint="#8B2D2D"
-                android:text="System Management"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
-            <Button
-                android:id="@+id/btn_notification_logs"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="32dp"
-                android:backgroundTint="#8B2D2D"
-                android:text="Notification Logs"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="12dp" />
 
         </LinearLayout>
     </ScrollView>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- Bottom Nav Placeholder -->
+    <LinearLayout
+        android:id="@+id/bottom_nav"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_alignParentBottom="true"
+        android:background="#0A0A0A"
+        android:gravity="center"
+        android:orientation="horizontal">
+        <ImageView android:layout_width="0dp" android:layout_height="24dp" android:layout_weight="1" android:src="@drawable/ic_explore" app:tint="#444444" />
+        <ImageView android:layout_width="0dp" android:layout_height="24dp" android:layout_weight="1" android:src="@drawable/ic_add" app:tint="#4CAF50" />
+        <ImageView android:layout_width="0dp" android:layout_height="24dp" android:layout_weight="1" android:src="@drawable/ic_person" app:tint="#444444" />
+    </LinearLayout>
+
+</RelativeLayout>
