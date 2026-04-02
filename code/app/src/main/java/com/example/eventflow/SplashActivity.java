@@ -77,7 +77,7 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void navigateToRoleSelection() {
-        Intent intent = new Intent(SplashActivity.this, RoleSelectionActivity.class);
+        Intent intent = new Intent(SplashActivity.this, MainActivity.class);
         startActivity(intent);
         finish();
     }

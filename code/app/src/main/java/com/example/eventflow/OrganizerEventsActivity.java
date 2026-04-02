@@ -1,5 +1,6 @@
 package com.example.eventflow;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
@@ -11,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.eventflow.model.entities.Event;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -34,7 +36,10 @@ public class OrganizerEventsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_organizer_events);
 
         ImageButton btnBack = findViewById(R.id.btn_back);
-        if (btnBack != null) btnBack.setOnClickListener(v -> finish());
+        if (btnBack != null) btnBack.setOnClickListener(v -> {
+            // Explicitly go back to role selection if finished
+            onBackPressed();
+        });
 
         recyclerView = findViewById(R.id.rvOrganizerEvents);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -44,6 +49,31 @@ public class OrganizerEventsActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
 
         loadMyEvents();
+        setupBottomNavigation();
+    }
+
+    private void setupBottomNavigation() {
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.nav_dashboard);
+            bottomNav.setOnItemSelectedListener(item -> {
+                int id = item.getItemId();
+                if (id == R.id.nav_profile) {
+                    startActivity(new Intent(this, ProfileActivity.class));
+                    return true;
+                } else if (id == R.id.nav_dashboard) {
+                    // Go back to role selection (MainActivity)
+                    Intent intent = new Intent(this, MainActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                    return true;
+                } else if (id == R.id.nav_admin) {
+                    startActivity(new Intent(this, AdminDashboardActivity.class));
+                    return true;
+                }
+                return true;
+            });
+        }
     }
 
     private void loadMyEvents() {

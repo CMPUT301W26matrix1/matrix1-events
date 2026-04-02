@@ -1,6 +1,7 @@
 package com.example.eventflow;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -68,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(this, "Please select a role first", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                navigateToRoleDashboard();
+                saveRoleAndNavigate();
             });
         }
 
@@ -77,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         if (mainView != null) {
             ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
                 Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+                v.setPadding(systemBars.left, systemBars.top, systemBars.bottom, systemBars.bottom);
                 return insets;
             });
         }
@@ -123,6 +124,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void saveRoleAndNavigate() {
+        // Save role to SharedPreferences so SplashActivity can skip this screen next time
+        SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        prefs.edit().putString("selectedRole", selectedRole).apply();
+
+        navigateToRoleDashboard();
+    }
+
     private void navigateToRoleDashboard() {
         Intent intent;
         switch (selectedRole) {
@@ -139,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
         }
         startActivity(intent);
+        // Do NOT call finish() here to allow coming back to role selection (MainActivity)
     }
 
     private void handleScanResult(String contents) {

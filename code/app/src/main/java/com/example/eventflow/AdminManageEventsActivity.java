@@ -1,5 +1,6 @@
 package com.example.eventflow;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -12,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.eventflow.model.entities.Event;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -51,6 +53,22 @@ public class AdminManageEventsActivity extends AppCompatActivity {
             });
         }
 
+        // Tab buttons (Navigation)
+        findViewById(R.id.btn_tab_users).setOnClickListener(v -> {
+            startActivity(new Intent(this, AdminProfileListActivity.class));
+            finish();
+        });
+        findViewById(R.id.btn_tab_images).setOnClickListener(v -> {
+            startActivity(new Intent(this, AdminImageManagementActivity.class));
+            finish();
+        });
+
+        // FAB QR Scan
+        findViewById(R.id.fab_qr_scan).setOnClickListener(v -> {
+            // Intent to QR Scanner if implemented
+            Toast.makeText(this, "QR Scanner", Toast.LENGTH_SHORT).show();
+        });
+
         // RecyclerView setup
         recyclerView = findViewById(R.id.eventsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -58,7 +76,32 @@ public class AdminManageEventsActivity extends AppCompatActivity {
         adapter = new EventAdapter(filteredEvents, "Admin");
         recyclerView.setAdapter(adapter);
 
+        setupBottomNavigation();
         loadEvents();
+    }
+
+    private void setupBottomNavigation() {
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.nav_admin);
+            bottomNav.setOnItemSelectedListener(item -> {
+                int id = item.getItemId();
+                if (id == R.id.nav_dashboard) {
+                    Intent intent = new Intent(this, MainActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                    return true;
+                } else if (id == R.id.nav_profile) {
+                    startActivity(new Intent(this, ProfileActivity.class));
+                    return true;
+                } else if (id == R.id.nav_admin) {
+                    // Go back to Admin Panel (Dashboard)
+                    finish();
+                    return true;
+                }
+                return true;
+            });
+        }
     }
 
     /**

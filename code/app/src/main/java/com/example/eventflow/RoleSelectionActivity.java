@@ -37,13 +37,11 @@ public class RoleSelectionActivity extends AppCompatActivity {
             if ("Entrant".equals(selectedRole)) {
                 startActivity(new Intent(RoleSelectionActivity.this, BrowseEventsActivity.class));
             } else if ("Organizer".equals(selectedRole)) {
-                // Navigate to Organizer view if implemented, otherwise MainActivity
-                startActivity(new Intent(RoleSelectionActivity.this, MainActivity.class));
+                startActivity(new Intent(RoleSelectionActivity.this, OrganizerEventsActivity.class));
             } else if ("Admin".equals(selectedRole)) {
-                // Navigate to Admin view if implemented, otherwise MainActivity
-                startActivity(new Intent(RoleSelectionActivity.this, MainActivity.class));
+                startActivity(new Intent(RoleSelectionActivity.this, AdminDashboardActivity.class));
             }
-            finish();
+            // Do NOT call finish() here to allow coming back to role selection via "Dashboard"
         });
     }
 
