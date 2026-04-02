@@ -128,7 +128,8 @@ public class EntrantLocationMapActivity extends AppCompatActivity implements OnM
 
                         Log.d("MapsDebug", "Entry: " + userId + ", lat=" + lat + ", lng=" + lng + ", name=" + userName);
 
-                        if (lat != null && lng != null && userName != null) {
+                        if (lat != null && lng != null) {
+                            String name = userName != null ? userName : "Unknown";
                             entrantLocations.add(new EntrantLocation(
                                     userName, userId, lat, lng));
                         }
