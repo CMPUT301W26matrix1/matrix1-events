@@ -7,139 +7,73 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Model class for comments. Handles both legacy parentId and newer parentCommentId fields.
+ */
 public class Comment {
     private String commentId;
     private String userId;
     private String userName;
     private String text;
     private Timestamp timestamp;
-    private String parentCommentId; // Field name in some docs
-    private String parentId;        // Field name in other docs
+    private String parentCommentId; 
+    private String parentId;        
     private String role;
-    private Map<String, Object> reactions = new HashMap<>(); // emoji -> count (Integer) OR list of userIds (ArrayList)
-
-    // Local-only field for UI rendering, not persisted to Firestore
-    private int depth = 0;
+    private Map<String, Object> reactions = new HashMap<>();
 
     public Comment() {
         // needed for Firestore
     }
 
-    public Comment(String commentId, String userId, String userName, String text, Timestamp timestamp) {
-        this(commentId, userId, userName, text, timestamp, null);
-    }
+    public String getCommentId() { return commentId; }
+    public void setCommentId(String commentId) { this.commentId = commentId; }
 
-    public Comment(String commentId, String userId, String userName, String text, Timestamp timestamp, String parentCommentId) {
-        this.commentId = commentId;
-        this.userId = userId;
-        this.userName = userName;
-        this.text = text;
-        this.timestamp = timestamp;
-        this.parentCommentId = parentCommentId;
-        this.parentId = parentCommentId;
-    }
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 
-    public String getCommentId() {
-        return commentId;
-    }
+    public String getUserName() { return userName; }
+    public void setUserName(String userName) { this.userName = userName; }
 
-    public String getUserId() {
-        return userId;
-    }
+    public String getText() { return text; }
+    public void setText(String text) { this.text = text; }
 
-    public String getUserName() {
-        return userName;
-    }
+    public Timestamp getTimestamp() { return timestamp; }
+    public void setTimestamp(Timestamp timestamp) { this.timestamp = timestamp; }
 
-    public String getText() {
-        return text;
-    }
+    public String getParentCommentId() { return parentCommentId; }
+    public void setParentCommentId(String parentCommentId) { this.parentCommentId = parentCommentId; }
 
-    public Timestamp getTimestamp() {
-        return timestamp;
-    }
+    public String getParentId() { return parentId; }
+    public void setParentId(String parentId) { this.parentId = parentId; }
 
-    public String getParentCommentId() {
-        return parentId != null ? parentId : parentCommentId;
-    }
-
-    public String getParentId() {
-        return parentId;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public Map<String, Object> getReactions() {
-        return reactions;
-    }
-
+    /**
+     * Helper to check if this is a top-level comment (no parent).
+     */
     @Exclude
-    public int getDepth() {
-        return depth;
-    }
-
-    public void setCommentId(String commentId) {
-        this.commentId = commentId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public void setTimestamp(Timestamp timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public void setParentCommentId(String parentCommentId) {
-        this.parentCommentId = parentCommentId;
-    }
-
-    public void setParentId(String parentId) {
-        this.parentId = parentId;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public void setReactions(Map<String, Object> reactions) {
-        this.reactions = reactions;
-    }
-
-    @Exclude
-    public void setDepth(int depth) {
-        this.depth = depth;
+    public boolean isTopLevel() {
+        return (parentId == null || parentId.isEmpty()) && (parentCommentId == null || parentCommentId.isEmpty());
     }
 
     /**
-     * Helper to get count of a specific reaction, handling both Integer and List types.
+     * Unified parent ID getter.
      */
+    @Exclude
+    public String getEffectiveParentId() {
+        if (parentId != null && !parentId.isEmpty()) return parentId;
+        return parentCommentId;
+    }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+
+    public Map<String, Object> getReactions() { return reactions; }
+    public void setReactions(Map<String, Object> reactions) { this.reactions = reactions; }
+
     public int getReactionCount(String emoji) {
         if (reactions == null) return 0;
         Object value = reactions.get(emoji);
-        if (value instanceof Number) {
-            return ((Number) value).intValue();
-        } else if (value instanceof List) {
-            return ((List<?>) value).size();
-        }
+        if (value instanceof Number) return ((Number) value).intValue();
+        if (value instanceof List) return ((List<?>) value).size();
         return 0;
-    }
-
-    public void addReaction(String emoji) {
-        if (reactions == null) {
-            reactions = new HashMap<>();
-        }
-        int count = getReactionCount(emoji);
-        reactions.put(emoji, count + 1);
     }
 }

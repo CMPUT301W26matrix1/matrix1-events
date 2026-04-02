@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="#000000">
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
@@ -29,14 +29,14 @@
                     android:scaleType="centerCrop"
                     android:src="@drawable/ic_placeholder" />
 
-                <!-- Gradient Overlay for better text readability -->
+                <!-- Gradient Overlay -->
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:background="@drawable/rounded_sheet"
                     android:alpha="0.2" />
 
-                <!-- Toolbar Content (Back and Delete) -->
+                <!-- Toolbar Content -->
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -75,7 +75,7 @@
                 </RelativeLayout>
             </RelativeLayout>
 
-            <!-- Sleek Overlapping Content Card -->
+            <!-- Overlapping Content Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -257,6 +257,6 @@
             </LinearLayout>
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
 </RelativeLayout>

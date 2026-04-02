@@ -27,7 +27,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
     }
 
     private final List<Comment> allComments;
-    private final List<Comment> topLevelComments;
+    private final List<Comment> displayComments;
     private final CommentActionListener actionListener;
     private boolean isOrganizer;
     private boolean isAdmin;
@@ -35,30 +35,31 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
     public CommentAdapter(List<Comment> comments, CommentActionListener actionListener,
                           boolean isOrganizer, boolean isAdmin) {
         this.allComments = comments;
-        this.topLevelComments = new ArrayList<>();
+        this.displayComments = new ArrayList<>();
         this.actionListener = actionListener;
         this.isOrganizer = isOrganizer;
         this.isAdmin = isAdmin;
-        filterTopLevelComments();
+        updateDisplayList();
     }
 
-    private void filterTopLevelComments() {
-        topLevelComments.clear();
+    private void updateDisplayList() {
+        displayComments.clear();
+        // Everyone sees threads now to maintain structure
         for (Comment c : allComments) {
-            if (c.getParentCommentId() == null) {
-                topLevelComments.add(c);
+            if (c.isTopLevel()) {
+                displayComments.add(c);
             }
         }
     }
 
     public void refreshComments() {
-        filterTopLevelComments();
-        super.notifyDataSetChanged();
+        updateDisplayList();
+        notifyDataSetChanged();
     }
 
     public void setPermissions(boolean isOrganizer, boolean isAdmin) {
-        this.isOrganizer = isOrganizer;
         this.isAdmin = isAdmin;
+        this.isOrganizer = isOrganizer;
         refreshComments();
     }
 
@@ -72,10 +73,10 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
 
     @Override
     public void onBindViewHolder(@NonNull CommentViewHolder holder, int position) {
-        Comment comment = topLevelComments.get(position);
+        Comment comment = displayComments.get(position);
         bindComment(holder, comment);
 
-        // Handle Replies
+        // Handle Replies for everyone to maintain nested format
         List<Comment> replies = getRepliesFor(comment.getCommentId());
         if (!replies.isEmpty()) {
             holder.rvReplies.setVisibility(View.VISIBLE);
@@ -132,12 +133,21 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
         } else {
             holder.btnDeleteComment.setVisibility(View.GONE);
         }
+        
+        // Admin also has reply option now to keep things consistent, or we can hide it as before
+        if (isAdmin) {
+            holder.tvReply.setVisibility(View.GONE); // Still hiding reply for admin to focus on moderation
+        } else {
+            holder.tvReply.setVisibility(View.VISIBLE);
+        }
     }
 
     private List<Comment> getRepliesFor(String parentId) {
         List<Comment> replies = new ArrayList<>();
+        if (parentId == null) return replies;
         for (Comment c : allComments) {
-            if (parentId.equals(c.getParentCommentId())) {
+            String effectiveParentId = c.getEffectiveParentId();
+            if (parentId.equals(effectiveParentId)) {
                 replies.add(c);
             }
         }
@@ -146,7 +156,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
 
     @Override
     public int getItemCount() {
-        return topLevelComments.size();
+        return displayComments.size();
     }
 
     static class CommentViewHolder extends RecyclerView.ViewHolder {
@@ -167,7 +177,6 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
         }
     }
 
-    // Inner class for replies to avoid infinite nesting issues in a simple way
     private class ReplyAdapter extends RecyclerView.Adapter<CommentViewHolder> {
         private final List<Comment> replies;
         private final CommentActionListener actionListener;
@@ -193,10 +202,9 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             Comment comment = replies.get(position);
             bindComment(holder, comment);
             
-            // Enable replying to a reply
-            holder.tvReply.setVisibility(View.VISIBLE);
+            // Nested comments can also have replies for non-admins
+            holder.tvReply.setVisibility(isAdmin ? View.GONE : View.VISIBLE);
 
-            // Handle further nested replies
             List<Comment> nestedReplies = getRepliesFor(comment.getCommentId());
             if (!nestedReplies.isEmpty()) {
                 holder.rvReplies.setVisibility(View.VISIBLE);
