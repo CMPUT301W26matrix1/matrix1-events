@@ -56,17 +56,19 @@ public class AdminDashboardActivity extends AppCompatActivity {
             bottomNav.setOnItemSelectedListener(item -> {
                 int id = item.getItemId();
                 if (id == R.id.nav_dashboard) {
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                    startActivity(intent);
+                    startActivity(new Intent(this, RoleSelectionActivity.class));
+                    finish();
                     return true;
                 } else if (id == R.id.nav_profile) {
                     startActivity(new Intent(this, ProfileActivity.class));
                     return true;
                 } else if (id == R.id.nav_admin) {
                     return true;
+                } else if (id == R.id.nav_events) {
+                    startActivity(new Intent(this, BrowseEventsActivity.class));
+                    return true;
                 }
-                return true;
+                return false;
             });
         }
     }

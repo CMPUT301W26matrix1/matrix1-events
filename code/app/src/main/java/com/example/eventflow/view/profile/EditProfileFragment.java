@@ -21,8 +21,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
 
-import com.example.eventflow.MainActivity;
 import com.example.eventflow.R;
+import com.example.eventflow.RoleSelectionActivity;
 import com.example.eventflow.controller.ProfileController;
 import com.example.eventflow.model.entities.Profile;
 import com.example.eventflow.model.repositories.ProfileRepository;
@@ -388,7 +388,7 @@ public class EditProfileFragment extends Fragment {
             public void onSuccess() {
                 if (!isAdded()) return;
                 Toast.makeText(requireContext(), "Profile deleted successfully", Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent(requireContext(), MainActivity.class);
+                Intent intent = new Intent(requireContext(), RoleSelectionActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
             }

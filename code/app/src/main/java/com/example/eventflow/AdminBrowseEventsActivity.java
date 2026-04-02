@@ -60,7 +60,7 @@ public class AdminBrowseEventsActivity extends AppCompatActivity {
         // Bottom Navigation logic
         findViewById(R.id.admin_bottom_nav).findViewById(android.R.id.content).setOnClickListener(v -> {
             // Dashboard (Explore)
-            startActivity(new Intent(this, MainActivity.class));
+            startActivity(new Intent(this, RoleSelectionActivity.class));
             finish();
         });
 

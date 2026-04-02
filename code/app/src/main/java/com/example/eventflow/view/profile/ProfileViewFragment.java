@@ -18,8 +18,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
-import com.example.eventflow.MainActivity;
 import com.example.eventflow.R;
+import com.example.eventflow.RoleSelectionActivity;
 import com.example.eventflow.model.entities.Profile;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -135,9 +135,6 @@ public class ProfileViewFragment extends Fragment {
                     llEventsList.setVisibility(View.VISIBLE);
                 }
                 if (tvViewFullHistory != null) {
-                    tvViewFullHistory.setVisibility(View.VISIBLE);
-
-                    // Add click listener for View Full History
                     tvViewFullHistory.setOnClickListener(v -> {
                         if (getParentFragment() instanceof ProfileContainerFragment) {
                             ((ProfileContainerFragment) getParentFragment()).showEventHistory();
@@ -280,7 +277,7 @@ public class ProfileViewFragment extends Fragment {
 
     private void signOut() {
         clearUserData();
-        Intent intent = new Intent(getActivity(), MainActivity.class);
+        Intent intent = new Intent(getActivity(), RoleSelectionActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         requireActivity().finish();
@@ -304,7 +301,7 @@ public class ProfileViewFragment extends Fragment {
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(getContext(), "Account deleted", Toast.LENGTH_SHORT).show();
                     clearUserData();
-                    Intent intent = new Intent(getActivity(), MainActivity.class);
+                    Intent intent = new Intent(getActivity(), RoleSelectionActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
                     requireActivity().finish();
