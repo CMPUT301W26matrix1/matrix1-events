@@ -16,9 +16,9 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 
-import com.example.eventflow.MainActivity;
 import com.example.eventflow.ProfileActivity;
 import com.example.eventflow.R;
+import com.example.eventflow.RoleSelectionActivity;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
@@ -126,7 +126,7 @@ public class OrgEventActivity extends AppCompatActivity {
         // Navigation bar logic: Switches between major app sections
         if (navDashboard != null) {
             navDashboard.setOnClickListener(v -> {
-                Intent intent = new Intent(OrgEventActivity.this, MainActivity.class);
+                Intent intent = new Intent(OrgEventActivity.this, RoleSelectionActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(intent);
             });

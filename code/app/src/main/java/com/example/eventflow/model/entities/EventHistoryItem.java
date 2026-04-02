@@ -1,51 +1,36 @@
 package com.example.eventflow.model.entities;
 
 public class EventHistoryItem {
-    private String deviceId;
-    private String eventTitle;
+    private String eventId;
+    private String eventName;
     private String eventDate;
+    private String eventLocation;
     private String status;
 
     public EventHistoryItem() {
         // Required empty constructor for Firestore
     }
 
-    public EventHistoryItem(String deviceId, String eventTitle, String eventDate, String status) {
-        this.deviceId = deviceId;
-        this.eventTitle = eventTitle;
+    public EventHistoryItem(String eventId, String eventName, String eventDate, String eventLocation, String status) {
+        this.eventId = eventId;
+        this.eventName = eventName;
         this.eventDate = eventDate;
+        this.eventLocation = eventLocation;
         this.status = status;
     }
 
-    public String getDeviceId() {
-        return deviceId;
-    }
+    public String getEventId() { return eventId; }
+    public void setEventId(String eventId) { this.eventId = eventId; }
 
-    public void setDeviceId(String deviceId) {
-        this.deviceId = deviceId;
-    }
+    public String getEventName() { return eventName; }
+    public void setEventName(String eventName) { this.eventName = eventName; }
 
-    public String getEventTitle() {
-        return eventTitle;
-    }
+    public String getEventDate() { return eventDate; }
+    public void setEventDate(String eventDate) { this.eventDate = eventDate; }
 
-    public void setEventTitle(String eventTitle) {
-        this.eventTitle = eventTitle;
-    }
+    public String getEventLocation() { return eventLocation; }
+    public void setEventLocation(String eventLocation) { this.eventLocation = eventLocation; }
 
-    public String getEventDate() {
-        return eventDate;
-    }
-
-    public void setEventDate(String eventDate) {
-        this.eventDate = eventDate;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

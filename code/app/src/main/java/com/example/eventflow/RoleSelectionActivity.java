@@ -29,22 +29,14 @@ public class RoleSelectionActivity extends AppCompatActivity {
         // Set initial state
         selectCard(cardEntrant, "Entrant");
 
+        // Update card click listeners to only select the card, not navigate
         cardEntrant.setOnClickListener(v -> selectCard(cardEntrant, "Entrant"));
         cardOrganizer.setOnClickListener(v -> selectCard(cardOrganizer, "Organizer"));
         cardAdmin.setOnClickListener(v -> selectCard(cardAdmin, "Admin"));
 
-        btnContinue.setOnClickListener(v -> {
-            if ("Entrant".equals(selectedRole)) {
-                startActivity(new Intent(RoleSelectionActivity.this, BrowseEventsActivity.class));
-            } else if ("Organizer".equals(selectedRole)) {
-                // Navigate to Organizer view if implemented, otherwise MainActivity
-                startActivity(new Intent(RoleSelectionActivity.this, MainActivity.class));
-            } else if ("Admin".equals(selectedRole)) {
-                // Navigate to Admin view if implemented, otherwise MainActivity
-                startActivity(new Intent(RoleSelectionActivity.this, MainActivity.class));
-            }
-            finish();
-        });
+        if (btnContinue != null) {
+            btnContinue.setOnClickListener(v -> navigateToRole(selectedRole));
+        }
     }
 
     private void selectCard(MaterialCardView selectedCard, String role) {
@@ -60,7 +52,27 @@ public class RoleSelectionActivity extends AppCompatActivity {
     }
 
     private void resetCard(MaterialCardView card) {
+        if (card == null) return;
         card.setStrokeColor(Color.parseColor("#1A1A1A"));
         card.setStrokeWidth(2);
+    }
+
+    private void navigateToRole(String role) {
+        Intent intent;
+        switch (role) {
+            case "Entrant":
+                intent = new Intent(this, BrowseEventsActivity.class);
+                break;
+            case "Organizer":
+                intent = new Intent(this, OrganizerEventsActivity.class);
+                break;
+            case "Admin":
+                intent = new Intent(this, AdminDashboardActivity.class);
+                break;
+            default:
+                return;
+        }
+        startActivity(intent);
+        finish();
     }
 }

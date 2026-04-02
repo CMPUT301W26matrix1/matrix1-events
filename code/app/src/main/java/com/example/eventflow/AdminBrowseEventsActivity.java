@@ -2,120 +2,78 @@ package com.example.eventflow;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.widget.Button;
-import android.widget.EditText;
-
+import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.cardview.widget.CardView;
 
-import com.example.eventflow.model.entities.Event;
-import com.example.eventflow.org_event.OrgEventActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * US 03.09.01 — Admin can browse events, join as entrant, and create events as organizer.
+ * AdminBrowseEventsActivity
+ * 
+ * Acting as the "Admin Panel" dashboard. This screen provides entry points 
+ * to all administrative functions as shown in the Figma design.
  */
 public class AdminBrowseEventsActivity extends AppCompatActivity {
 
-    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private RecyclerView recyclerView;
-    private EventAdapter adapter;
-
-    private final List<Event> allEvents = new ArrayList<>();
-    private final List<Event> filteredEvents = new ArrayList<>();
-
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private TextView tvEventCount, tvUserCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.admin_browse_events_activity);
 
-        recyclerView = findViewById(R.id.eventsRecyclerView);
-        EditText searchBar = findViewById(R.id.searchBar);
+        tvEventCount = findViewById(R.id.tv_event_count);
+        tvUserCount = findViewById(R.id.tv_user_count);
 
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new EventAdapter(filteredEvents, "Admin");
-        recyclerView.setAdapter(adapter);
+        // Core Management Cards
+        CardView btnManageEvents = findViewById(R.id.btn_manage_events);
+        CardView btnManageUsers = findViewById(R.id.btn_manage_users);
+        CardView btnManageImages = findViewById(R.id.btn_manage_images);
+        CardView btnSystemLogs = findViewById(R.id.btn_system_logs);
 
-        loadEvents();
-
-        if (searchBar != null) {
-            searchBar.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                }
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    filterEvents(s.toString());
-                }
-
-                @Override
-                public void afterTextChanged(Editable s) {
-                }
+        if (btnManageEvents != null) {
+            btnManageEvents.setOnClickListener(v -> {
+                startActivity(new Intent(this, AdminManageEventsActivity.class));
             });
         }
 
-        // US 03.09.01 — Admin can create events as organizer
-        Button btnCreateEvent = findViewById(R.id.btnAdminCreateEvent);
-        if (btnCreateEvent != null) {
-            btnCreateEvent.setOnClickListener(v -> {
-                Intent intent = new Intent(this, OrgEventActivity.class);
-                startActivity(intent);
+        if (btnManageUsers != null) {
+            btnManageUsers.setOnClickListener(v -> {
+                startActivity(new Intent(this, AdminProfileListActivity.class));
             });
         }
-    }
 
-    private void loadEvents() {
-        db.collection("events")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    allEvents.clear();
-                    filteredEvents.clear();
-
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        try {
-                            Event event = doc.toObject(Event.class);
-                            if (event != null) {
-                                event.setEventId(doc.getId());
-                                allEvents.add(event);
-                            }
-                        } catch (Exception e) {
-                            // Skip documents that don't match Event model
-                            e.printStackTrace();
-                        }
-                    }
-
-                    filteredEvents.addAll(allEvents);
-                    adapter.notifyDataSetChanged();
-                })
-                .addOnFailureListener(e -> {
-                    e.printStackTrace();
-                });
-    }
-
-    private void filterEvents(String query) {
-        filteredEvents.clear();
-
-        if (query == null || query.trim().isEmpty()) {
-            filteredEvents.addAll(allEvents);
-        } else {
-            String lowerQuery = query.toLowerCase().trim();
-            for (Event event : allEvents) {
-                if (event.getName() != null &&
-                        event.getName().toLowerCase().contains(lowerQuery)) {
-                    filteredEvents.add(event);
-                }
-            }
+        if (btnManageImages != null) {
+            btnManageImages.setOnClickListener(v -> {
+                startActivity(new Intent(this, AdminImageManagementActivity.class));
+            });
         }
 
-        adapter.notifyDataSetChanged();
+        if (btnSystemLogs != null) {
+            btnSystemLogs.setOnClickListener(v -> {
+                startActivity(new Intent(this, AdminNotificationLogsActivity.class));
+            });
+        }
+        
+        // Bottom Navigation logic
+        findViewById(R.id.admin_bottom_nav).findViewById(android.R.id.content).setOnClickListener(v -> {
+            // Dashboard (Explore)
+            startActivity(new Intent(this, RoleSelectionActivity.class));
+            finish();
+        });
+
+        loadStats();
+    }
+
+    private void loadStats() {
+        db.collection("events").get().addOnSuccessListener(queryDocumentSnapshots -> {
+            if (tvEventCount != null) tvEventCount.setText(queryDocumentSnapshots.size() + " total events");
+        });
+
+        db.collection("profiles").get().addOnSuccessListener(queryDocumentSnapshots -> {
+            if (tvUserCount != null) tvUserCount.setText(queryDocumentSnapshots.size() + " registered users");
+        });
     }
 }

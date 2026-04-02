@@ -10,14 +10,17 @@
         android:id="@+id/rl_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:paddingHorizontal="24dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="16dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="EventFlow"
             android:textColor="@color/white"
-            android:textSize="24sp"
+            android:textSize="28sp"
+            android:fontFamily="sans-serif-black"
             android:textStyle="bold" />
 
         <RelativeLayout
@@ -41,155 +44,147 @@
                 android:layout_height="8dp"
                 android:layout_alignTop="@id/btn_notifications"
                 android:layout_alignEnd="@id/btn_notifications"
+                android:layout_marginTop="2dp"
+                android:layout_marginEnd="2dp"
                 android:background="@drawable/badge_red_rounded" />
         </RelativeLayout>
     </RelativeLayout>
 
-    <!-- Search and Filter Bar -->
-    <LinearLayout
-        android:id="@+id/ll_search_filter"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/rl_header"
-        android:layout_marginHorizontal="16dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <RelativeLayout
-            android:layout_width="0dp"
-            android:layout_height="50dp"
-            android:layout_weight="1"
-            android:background="@drawable/search_bar_bg"
-            android:paddingHorizontal="16dp">
-
-            <ImageView
-                android:id="@+id/iv_search_icon"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_centerVertical="true"
-                android:src="@drawable/ic_search"
-                app:tint="@color/text_grey" />
-
-            <EditText
-                android:id="@+id/etSearchEvents"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginStart="12dp"
-                android:layout_toEndOf="@id/iv_search_icon"
-                android:background="@null"
-                android:hint="Search events..."
-                android:textColorHint="@color/text_grey"
-                android:textColor="@color/white"
-                android:textSize="16sp"
-                android:imeOptions="actionSearch"
-                android:inputType="text" />
-        </RelativeLayout>
-
-        <ImageButton
-            android:id="@+id/btnFilterToggle"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_marginStart="12dp"
-            android:background="@drawable/search_bar_bg"
-            android:src="@android:drawable/ic_menu_sort_alphabetically"
-            app:tint="@color/text_grey" />
-    </LinearLayout>
-
-    <!-- Filter Options Section (Hidden by default) -->
-    <LinearLayout
-        android:id="@+id/ll_filter_options"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/ll_search_filter"
-        android:layout_margin="16dp"
-        android:background="@drawable/rounded_card_bg"
-        android:backgroundTint="#1A1A1A"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:visibility="gone">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Filter by"
-            android:textColor="@color/white"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="AVAILABILITY"
-            android:textColor="@color/text_grey"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:scrollbars="none">
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/cgAvailability"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:singleSelection="true">
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_avail_all"
-                    style="@style/Widget.MaterialComponents.Chip.Choice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="All"
-                    android:textColor="@color/white"
-                    app:chipBackgroundColor="@color/chip_unselected" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_avail_available"
-                    style="@style/Widget.MaterialComponents.Chip.Choice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Available"
-                    android:textColor="@color/white"
-                    app:chipBackgroundColor="@color/chip_unselected" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_avail_waitlist"
-                    style="@style/Widget.MaterialComponents.Chip.Choice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Waitlist Only"
-                    android:textColor="@color/white"
-                    app:chipBackgroundColor="@color/chip_unselected" />
-            </com.google.android.material.chip.ChipGroup>
-        </HorizontalScrollView>
-    </LinearLayout>
-
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/ll_filter_options">
+        android:layout_below="@id/rl_header"
+        android:clipToPadding="false"
+        android:paddingBottom="80dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Upcoming Events Section -->
-            <RelativeLayout
-                android:id="@+id/rl_upcoming_header"
+            <!-- Search and Filter Bar -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="16dp">
+                android:layout_marginHorizontal="24dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <RelativeLayout
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/search_bar_rounded_bg"
+                    android:paddingHorizontal="20dp">
+
+                    <ImageView
+                        android:id="@+id/iv_search_icon"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_centerVertical="true"
+                        android:src="@drawable/ic_search"
+                        app:tint="#444444" />
+
+                    <EditText
+                        android:id="@+id/etSearchEvents"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="12dp"
+                        android:layout_toEndOf="@id/iv_search_icon"
+                        android:background="@null"
+                        android:hint="Search events..."
+                        android:textColorHint="#444444"
+                        android:textColor="@color/white"
+                        android:textSize="16sp" />
+                </RelativeLayout>
+
+                <ImageButton
+                    android:id="@+id/btnFilterToggle"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/search_bar_rounded_bg"
+                    android:src="@drawable/ic_edit"
+                    android:padding="16dp"
+                    android:scaleType="fitCenter"
+                    app:tint="#444444" />
+            </LinearLayout>
+
+            <!-- Filter Options (Initially Hidden) -->
+            <LinearLayout
+                android:id="@+id/ll_filter_options"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"
+                android:visibility="gone">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:text="Availability"
+                    android:textColor="@color/white"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="8dp"/>
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/cgAvailability"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:singleSelection="true"
+                    app:selectionRequired="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_avail_all"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="All"
+                        android:checked="true"
+                        android:textColor="@color/white"
+                        app:chipBackgroundColor="@color/accent_blue"
+                        app:chipCornerRadius="20dp"
+                        app:chipStrokeWidth="0dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_avail_available"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Available"
+                        android:textColor="#888888"
+                        app:chipBackgroundColor="#121212"
+                        app:chipCornerRadius="20dp"
+                        app:chipStrokeWidth="0dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_avail_waitlist"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Waitlist Only"
+                        android:textColor="#888888"
+                        app:chipBackgroundColor="#121212"
+                        app:chipCornerRadius="20dp"
+                        app:chipStrokeWidth="0dp" />
+                </com.google.android.material.chip.ChipGroup>
+            </LinearLayout>
+
+            <!-- Upcoming Events Section -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:paddingHorizontal="24dp">
+
+                <TextView
+                    android:id="@+id/tv_upcoming_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:text="Upcoming Events"
                     android:textColor="@color/white"
-                    android:textSize="20sp"
+                    android:textSize="22sp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -197,25 +192,27 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
+                    android:layout_alignBaseline="@id/tv_upcoming_title"
                     android:text="0 events"
-                    android:textColor="@color/text_grey"
+                    android:textColor="#444444"
                     android:textSize="14sp" />
             </RelativeLayout>
 
             <!-- Category Chips -->
             <HorizontalScrollView
-                android:id="@+id/hsv_categories"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="16dp"
+                android:layout_marginTop="20dp"
+                android:paddingHorizontal="24dp"
                 android:scrollbars="none">
 
                 <com.google.android.material.chip.ChipGroup
                     android:id="@+id/cgCategories"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    app:singleSelection="true">
+                    app:singleSelection="true"
+                    app:selectionRequired="true"
+                    app:checkedChip="@+id/chip_cat_all">
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_cat_all"
@@ -224,7 +221,9 @@
                         android:layout_height="wrap_content"
                         android:text="All"
                         android:textColor="@color/white"
-                        app:chipBackgroundColor="@color/accent_blue" />
+                        app:chipBackgroundColor="@color/accent_blue"
+                        app:chipCornerRadius="20dp"
+                        app:chipStrokeWidth="0dp" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_cat_music"
@@ -232,8 +231,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Music"
-                        android:textColor="@color/white"
-                        app:chipBackgroundColor="@color/chip_unselected" />
+                        android:textColor="#888888"
+                        app:chipBackgroundColor="#121212"
+                        app:chipCornerRadius="20dp"
+                        app:chipStrokeWidth="0dp" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_cat_tech"
@@ -241,8 +242,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Tech"
-                        android:textColor="@color/white"
-                        app:chipBackgroundColor="@color/chip_unselected" />
+                        android:textColor="#888888"
+                        app:chipBackgroundColor="#121212"
+                        app:chipCornerRadius="20dp"
+                        app:chipStrokeWidth="0dp" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_cat_food"
@@ -250,8 +253,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Food"
-                        android:textColor="@color/white"
-                        app:chipBackgroundColor="@color/chip_unselected" />
+                        android:textColor="#888888"
+                        app:chipBackgroundColor="#121212"
+                        app:chipCornerRadius="20dp"
+                        app:chipStrokeWidth="0dp" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_cat_sport"
@@ -259,8 +264,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Sport"
-                        android:textColor="@color/white"
-                        app:chipBackgroundColor="@color/chip_unselected" />
+                        android:textColor="#888888"
+                        app:chipBackgroundColor="#121212"
+                        app:chipCornerRadius="20dp"
+                        app:chipStrokeWidth="0dp" />
                 </com.google.android.material.chip.ChipGroup>
             </HorizontalScrollView>
 
@@ -268,19 +275,13 @@
                 android:id="@+id/recyclerViewEvents"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:paddingHorizontal="16dp"
+                android:layout_marginTop="16dp"
+                android:paddingHorizontal="24dp"
                 android:clipToPadding="false"
                 android:nestedScrollingEnabled="false" />
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:visibility="gone" />
 
     <!-- QR Scan FAB -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -291,7 +292,15 @@
         android:layout_alignParentBottom="true"
         android:layout_margin="24dp"
         android:src="@drawable/ic_explore"
-        app:backgroundTint="@color/accent_green"
+        app:backgroundTint="#81C784"
+        app:fabSize="normal"
         app:tint="@color/background_black" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:visibility="gone" />
 
 </RelativeLayout>
