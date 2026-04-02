@@ -2,6 +2,16 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
+        android:id="@+id/nav_events"
+        android:icon="@drawable/ic_home"
+        android:title="Home" />
+
+    <item
+        android:id="@+id/nav_my_events"
+        android:icon="@drawable/ic_events"
+        android:title="My Events" />
+
+    <item
         android:id="@+id/nav_dashboard"
         android:icon="@drawable/ic_grid_view"
         android:title="Dashboard" />

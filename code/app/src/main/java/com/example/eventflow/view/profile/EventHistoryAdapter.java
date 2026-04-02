@@ -32,7 +32,7 @@ public class EventHistoryAdapter extends RecyclerView.Adapter<EventHistoryAdapte
     @Override
     public void onBindViewHolder(@NonNull EventHistoryViewHolder holder, int position) {
         EventHistoryItem item = historyItems.get(position);
-        holder.tvEventTitle.setText(item.getEventTitle());
+        holder.tvEventTitle.setText(item.getEventName());
         holder.tvEventDate.setText("Date: " + item.getEventDate());
         holder.tvEventStatus.setText("Status: " + item.getStatus());
     }

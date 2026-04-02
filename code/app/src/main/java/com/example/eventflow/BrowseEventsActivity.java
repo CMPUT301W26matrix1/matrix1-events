@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.eventflow.event.EventListFragment;
+import com.example.eventflow.view.profile.FullHistoryFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class BrowseEventsActivity extends AppCompatActivity {
@@ -20,22 +21,31 @@ public class BrowseEventsActivity extends AppCompatActivity {
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         if (bottomNav != null) {
-            bottomNav.setSelectedItemId(R.id.nav_dashboard);
+            bottomNav.setSelectedItemId(R.id.nav_events);
             bottomNav.setOnItemSelectedListener(item -> {
                 int id = item.getItemId();
                 if (id == R.id.nav_profile) {
                     startActivity(new Intent(this, ProfileActivity.class));
                     return true;
                 } else if (id == R.id.nav_dashboard) {
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                    startActivity(intent);
+                    startActivity(new Intent(this, RoleSelectionActivity.class));
+                    finish();
                     return true;
                 } else if (id == R.id.nav_admin) {
                     startActivity(new Intent(this, AdminDashboardActivity.class));
                     return true;
+                } else if (id == R.id.nav_events) {
+                    getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, new EventListFragment())
+                        .commit();
+                    return true;
+                } else if (id == R.id.nav_my_events) {
+                    getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, new FullHistoryFragment())
+                        .commit();
+                    return true;
                 }
-                return true;
+                return false;
             });
         }
     }
