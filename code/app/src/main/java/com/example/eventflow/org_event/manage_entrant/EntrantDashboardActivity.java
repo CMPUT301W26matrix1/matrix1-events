@@ -7,8 +7,6 @@ import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.eventflow.NotificationsActivity;
-import com.example.eventflow.OrganizerFinalEntrantsActivity;
 import com.example.eventflow.R;
 import com.example.eventflow.WaitingListActivity;
 
@@ -20,7 +18,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         setContentView(R.layout.activity_entrant_dashboard);
 
         // Get event info passed from MainActivity
-        String eventId   = getIntent().getStringExtra("eventId");
+        String eventId = getIntent().getStringExtra("eventId");
         String eventName = getIntent().getStringExtra("eventName");
 
         // Back button
@@ -29,12 +27,12 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             btnBack.setOnClickListener(v -> finish());
         }
 
-        View cardCancelled     = findViewById(R.id.cardCancelled);
-        View cardWaitlist      = findViewById(R.id.cardWaitlist);
-        View cardEnrolled      = findViewById(R.id.cardEnrolled);
+        View cardCancelled = findViewById(R.id.cardCancelled);
+        View cardWaitlist = findViewById(R.id.cardWaitlist);
+        View cardEnrolled = findViewById(R.id.cardEnrolled);
         View cardNotifications = findViewById(R.id.cardNotifications);
 
-        // Cancelled Entrants → Open CancelledEntrantsActivity
+        // Cancelled Entrants
         if (cardCancelled != null) {
             cardCancelled.setOnClickListener(v -> {
                 Intent intent = new Intent(this, CancelledEntrantsActivity.class);
@@ -43,13 +41,13 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             });
         }
 
-        // Manage Waitlist → Waiting Lists button
+        // Manage Waitlist
         if (cardWaitlist != null) {
             cardWaitlist.setOnClickListener(v ->
                     startActivity(new Intent(this, WaitingListActivity.class)));
         }
 
-        // Final Enrolled Entrants → Final Entrants button
+        // Final Enrolled Entrants
         if (cardEnrolled != null) {
             cardEnrolled.setOnClickListener(v -> {
                 Intent intent = new Intent(this, OrganizerFinalEntrantsActivity.class);
@@ -59,7 +57,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             });
         }
 
-        // Notifications card — keeps existing behaviour
+        // Notifications card
         if (cardNotifications != null) {
             cardNotifications.setOnClickListener(v ->
                     startActivity(new Intent(this, NotificationsActivity.class)));

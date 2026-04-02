@@ -41,17 +41,36 @@ public class EnrolledEntrantsAdapter extends RecyclerView.Adapter<EnrolledEntran
         // Sets the text for each view in the card
         holder.tvName.setText(entrant.getName());
         holder.tvEmail.setText(entrant.getEmail());
-        holder.tvPhone.setText(entrant.getPhoneNumber());
+
+        // Handle phone (if available)
+        if (entrant.getPhoneNumber() != null && !entrant.getPhoneNumber().isEmpty()) {
+            holder.tvPhone.setText(entrant.getPhoneNumber());
+            holder.tvPhone.setVisibility(View.VISIBLE);
+        } else {
+            holder.tvPhone.setVisibility(View.GONE);
+        }
 
         // Sets the two unique dates from your Entrant model
-        holder.tvJoinDate.setText(entrant.getJoinDate());
-        holder.tvAcceptDate.setText(entrant.getAcceptDate());
+        if (entrant.getJoinDate() != null) {
+            holder.tvJoinDate.setText(entrant.getJoinDate());
+        }
+        if (entrant.getAcceptDate() != null) {
+            holder.tvAcceptDate.setText(entrant.getAcceptDate());
+        }
     }
 
     @Override
     public int getItemCount() {
         // Returns the total number of items in the list
         return enrolledList != null ? enrolledList.size() : 0;
+    }
+
+    /**
+     * ADD THIS METHOD - Updates the list and refreshes the adapter
+     */
+    public void updateList(List<Entrant> newList) {
+        this.enrolledList = newList;
+        notifyDataSetChanged();
     }
 
     /**

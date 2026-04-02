@@ -42,10 +42,6 @@
         <activity android:name=".BrowseEventsActivity" />
         <activity android:name=".ProfileActivity" />
 
-        <activity
-            android:name=".OrganizerFinalEntrantsActivity"
-            android:exported="false" />
-
         <!-- Waiting List Screen -->
         <activity android:name=".WaitingListActivity" />
 
@@ -68,27 +64,36 @@
 
         <activity android:name=".org_event.InviteEntrantsActivity" />
 
-        <!-- Manage Entrants -->
+        <!-- Manage Entrants - All activities in the same package -->
         <activity
-            android:name="com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity"
+            android:name=".org_event.manage_entrant.EntrantDashboardActivity"
             android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             android:exported="false" />
 
         <activity
             android:name=".org_event.manage_entrant.WaitlistMgmtActivity"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            android:exported="false" />
 
         <activity
             android:name=".org_event.manage_entrant.CancelledEntrantsActivity"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"/>
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            android:exported="false" />
 
         <activity
-            android:name="com.example.eventflow.org_event.manage_entrant.EnrolledEntrantsActivity"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"/>
+            android:name=".org_event.manage_entrant.OrganizerFinalEntrantsActivity"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            android:exported="false" />
+
+        <activity
+            android:name=".org_event.manage_entrant.EnrolledEntrantsActivity"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            android:exported="false" />
 
         <activity
             android:name=".org_event.manage_entrant.NotificationsActivity"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            android:exported="false" />
 
         <!-- to upload as CSV -->
         <provider

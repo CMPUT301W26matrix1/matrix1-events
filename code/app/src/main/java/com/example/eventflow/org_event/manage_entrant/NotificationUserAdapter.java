@@ -8,6 +8,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.eventflow.R;
+import com.example.eventflow.model.entities.Entrant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,23 +16,26 @@ import java.util.Set;
 public class NotificationUserAdapter extends RecyclerView.Adapter<NotificationUserAdapter.ViewHolder> {
 
     private List<Entrant> userList;
-    // This Set keeps track of who is currently checked
     private Set<Entrant> selectedUsers = new HashSet<>();
 
     public NotificationUserAdapter(List<Entrant> userList) {
         this.userList = userList;
     }
 
-    // Allows the Activity to see who was checked when "Send" is clicked
     public Set<Entrant> getSelectedUsers() {
         return selectedUsers;
+    }
+
+    public void updateList(List<Entrant> newList) {
+        this.userList = newList;
+        notifyDataSetChanged();
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_notification_user, parent, false);
+                .inflate(R.layout.item_selected_notification, parent, false);
         return new ViewHolder(view);
     }
 
@@ -40,16 +44,32 @@ public class NotificationUserAdapter extends RecyclerView.Adapter<NotificationUs
         Entrant user = userList.get(position);
         holder.tvName.setText(user.getName());
 
-        // Extract the first letter for the Circular Avatar (e.g., "A" for Alice)
-        if (user.getName() != null && !user.getName().isEmpty()) {
-            holder.tvAvatar.setText(user.getName().substring(0, 1).toUpperCase());
+        String name = user.getName();
+        if (name != null && !name.isEmpty()) {
+            String initial = name.substring(0, 1).toUpperCase();
+            holder.tvAvatar.setText(initial);
+        } else {
+            holder.tvAvatar.setText("?");
         }
 
-        // Remove previous listeners to prevent recycling bugs
+        String status = user.getStatus();
+
+        holder.tvStatusBadge.setVisibility(View.VISIBLE);
+        holder.tvStatusBadge.setPadding(20, 8, 20, 8);
+
+        if (status != null && status.equalsIgnoreCase("Selected")) {
+            holder.tvStatusBadge.setText("Selected");
+            holder.tvStatusBadge.setBackgroundColor(0xFF1B5E20);
+            holder.tvStatusBadge.setTextColor(0xFF4CAF50);
+        } else {
+            holder.tvStatusBadge.setText("Rejected");
+            holder.tvStatusBadge.setBackgroundColor(0xFFB71C1C);
+            holder.tvStatusBadge.setTextColor(0xFFF44336);
+        }
+
         holder.cbSelect.setOnCheckedChangeListener(null);
         holder.cbSelect.setChecked(selectedUsers.contains(user));
 
-        // Add user to the Set if checked, remove if unchecked
         holder.cbSelect.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 selectedUsers.add(user);
@@ -65,14 +85,14 @@ public class NotificationUserAdapter extends RecyclerView.Adapter<NotificationUs
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvAvatar;
+        TextView tvName, tvAvatar, tvStatusBadge;
         CheckBox cbSelect;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            // These IDs must match your item_notification_user.xml
             tvName = itemView.findViewById(R.id.tvUserName);
             tvAvatar = itemView.findViewById(R.id.tvAvatar);
+            tvStatusBadge = itemView.findViewById(R.id.tvStatusBadge);
             cbSelect = itemView.findViewById(R.id.cbSelectUser);
         }
     }

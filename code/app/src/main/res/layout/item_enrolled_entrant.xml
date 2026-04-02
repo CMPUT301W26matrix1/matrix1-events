@@ -21,11 +21,11 @@
                 android:id="@+id/tvEnrolledName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Jack Wilson"
                 android:textColor="#FFFFFF"
                 android:textSize="18sp"
                 android:textStyle="bold" />
             <TextView
+                android:id="@+id/tvEnrolledStatus"
                 android:layout_alignParentEnd="true"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -43,7 +43,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="jack@example.com"
             android:textColor="#666666" />
 
         <TextView
@@ -51,7 +50,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:text="(555) 012-3456"
             android:textColor="#666666" />
 
         <View
@@ -70,7 +68,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Joined" android:textColor="#444444" android:textSize="11sp" />
-                <TextView android:id="@+id/tvJoinDate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Feb 20, 2025" android:textColor="#999999" android:textSize="13sp" />
+                <TextView android:id="@+id/tvJoinDate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#999999" android:textSize="13sp" />
             </LinearLayout>
             <LinearLayout
                 android:layout_width="0dp"
@@ -78,7 +76,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Accepted" android:textColor="#444444" android:textSize="11sp" />
-                <TextView android:id="@+id/tvAcceptDate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Feb 21, 2025" android:textColor="#999999" android:textSize="13sp" />
+                <TextView android:id="@+id/tvAcceptDate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#999999" android:textSize="13sp" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
