@@ -103,8 +103,11 @@ public class InviteEntrantsFragment extends Fragment {
         // Back button
         View btnBack = view.findViewById(R.id.btn_invite_back);
         if (btnBack != null) {
-            btnBack.setOnClickListener(v -> requireActivity()
-                    .getSupportFragmentManager().popBackStack());
+            btnBack.setOnClickListener(v -> {
+                if (getActivity() != null) {
+                    getActivity().finish();
+                }
+            });
         }
 
 

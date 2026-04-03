@@ -211,8 +211,10 @@ public class OrgEventActivity extends AppCompatActivity {
         try {
             int cap = Integer.parseInt(etLimit.getText().toString().trim());
             eventMap.put("capacity", cap);
+            eventMap.put("waitingListLimit", cap); // Assuming capacity as default waitlist limit
         } catch (Exception e) {
             eventMap.put("capacity", 0);
+            eventMap.put("waitingListLimit", 0);
         }
 
         eventMap.put("registrationStart", etRegStart.getText().toString());
@@ -222,16 +224,24 @@ public class OrgEventActivity extends AppCompatActivity {
         eventMap.put("posterUrl", imageUri != null ? imageUri.toString() : null);
         
         // Initialize lists only for new events
-        if (currentEventId.isEmpty()) {
+        if (currentEventId == null || currentEventId.isEmpty()) {
             eventMap.put("createdAt", Timestamp.now());
             eventMap.put("waitingList", new ArrayList<String>());
             eventMap.put("selectedEntrants", new ArrayList<String>());
+            eventMap.put("coOrganizerIds", new ArrayList<String>());
         }
 
         // Perform the save operation
         db.collection("events").document(eventId).set(eventMap, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, "Event saved successfully!", Toast.LENGTH_SHORT).show();
+                    
+                    // If it's a private event, navigate directly to Invite screen
+                    if (switchPrivate.isChecked()) {
+                        Intent inviteIntent = new Intent(this, InviteEntrantsActivity.class);
+                        inviteIntent.putExtra("EVENT_ID", eventId);
+                        startActivity(inviteIntent);
+                    }
                     finish();
                 })
                 .addOnFailureListener(e -> Toast.makeText(this, "Failed to save: " + e.getMessage(), Toast.LENGTH_SHORT).show());
