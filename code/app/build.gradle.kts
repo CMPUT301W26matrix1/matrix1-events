@@ -68,6 +68,8 @@ dependencies {
     implementation("com.squareup.picasso:picasso:2.8")
     implementation("com.google.firebase:firebase-storage:21.0.1")
     implementation("com.google.firebase:firebase-auth:23.2.0")
+    implementation("com.google.firebase:firebase-messaging:23.4.0")
+    implementation("androidx.work:work-runtime:2.9.0")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

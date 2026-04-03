@@ -26,8 +26,15 @@ public class NotificationUserAdapter extends RecyclerView.Adapter<NotificationUs
         return selectedUsers;
     }
 
+    // ADD THIS METHOD - Clears all selected users
+    public void clearSelectedUsers() {
+        selectedUsers.clear();
+        notifyDataSetChanged();  // Refresh the UI to uncheck all checkboxes
+    }
+
     public void updateList(List<Entrant> newList) {
         this.userList = newList;
+        selectedUsers.clear();  // Also clear selections when list changes
         notifyDataSetChanged();
     }
 
@@ -57,14 +64,29 @@ public class NotificationUserAdapter extends RecyclerView.Adapter<NotificationUs
         holder.tvStatusBadge.setVisibility(View.VISIBLE);
         holder.tvStatusBadge.setPadding(20, 8, 20, 8);
 
-        if (status != null && status.equalsIgnoreCase("Selected")) {
-            holder.tvStatusBadge.setText("Selected");
-            holder.tvStatusBadge.setBackgroundColor(0xFF1B5E20);
-            holder.tvStatusBadge.setTextColor(0xFF4CAF50);
+        // FIXED: Show actual status instead of just "Selected" or "Rejected"
+        if (status != null) {
+            if (status.equalsIgnoreCase("Selected")) {
+                holder.tvStatusBadge.setText("Selected");
+                holder.tvStatusBadge.setBackgroundColor(0xFF1B5E20);
+                holder.tvStatusBadge.setTextColor(0xFF4CAF50);
+            } else if (status.equalsIgnoreCase("Waiting")) {
+                holder.tvStatusBadge.setText("Waiting");
+                holder.tvStatusBadge.setBackgroundColor(0xFFE65100);
+                holder.tvStatusBadge.setTextColor(0xFFFF9800);
+            } else if (status.equalsIgnoreCase("Cancelled") || status.equalsIgnoreCase("Declined")) {
+                holder.tvStatusBadge.setText("Cancelled");
+                holder.tvStatusBadge.setBackgroundColor(0xFFB71C1C);
+                holder.tvStatusBadge.setTextColor(0xFFF44336);
+            } else {
+                holder.tvStatusBadge.setText(status);
+                holder.tvStatusBadge.setBackgroundColor(0xFF1A1A1A);
+                holder.tvStatusBadge.setTextColor(0xFF666666);
+            }
         } else {
-            holder.tvStatusBadge.setText("Rejected");
-            holder.tvStatusBadge.setBackgroundColor(0xFFB71C1C);
-            holder.tvStatusBadge.setTextColor(0xFFF44336);
+            holder.tvStatusBadge.setText("Unknown");
+            holder.tvStatusBadge.setBackgroundColor(0xFF1A1A1A);
+            holder.tvStatusBadge.setTextColor(0xFF666666);
         }
 
         holder.cbSelect.setOnCheckedChangeListener(null);

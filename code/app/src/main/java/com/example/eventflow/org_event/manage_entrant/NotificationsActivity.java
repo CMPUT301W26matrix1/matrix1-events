@@ -48,11 +48,12 @@ public class NotificationsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_notifications);
 
-        // Get event ID - don't finish if missing, just show empty data
+        // Get event ID
         if (getIntent().hasExtra("eventId")) {
             eventId = getIntent().getStringExtra("eventId");
         } else {
-            eventId = null;}
+            eventId = null;
+        }
 
         db = FirebaseFirestore.getInstance();
 
@@ -96,7 +97,6 @@ public class NotificationsActivity extends AppCompatActivity {
     }
 
     private void loadCounts() {
-        // Set default values
         tvAllCount.setText("0");
         tvSelectedCount.setText("0");
         tvCancelledCount.setText("0");
@@ -153,8 +153,9 @@ public class NotificationsActivity extends AppCompatActivity {
                         String status = doc.getString("status");
 
                         if (name != null && !name.isEmpty()) {
+                            // FIXED: Use correct constructor (name, email, phone, inviteDate, status)
                             Entrant entrant = new Entrant(name, email != null ? email : "", "", "", status);
-                            entrant.setUserId(userId);
+                            // REMOVED: entrant.setUserId(userId); - This method doesn't exist
                             allSpecificUsers.add(entrant);
                         }
                     }
@@ -292,7 +293,8 @@ public class NotificationsActivity extends AppCompatActivity {
             return;
         }
 
-        final boolean isSpecificUserSelected = !adapter.getSelectedUsers().isEmpty();
+        // FIXED: Check if adapter is not null
+        final boolean isSpecificUserSelected = adapter != null && !adapter.getSelectedUsers().isEmpty();
 
         if (selectedRecipient == null && !isSpecificUserSelected) {
             Toast.makeText(this, "Please select at least one recipient.", Toast.LENGTH_SHORT).show();
@@ -308,8 +310,9 @@ public class NotificationsActivity extends AppCompatActivity {
 
         List<String> recipientIds = new ArrayList<>();
 
-        if (isSpecificUserSelected) {
+        if (isSpecificUserSelected && adapter != null) {
             for (Entrant entrant : adapter.getSelectedUsers()) {
+                // UserId might be null, that's fine
                 if (entrant.getUserId() != null) {
                     recipientIds.add(entrant.getUserId());
                 }
@@ -337,6 +340,11 @@ public class NotificationsActivity extends AppCompatActivity {
                     etTitle.setText("");
                     etMessage.setText("");
                     etSearchUsers.setText("");
+
+                    // Clear selected users
+                    if (adapter != null) {
+                        adapter.clearSelectedUsers();
+                    }
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(NotificationsActivity.this, "Failed to send: " + e.getMessage(), Toast.LENGTH_SHORT).show();

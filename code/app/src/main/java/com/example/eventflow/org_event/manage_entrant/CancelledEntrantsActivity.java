@@ -34,7 +34,7 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cancelled_entrants);
 
-        // Get event ID from intent - don't finish if missing, just show empty
+        // Get event ID from intent
         if (getIntent().hasExtra("eventId")) {
             eventId = getIntent().getStringExtra("eventId");
         } else {
@@ -94,7 +94,6 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
         if (eventId != null) {
             loadCancelledEntrants();
         } else {
-            // Show empty state
             updateStatsCounts();
         }
     }
@@ -102,7 +101,6 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
     private void loadCancelledEntrants() {
         if (eventId == null) return;
 
-        // Query participants with status "Cancelled" or "Declined"
         db.collection("events").document(eventId)
                 .collection("participants")
                 .whereIn("status", java.util.Arrays.asList("Cancelled", "Declined"))
@@ -111,7 +109,6 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
                     cancelledList.clear();
 
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        String userId = doc.getString("userId");
                         String name = doc.getString("name");
                         String email = doc.getString("email");
                         String phone = doc.getString("phone");
@@ -124,8 +121,9 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
                                     "Unknown date";
                         }
 
+                        // FIXED: Use correct constructor with all 5 parameters
+                        // Order: name, email, phoneNumber, inviteDate, status
                         Entrant entrant = new Entrant(name, email, phone, cancelledDate, status);
-                        entrant.setUserId(userId);
                         cancelledList.add(entrant);
                     }
 
@@ -137,7 +135,6 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
                 });
     }
 
-    // Update the stats counts
     private void updateStatsCounts() {
         if (tvCancelledCount != null) {
             tvCancelledCount.setText(String.valueOf(cancelledList.size()));
@@ -147,7 +144,6 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
         }
     }
 
-    // Filter Method
     private void filter(String text) {
         List<Entrant> filteredList = new ArrayList<>();
 
@@ -165,11 +161,9 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
         adapter.updateList(filteredList);
     }
 
-    // Draw New Entrant Method
     private void drawNewEntrant() {
         if (eventId == null) return;
 
-        // Get waiting list from Firestore
         db.collection("events").document(eventId)
                 .collection("participants")
                 .whereEqualTo("status", "Waiting")
