@@ -1,3 +1,15 @@
 <resources>
-    <string name="app_name">ListyCityLab3</string>
+    <string name="app_name">EventFlow</string>
+    <string name="login_title">Login</string>
+    <string name="signup_title">Signup</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Password</string>
+    <string name="username_hint">Username</string>
+    <string name="remember_me">Remember me</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="or_divider">Or</string>
+    <string name="new_here_signup">Not part of the flow? Join the club</string>
+    <string name="already_have_account">Already one of us? Log in</string>
+    <string name="glad_you_are_back">Glad you\'re back!</string>
+    <string name="signup_details">Just some details to get you in!</string>
 </resources>
