@@ -56,6 +56,7 @@ public class EventDetailActivity extends AppCompatActivity {
     private EditText etCommentInput;
     private ImageButton btnPostComment;
     private RecyclerView rvComments, rvNearbyEvents;
+    private TextView tvNearbyEventsLabel;
     
     private FirebaseFirestore db;
     private final ArrayList<Comment> commentList = new ArrayList<>();
@@ -94,7 +95,14 @@ public class EventDetailActivity extends AppCompatActivity {
         eventController = new EventController(deviceId);
         loadEventDetails();
         loadComments();
-        loadNearbyEvents();
+        
+        // Only load nearby events if NOT an organizer
+        if (!isOrganizer) {
+            loadNearbyEvents();
+        } else {
+            if (rvNearbyEvents != null) rvNearbyEvents.setVisibility(View.GONE);
+            if (tvNearbyEventsLabel != null) tvNearbyEventsLabel.setVisibility(View.GONE);
+        }
     }
 
     private void initUI() {
@@ -124,9 +132,13 @@ public class EventDetailActivity extends AppCompatActivity {
         rvComments.setNestedScrollingEnabled(false);
 
         rvNearbyEvents = findViewById(R.id.rvNearbyEvents);
-        rvNearbyEvents.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        nearbyEventAdapter = new NearbyEventAdapter(nearbyEvents, userRole != null ? userRole : "entrant");
-        rvNearbyEvents.setAdapter(nearbyEventAdapter);
+        tvNearbyEventsLabel = findViewById(R.id.tv_nearby_events_label);
+        
+        if (rvNearbyEvents != null) {
+            rvNearbyEvents.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+            nearbyEventAdapter = new NearbyEventAdapter(nearbyEvents, userRole != null ? userRole : "entrant");
+            rvNearbyEvents.setAdapter(nearbyEventAdapter);
+        }
     }
 
     private void setupListeners() {
