@@ -20,10 +20,6 @@ import java.util.UUID;
  * It uses a randomized selection strategy to ensure fairness across all entrants.
  *
  * Design Pattern: Controller (MVC) - Encapsulates business logic for lottery draws.
- *
- * Outstanding Issues:
- * - Large waiting lists may require Firestore transactions to ensure atomicity.
- * - Notifications are sent in a loop, which could hit Firestore rate limits for very large events.
  */
 public class LotteryController {
 
@@ -31,9 +27,6 @@ public class LotteryController {
 
     /**
      * Helper method to save notification to both user and admin collections.
-     * 
-     * @param notification The notification object to save.
-     * @param userId       The unique identifier of the user receiving the notification.
      */
     private void saveNotificationToBoth(Notification notification, String userId) {
         if (notification.getId() == null || notification.getId().isEmpty()) {
@@ -53,13 +46,31 @@ public class LotteryController {
     }
 
     /**
+     * UPDATES the user's event status in event_participations collection
+     * This ensures Profile counts update correctly
+     */
+    private void updateUserEventStatus(String userId, String eventId, String newStatus) {
+        db.collection("users")
+                .document(userId)
+                .collection("event_participations")
+                .document(eventId)
+                .update("status", newStatus)
+                .addOnSuccessListener(aVoid -> {
+                    System.out.println("✅ User " + userId + " status updated to: " + newStatus);
+                })
+                .addOnFailureListener(e -> {
+                    System.err.println("❌ Failed to update status for user " + userId + ": " + e.getMessage());
+                });
+    }
+
+    /**
      * Sends a selection notification to an entrant who won the lottery.
-     * 
-     * @param userId    Unique ID of the winning entrant.
-     * @param eventId   ID of the event they were selected for.
-     * @param eventName Name of the event.
+     * ALSO updates their status to "Selected"
      */
     private void sendSelectionNotification(String userId, String eventId, String eventName) {
+        // UPDATE STATUS TO SELECTED FIRST
+        updateUserEventStatus(userId, eventId, "Selected");
+
         Notification notification = new Notification(
                 "Congratulations! You've been selected!",
                 eventName,
@@ -72,12 +83,12 @@ public class LotteryController {
 
     /**
      * Sends a notification to an entrant who was not selected in the lottery draw.
-     * 
-     * @param userId    Unique ID of the entrant.
-     * @param eventId   ID of the event.
-     * @param eventName Name of the event.
+     * ALSO updates their status to "Rejected"
      */
     private void sendLostLotteryNotification(String userId, String eventId, String eventName) {
+        // UPDATE STATUS TO REJECTED
+        updateUserEventStatus(userId, eventId, "Rejected");
+
         Notification notification = new Notification(
                 "You weren't selected this time.",
                 eventName,
@@ -90,11 +101,6 @@ public class LotteryController {
 
     /**
      * Draws a single replacement entrant from the waiting list.
-     * Fairly selects a random candidate who hasn't been chosen yet.
-     *
-     * @param waitingList      The current pool of entrants.
-     * @param selectedEntrants The list of already selected entrants.
-     * @return The ID of the replacement entrant, or null if none available.
      */
     public String drawReplacement(List<String> waitingList, List<String> selectedEntrants) {
         if (waitingList == null || waitingList.isEmpty()) return null;
@@ -115,8 +121,6 @@ public class LotteryController {
      * Executes the main lottery draw for an event.
      * Shuffles the waiting list and selects up to N attendees based on event capacity.
      * Winners are moved to selectedEntrants and both winners and losers are notified.
-     *
-     * @param eventId The unique identifier of the event to run the draw for.
      */
     public void runLotteryDraw(String eventId) {
         db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
@@ -153,14 +157,27 @@ public class LotteryController {
 
     /**
      * Handles an entrant's acceptance of a private invite by adding them to the event's waiting list.
-     *
-     * @param userId  ID of the entrant.
-     * @param eventId ID of the event.
+     * ALSO sets initial status to "Waiting"
      */
     public void acceptPrivateInvite(String userId, String eventId) {
         db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
             if (doc.exists()) {
                 String eventName = doc.getString("name");
+
+                // Set initial status to Waiting
+                Map<String, Object> participation = new HashMap<>();
+                participation.put("eventId", eventId);
+                participation.put("eventName", eventName);
+                participation.put("status", "Waiting");
+                participation.put("joinedAt", Timestamp.now());
+                participation.put("userId", userId);
+
+                db.collection("users")
+                        .document(userId)
+                        .collection("event_participations")
+                        .document(eventId)
+                        .set(participation);
+
                 Notification notification = new Notification(
                         "You've joined the waiting list!",
                         eventName,

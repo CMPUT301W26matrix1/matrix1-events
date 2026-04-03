@@ -3,6 +3,7 @@ package com.example.eventflow;
 import android.content.Intent;
 import android.graphics.Color;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -72,8 +73,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
         if (holder instanceof CoOrganizerViewHolder) {
             CoOrganizerViewHolder h = (CoOrganizerViewHolder) holder;
             h.eventName.setText(n.getEventName() != null ? n.getEventName() : "Event Invitation");
-            
-            // For now, load placeholder. Ideally event image URL would be in Notification.
+
             Picasso.get().load(R.drawable.ic_placeholder).into(h.eventImage);
 
             h.btnAccept.setOnClickListener(v -> handleCoOrganizerAccept(n, userId, h));
@@ -98,7 +98,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
 
             h.unreadDot.setVisibility(n.isRead() ? View.GONE : View.VISIBLE);
 
-            // Set Icon and Color based on Type to match Figma
+            // Set Icon and Color based on Type
             if (Notification.TYPE_SELECTED.equals(n.getType()) || Notification.TYPE_PRIVATE_INVITE.equals(n.getType())) {
                 h.ivIcon.setImageResource(R.drawable.ic_check);
                 h.ivIcon.setColorFilter(Color.parseColor("#4CAF50"));
@@ -167,36 +167,79 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     private void handleDefaultAccept(Notification n, String userId, DefaultViewHolder holder) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        
+
         // 1. Mark notification as read and accepted
         markNotificationAsHandled(n, userId, true);
-        
+
         // 2. Update Participation Record for "My Events" page
+        // FIXED: Use correct status based on notification type
+        String status;
+        if (Notification.TYPE_SELECTED.equals(n.getType())) {
+            status = "Selected";  // When accepting a lottery win
+        } else if (Notification.TYPE_PRIVATE_INVITE.equals(n.getType())) {
+            status = "Waiting";   // When accepting a private invite
+        } else {
+            status = "Joined";
+        }
+
+        // Get event name from notification
+        String eventName = n.getEventName();
+        if (eventName == null || eventName.isEmpty()) {
+            eventName = n.getMessage();
+        }
+
         Map<String, Object> participation = new HashMap<>();
-        participation.put("eventName", n.getEventName());
-        participation.put("status", "Joined");
-        participation.put("timestamp", Timestamp.now());
         participation.put("eventId", n.getEventId());
+        participation.put("eventName", eventName);
+        participation.put("status", status);
+        participation.put("joinedAt", Timestamp.now());
+        participation.put("userId", userId);
 
         db.collection("users").document(userId)
                 .collection("event_participations").document(n.getEventId())
-                .set(participation, SetOptions.merge());
-
-        // 3. Add user to waiting list in the event document
-        db.collection("events").document(n.getEventId())
-                .update("waitingList", FieldValue.arrayUnion(userId))
-                .addOnSuccessListener(unused -> {
-                    Toast.makeText(holder.itemView.getContext(), "Joined waiting list!", Toast.LENGTH_SHORT).show();
-                    n.setAccepted(true);
-                    notifyItemChanged(holder.getAdapterPosition());
+                .set(participation, SetOptions.merge())
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("NotificationsAdapter", "Event participation saved with status: " + status);
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(holder.itemView.getContext(), "Failed to join: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Log.e("NotificationsAdapter", "Failed to save participation: " + e.getMessage());
                 });
+
+        // 3. Add user to waiting list in the event document (only for private invites)
+        if (Notification.TYPE_PRIVATE_INVITE.equals(n.getType())) {
+            db.collection("events").document(n.getEventId())
+                    .update("waitingList", FieldValue.arrayUnion(userId))
+                    .addOnSuccessListener(unused -> {
+                        Toast.makeText(holder.itemView.getContext(), "Joined waiting list!", Toast.LENGTH_SHORT).show();
+                        n.setAccepted(true);
+                        notifyItemChanged(holder.getAdapterPosition());
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(holder.itemView.getContext(), "Failed to join: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        } else {
+            // For SELECTED notifications, just show success
+            Toast.makeText(holder.itemView.getContext(), "You've accepted the invitation!", Toast.LENGTH_SHORT).show();
+            n.setAccepted(true);
+            notifyItemChanged(holder.getAdapterPosition());
+        }
     }
 
     private void handleDefaultDecline(Notification n, String userId, DefaultViewHolder holder) {
         markNotificationAsHandled(n, userId, false);
+
+        // Update status to "Declined" in event_participations
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("users").document(userId)
+                .collection("event_participations").document(n.getEventId())
+                .update("status", "Declined")
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("NotificationsAdapter", "Status updated to Declined");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("NotificationsAdapter", "Failed to update status: " + e.getMessage());
+                });
+
         Toast.makeText(holder.itemView.getContext(), "Invitation Declined", Toast.LENGTH_SHORT).show();
         n.setDeclined(true);
         notifyItemChanged(holder.getAdapterPosition());

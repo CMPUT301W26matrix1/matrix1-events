@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * Fragment that displays a list of notifications for the entrant.
- * Designed with a modern dark theme to match the system dashboard.
+ * Handles accepting/declining event invitations.
  */
 public class NotificationsFragment extends Fragment {
 
@@ -66,6 +66,7 @@ public class NotificationsFragment extends Fragment {
 
         // Setup RecyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        // FIXED: Only pass notificationList, no callbacks (adapter handles everything)
         adapter = new NotificationsAdapter(notificationList);
         recyclerView.setAdapter(adapter);
 
