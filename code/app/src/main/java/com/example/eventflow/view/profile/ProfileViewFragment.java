@@ -18,6 +18,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
+import com.example.eventflow.LoginActivity;
 import com.example.eventflow.R;
 import com.example.eventflow.RoleSelectionActivity;
 import com.example.eventflow.model.entities.Profile;
@@ -277,7 +278,7 @@ public class ProfileViewFragment extends Fragment {
 
     private void signOut() {
         clearUserData();
-        Intent intent = new Intent(getActivity(), RoleSelectionActivity.class);
+        Intent intent = new Intent(getActivity(), LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         requireActivity().finish();
@@ -301,7 +302,7 @@ public class ProfileViewFragment extends Fragment {
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(getContext(), "Account deleted", Toast.LENGTH_SHORT).show();
                     clearUserData();
-                    Intent intent = new Intent(getActivity(), RoleSelectionActivity.class);
+                    Intent intent = new Intent(getActivity(), LoginActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
                     requireActivity().finish();
@@ -312,9 +313,12 @@ public class ProfileViewFragment extends Fragment {
     }
 
     private void clearUserData() {
-        SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", android.content.Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.clear();
-        editor.apply();
+        // Clear general user preferences
+        SharedPreferences userPrefs = requireContext().getSharedPreferences("UserPrefs", android.content.Context.MODE_PRIVATE);
+        userPrefs.edit().clear().apply();
+
+        // Clear login specific preferences
+        SharedPreferences loginPrefs = requireContext().getSharedPreferences("eventflow_prefs", android.content.Context.MODE_PRIVATE);
+        loginPrefs.edit().clear().apply();
     }
 }
