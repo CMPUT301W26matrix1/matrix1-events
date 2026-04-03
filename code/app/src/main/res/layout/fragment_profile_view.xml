@@ -32,7 +32,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="24dp"
+            android:paddingHorizontal="20dp"
             android:paddingBottom="40dp">
 
             <!-- Profile Overview Card -->
@@ -41,85 +41,146 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 app:cardBackgroundColor="#121212"
-                app:cardCornerRadius="20dp"
+                app:cardCornerRadius="24dp"
                 app:strokeWidth="0dp">
 
-                <RelativeLayout
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:orientation="vertical"
                     android:padding="20dp">
 
-                    <androidx.cardview.widget.CardView
-                        android:id="@+id/cv_profile_avatar"
-                        android:layout_width="64dp"
-                        android:layout_height="64dp"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="0dp"
-                        app:cardBackgroundColor="#1A2D1A">
+                    <!-- Top Row: Avatar and Name/Role -->
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
 
-                        <TextView
-                            android:id="@+id/tvAvatarLetter"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:text="J"
-                            android:textColor="#4CAF50"
-                            android:textSize="24sp"
-                            android:textStyle="bold" />
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/cv_profile_avatar"
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="0dp"
+                            app:cardBackgroundColor="#142114">
+
+                            <TextView
+                                android:id="@+id/tvAvatarLetter"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:text="J"
+                                android:textColor="#4CAF50"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+
+                            <ImageView
+                                android:id="@+id/iv_profile_pic"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:visibility="gone"/>
+                        </androidx.cardview.widget.CardView>
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginStart="16dp"
+                            android:layout_toEndOf="@id/cv_profile_avatar"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tvFullName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="John Doe"
+                                android:textColor="#FFFFFF"
+                                android:textSize="20sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvUserRole"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Organizer"
+                                android:textColor="#555555"
+                                android:textSize="14sp" />
+                        </LinearLayout>
 
                         <ImageView
-                            android:id="@+id/iv_profile_pic"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:scaleType="centerCrop"
-                            android:visibility="gone"/>
-                    </androidx.cardview.widget.CardView>
+                            android:id="@+id/cv_edit_profile"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:src="@drawable/ic_edit"
+                            app:tint="#444444"
+                            android:clickable="true"
+                            android:focusable="true"/>
+                    </RelativeLayout>
 
+                    <!-- Details INSIDE Card (For Organizer/Admin) -->
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:id="@+id/llContactDetailsInside"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="16dp"
-                        android:layout_toEndOf="@id/cv_profile_avatar"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:layout_marginTop="24dp"
+                        android:visibility="gone">
 
-                        <TextView
-                            android:id="@+id/tvFullName"
-                            android:layout_width="wrap_content"
+                        <!-- Name Field -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="John Doe"
-                            android:textColor="#FFFFFF"
-                            android:textSize="20sp"
-                            android:textStyle="bold" />
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="20dp"
+                            android:gravity="center_vertical">
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_person" app:tint="#333333" />
+                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginStart="16dp">
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Name" android:textColor="#555555" android:textSize="11sp" />
+                                <TextView android:id="@+id/tvNameInside" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="John Doe" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" />
+                            </LinearLayout>
+                        </LinearLayout>
 
-                        <TextView
-                            android:id="@+id/tvUserRole"
-                            android:layout_width="wrap_content"
+                        <!-- Email Field -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Organizer"
-                            android:textColor="#666666"
-                            android:textSize="14sp" />
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="20dp"
+                            android:gravity="center_vertical">
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_email" app:tint="#333333" />
+                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginStart="16dp">
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Email" android:textColor="#555555" android:textSize="11sp" />
+                                <TextView android:id="@+id/tvEmailInside" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="john.doe@example.com" android:textColor="#FFFFFF" android:textSize="15sp" android:textStyle="bold" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Phone Field -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_phone" app:tint="#333333" />
+                            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginStart="16dp">
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Phone" android:textColor="#555555" android:textSize="11sp" />
+                                <TextView android:id="@+id/tvPhoneInside" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+1 (555) 123-4567" android:textColor="#FFFFFF" android:textSize="15sp" android:textStyle="bold" />
+                            </LinearLayout>
+                        </LinearLayout>
                     </LinearLayout>
-
-                    <ImageView
-                        android:id="@+id/cv_edit_profile"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:src="@drawable/ic_edit"
-                        app:tint="#444444"
-                        android:clickable="true"
-                        android:focusable="true"/>
-                </RelativeLayout>
+                </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Detailed Info Section -->
+            <!-- Details OUTSIDE Card (For Entrant) -->
             <LinearLayout
+                android:id="@+id/llContactDetailsOutside"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:orientation="vertical"
                 android:layout_marginTop="32dp"
-                android:orientation="vertical">
+                android:paddingHorizontal="8dp"
+                android:visibility="gone">
 
                 <!-- Name Field -->
                 <LinearLayout
@@ -128,32 +189,10 @@
                     android:orientation="horizontal"
                     android:layout_marginBottom="24dp"
                     android:gravity="center_vertical">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_person"
-                        app:tint="#444444" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginStart="16dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Name"
-                            android:textColor="#666666"
-                            android:textSize="12sp" />
-                        <TextView
-                            android:id="@+id/tvName"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="John Doe"
-                            android:textColor="#FFFFFF"
-                            android:textSize="16sp"
-                            android:layout_marginTop="2dp" />
+                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_person" app:tint="#444444" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginStart="16dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Name" android:textColor="#666666" android:textSize="12sp" />
+                        <TextView android:id="@+id/tvNameOutside" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="John Doe" android:textColor="#FFFFFF" android:textSize="16sp" android:layout_marginTop="2dp" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -164,32 +203,10 @@
                     android:orientation="horizontal"
                     android:layout_marginBottom="24dp"
                     android:gravity="center_vertical">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_email"
-                        app:tint="#444444" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginStart="16dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Email"
-                            android:textColor="#666666"
-                            android:textSize="12sp" />
-                        <TextView
-                            android:id="@+id/tvEmail"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="john.doe@example.com"
-                            android:textColor="#FFFFFF"
-                            android:textSize="16sp"
-                            android:layout_marginTop="2dp" />
+                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_email" app:tint="#444444" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginStart="16dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Email" android:textColor="#666666" android:textSize="12sp" />
+                        <TextView android:id="@+id/tvEmailOutside" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="john.doe@example.com" android:textColor="#FFFFFF" android:textSize="16sp" android:layout_marginTop="2dp" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -198,37 +215,55 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginBottom="32dp"
+                    android:layout_marginBottom="8dp"
                     android:gravity="center_vertical">
+                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_phone" app:tint="#444444" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginStart="16dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Phone" android:textColor="#666666" android:textSize="12sp" />
+                        <TextView android:id="@+id/tvPhoneOutside" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="+1 (555) 123-4567" android:textColor="#FFFFFF" android:textSize="16sp" android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
 
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_phone"
-                        app:tint="#444444" />
+            <!-- Event History Section (For Entrant) -->
+            <LinearLayout
+                android:id="@+id/llEventHistoryContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="24dp"
+                android:visibility="gone">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginStart="16dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Phone"
-                            android:textColor="#666666"
-                            android:textSize="12sp" />
-                        <TextView
-                            android:id="@+id/tvPhone"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="+1 (555) 123-4567"
-                            android:textColor="#FFFFFF"
-                            android:textSize="16sp"
-                            android:layout_marginTop="2dp" />
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp">
+                    <ImageView android:id="@+id/ivEventHistoryIcon" android:layout_width="18dp" android:layout_height="18dp" android:layout_centerVertical="true" android:src="@drawable/ic_time" app:tint="#4CAF50" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerVertical="true" android:layout_marginStart="8dp" android:layout_toEndOf="@id/ivEventHistoryIcon" android:text="Event History" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" />
+                </RelativeLayout>
+
+                <!-- Stats Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="16dp">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical" android:background="@drawable/rounded_card_bg" android:backgroundTint="#121212" android:padding="12dp">
+                        <TextView android:id="@+id/tvJoinedCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1" android:textColor="#FF9800" android:textSize="18sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Joined" android:textColor="#444444" android:textSize="11sp" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:gravity="center" android:orientation="vertical" android:background="@drawable/rounded_card_bg" android:backgroundTint="#121212" android:padding="12dp">
+                        <TextView android:id="@+id/tvSelectedCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2" android:textColor="#4CAF50" android:textSize="18sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Selected" android:textColor="#444444" android:textSize="11sp" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:gravity="center" android:orientation="vertical" android:background="@drawable/rounded_card_bg" android:backgroundTint="#121212" android:padding="12dp">
+                        <TextView android:id="@+id/tvRejectedCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1" android:textColor="#F44336" android:textSize="18sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Rejected" android:textColor="#444444" android:textSize="11sp" />
                     </LinearLayout>
                 </LinearLayout>
 
+                <LinearLayout android:id="@+id/llRecentEventsList" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+                <TextView android:id="@+id/tvViewFullHistory" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="12dp" android:text="View Full History" android:textColor="#4CAF50" android:textSize="14sp" android:gravity="center" android:clickable="true" android:focusable="true"/>
             </LinearLayout>
 
             <!-- Actions Section -->
@@ -236,30 +271,15 @@
                 android:id="@+id/btnSignOutLayout"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="24dp"
                 app:cardBackgroundColor="#121212"
-                app:cardCornerRadius="12dp"
+                app:cardCornerRadius="16dp"
                 app:strokeWidth="0dp"
                 android:clickable="true"
                 android:focusable="true">
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:orientation="horizontal">
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_logout"
-                        app:tint="#FFFFFF" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Log Out"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:layout_marginStart="12dp" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="horizontal">
+                    <ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@drawable/ic_logout" app:tint="#FFFFFF" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Log Out" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:layout_marginStart="12dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -268,43 +288,24 @@
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="12dp"
-                app:cardBackgroundColor="#1A0D0D"
-                app:cardCornerRadius="12dp"
+                app:cardBackgroundColor="#0F0808"
+                app:cardCornerRadius="16dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#331111"
+                app:strokeColor="#1F1111"
                 android:clickable="true"
                 android:focusable="true">
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:orientation="horizontal">
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_trash"
-                        app:tint="#F44336" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Delete Account"
-                        android:textColor="#F44336"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:layout_marginStart="12dp" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="horizontal">
+                    <ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@drawable/ic_trash" app:tint="#F44336" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Delete Account" android:textColor="#F44336" android:textSize="16sp" android:textStyle="bold" android:layout_marginStart="12dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Hidden elements for code compatibility -->
+            <!-- Hidden compatibility views -->
             <View android:id="@+id/btnBack" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-            <LinearLayout android:id="@+id/llEventHistoryHeader" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-            <TextView android:id="@+id/tvEventHistoryHeader" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-            <LinearLayout android:id="@+id/llStatsRow" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-            <LinearLayout android:id="@+id/llEventsList" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-            <TextView android:id="@+id/tvViewFullHistory" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-            <TextView android:id="@+id/tvSelectedCount" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+            <TextView android:id="@+id/tvName" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+            <TextView android:id="@+id/tvEmail" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+            <TextView android:id="@+id/tvPhone" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
             <TextView android:id="@+id/tvWaitingCount" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-            <TextView android:id="@+id/tvRejectedCount" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
 
         </LinearLayout>
     </ScrollView>

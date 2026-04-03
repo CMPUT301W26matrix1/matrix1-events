@@ -1,6 +1,8 @@
 package com.example.eventflow;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
@@ -28,14 +30,23 @@ public class RoleSelectionActivity extends AppCompatActivity {
         // Set initial state
         selectCard(cardEntrant, "Entrant");
 
-        // Update card click listeners to only select the card, not navigate
-        if (cardEntrant != null) cardEntrant.setOnClickListener(v -> selectCard(cardEntrant, "Entrant"));
-        if (cardOrganizer != null) cardOrganizer.setOnClickListener(v -> selectCard(cardOrganizer, "Organizer"));
-        if (cardAdmin != null) cardAdmin.setOnClickListener(v -> selectCard(cardAdmin, "Admin"));
+        cardEntrant.setOnClickListener(v -> selectCard(cardEntrant, "Entrant"));
+        cardOrganizer.setOnClickListener(v -> selectCard(cardOrganizer, "Organizer"));
+        cardAdmin.setOnClickListener(v -> selectCard(cardAdmin, "Admin"));
 
-        if (btnContinue != null) {
-            btnContinue.setOnClickListener(v -> navigateToRole(selectedRole));
-        }
+        btnContinue.setOnClickListener(v -> {
+            // Save selected role to SharedPreferences for other activities/fragments to use
+            SharedPreferences prefs = getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
+            prefs.edit().putString("userRole", selectedRole.toLowerCase()).apply();
+
+            if ("Entrant".equals(selectedRole)) {
+                startActivity(new Intent(RoleSelectionActivity.this, BrowseEventsActivity.class));
+            } else if ("Organizer".equals(selectedRole)) {
+                startActivity(new Intent(RoleSelectionActivity.this, OrganizerEventsActivity.class));
+            } else if ("Admin".equals(selectedRole)) {
+                startActivity(new Intent(RoleSelectionActivity.this, AdminDashboardActivity.class));
+            }
+        });
     }
 
     private void selectCard(MaterialCardView selectedCard, String role) {
@@ -51,28 +62,7 @@ public class RoleSelectionActivity extends AppCompatActivity {
     }
 
     private void resetCard(MaterialCardView card) {
-        if (card == null) return;
         card.setStrokeColor(Color.parseColor("#1A1A1A"));
         card.setStrokeWidth(2);
-    }
-
-    private void navigateToRole(String role) {
-        Intent intent;
-        switch (role) {
-            case "Entrant":
-                intent = new Intent(this, BrowseEventsActivity.class);
-                break;
-            case "Organizer":
-                // Landing page for organizer is the OrganizerEventsActivity (Dashboard)
-                intent = new Intent(this, OrganizerEventsActivity.class);
-                break;
-            case "Admin":
-                intent = new Intent(this, AdminDashboardActivity.class);
-                break;
-            default:
-                return;
-        }
-        startActivity(intent);
-        finish();
     }
 }
