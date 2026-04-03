@@ -49,7 +49,7 @@ public class EventDetailActivity extends AppCompatActivity {
     private String eventId;
     private Event currentEvent;
     private com.google.android.material.button.MaterialButton btnJoinNow;
-    
+
     // UI components
     private TextView tvName, tvLocation, tvDate, tvTime, tvSpots, tvTotalSpots, tvRegPeriod, tvDescription, tvCommentsHeader;
     private ImageView ivPoster;
@@ -57,13 +57,13 @@ public class EventDetailActivity extends AppCompatActivity {
     private ImageButton btnPostComment;
     private RecyclerView rvComments, rvNearbyEvents;
     private TextView tvNearbyEventsLabel;
-    
+
     private FirebaseFirestore db;
     private final ArrayList<Comment> commentList = new ArrayList<>();
     private CommentAdapter commentAdapter;
     private final ArrayList<Event> nearbyEvents = new ArrayList<>();
     private NearbyEventAdapter nearbyEventAdapter;
-    
+
     private String userId = "";
     private String userName = "";
     private String deviceId;
@@ -91,11 +91,11 @@ public class EventDetailActivity extends AppCompatActivity {
 
         initUI();
         setupListeners();
-        
+
         eventController = new EventController(deviceId);
         loadEventDetails();
         loadComments();
-        
+
         // Only load nearby events if NOT an organizer
         if (!isOrganizer) {
             loadNearbyEvents();
@@ -116,11 +116,11 @@ public class EventDetailActivity extends AppCompatActivity {
         tvDescription = findViewById(R.id.tv_detail_description);
         tvCommentsHeader = findViewById(R.id.tv_comments_header);
         ivPoster = findViewById(R.id.iv_detail_poster);
-        
+
         btnJoinNow = findViewById(R.id.btn_join_now);
         etCommentInput = findViewById(R.id.etCommentInput);
         btnPostComment = findViewById(R.id.btnPostComment);
-        
+
         rvComments = findViewById(R.id.rvComments);
         rvComments.setLayoutManager(new LinearLayoutManager(this));
         commentAdapter = new CommentAdapter(commentList, new CommentAdapter.CommentActionListener() {
@@ -133,7 +133,7 @@ public class EventDetailActivity extends AppCompatActivity {
 
         rvNearbyEvents = findViewById(R.id.rvNearbyEvents);
         tvNearbyEventsLabel = findViewById(R.id.tv_nearby_events_label);
-        
+
         if (rvNearbyEvents != null) {
             rvNearbyEvents.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
             nearbyEventAdapter = new NearbyEventAdapter(nearbyEvents, userRole != null ? userRole : "entrant");
@@ -143,16 +143,21 @@ public class EventDetailActivity extends AppCompatActivity {
 
     private void setupListeners() {
         findViewById(R.id.btn_detail_back).setOnClickListener(v -> finish());
-        
+
         findViewById(R.id.btn_view_map_text).setOnClickListener(v -> {
             Intent intent = new Intent(this, EntrantLocationMapActivity.class);
             intent.putExtra("eventId", eventId);
-            if (currentEvent != null) intent.putExtra("eventName", currentEvent.getName());
+            if (currentEvent != null) {
+                intent.putExtra("eventName", currentEvent.getName());
+                intent.putExtra("eventLat", currentEvent.getLocationLatitude());
+                intent.putExtra("eventLng", currentEvent.getLocationLongitude());
+            }
+            intent.putExtra("userRole", userRole);
             startActivity(intent);
         });
 
         btnPostComment.setOnClickListener(v -> postComment());
-        
+
         btnJoinNow.setOnClickListener(v -> {
             if (currentEvent == null) return;
             boolean joined = eventController.isOnWaitingList(currentEvent);
@@ -176,7 +181,7 @@ public class EventDetailActivity extends AppCompatActivity {
         tvName.setText(e.getName());
         tvLocation.setText(e.getLocation());
         tvDescription.setText(e.getDescription());
-        
+
         if (e.getEventDate() != null) {
             SimpleDateFormat df = new SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault());
             SimpleDateFormat tf = new SimpleDateFormat("'at' HH:mm", Locale.getDefault());
@@ -247,7 +252,7 @@ public class EventDetailActivity extends AppCompatActivity {
     private void postComment() {
         String text = etCommentInput.getText().toString().trim();
         if (text.isEmpty()) return;
-        
+
         String cid = db.collection("events").document(eventId).collection("comments").document().getId();
         Map<String, Object> data = new HashMap<>();
         data.put("commentId", cid);
@@ -255,7 +260,7 @@ public class EventDetailActivity extends AppCompatActivity {
         data.put("userName", userName);
         data.put("text", text);
         data.put("timestamp", Timestamp.now());
-        
+
         db.collection("events").document(eventId).collection("comments").document(cid).set(data).addOnSuccessListener(a -> {
             etCommentInput.setText("");
             etCommentInput.setHint("Add a comment...");
@@ -313,11 +318,11 @@ public class EventDetailActivity extends AppCompatActivity {
                 if (ev != null) {
                     ev.setEventId(doc.getId());
                     if (ev.getEventId().equals(eventId)) continue;
-                    
+
                     float[] results = new float[1];
                     Location.distanceBetween(userLocation.getLatitude(), userLocation.getLongitude(),
                             ev.getLocationLatitude(), ev.getLocationLongitude(), results);
-                    
+
                     // Within 50km
                     if (results[0] < 50000) {
                         nearbyEvents.add(ev);
