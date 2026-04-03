@@ -19,6 +19,8 @@ import androidx.appcompat.widget.SwitchCompat;
 import com.example.eventflow.ProfileActivity;
 import com.example.eventflow.R;
 import com.example.eventflow.RoleSelectionActivity;
+import com.example.eventflow.OrganizerEventsActivity;
+import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
@@ -45,7 +47,7 @@ public class OrgEventActivity extends AppCompatActivity {
     private Button btnCreateEvent;
     
     // Bottom navigation views
-    private View navDashboard, navCreate, navProfile;
+    private View navHome, navDashboard, navCreate, navProfile;
     
     private FirebaseFirestore db;
     private String currentEventId = "";
@@ -93,6 +95,7 @@ public class OrgEventActivity extends AppCompatActivity {
         btnCreateEvent    = findViewById(R.id.btn_header_action);
         
         // Find bottom navigation bar items
+        navHome           = findViewById(R.id.nav_home);
         navDashboard      = findViewById(R.id.nav_dashboard);
         navCreate         = findViewById(R.id.nav_create);
         navProfile        = findViewById(R.id.nav_profile);
@@ -124,9 +127,18 @@ public class OrgEventActivity extends AppCompatActivity {
         if (etTime != null) etTime.setOnClickListener(v -> showTimePicker(etTime));
         
         // Navigation bar logic: Switches between major app sections
+        if (navHome != null) {
+            navHome.setOnClickListener(v -> {
+                Intent intent = new Intent(OrgEventActivity.this, RoleSelectionActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+            });
+        }
+
         if (navDashboard != null) {
             navDashboard.setOnClickListener(v -> {
-                Intent intent = new Intent(OrgEventActivity.this, RoleSelectionActivity.class);
+                // Return to the main organizer dashboard (Stats view)
+                Intent intent = new Intent(OrgEventActivity.this, EntrantDashboardActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(intent);
             });

@@ -24,6 +24,7 @@ import com.example.eventflow.controller.EventController;
 import com.example.eventflow.model.entities.Comment;
 import com.example.eventflow.model.entities.Event;
 import com.example.eventflow.model.repositories.EventRepository;
+import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.firebase.Timestamp;
@@ -59,6 +60,10 @@ public class EventDetailActivity extends AppCompatActivity {
     private RecyclerView rvComments, rvNearbyEvents;
     private TextView tvNearbyEventsLabel;
 
+
+    // Bottom navigation views
+    private View navHome, navDashboard, navCreate, navProfile;
+
     private FirebaseFirestore db;
     private final ArrayList<Comment> commentList = new ArrayList<>();
     private CommentAdapter commentAdapter;
@@ -92,11 +97,11 @@ public class EventDetailActivity extends AppCompatActivity {
 
         initUI();
         setupListeners();
-
+        
         eventController = new EventController(deviceId);
         loadEventDetails();
         loadComments();
-
+        
         // Only load nearby events if NOT an organizer
         if (!isOrganizer) {
             loadNearbyEvents();
@@ -117,11 +122,11 @@ public class EventDetailActivity extends AppCompatActivity {
         tvDescription = findViewById(R.id.tv_detail_description);
         tvCommentsHeader = findViewById(R.id.tv_comments_header);
         ivPoster = findViewById(R.id.iv_detail_poster);
-
+        
         btnJoinNow = findViewById(R.id.btn_join_now);
         etCommentInput = findViewById(R.id.etCommentInput);
         btnPostComment = findViewById(R.id.btnPostComment);
-
+        
         rvComments = findViewById(R.id.rvComments);
         rvComments.setLayoutManager(new LinearLayoutManager(this));
         commentAdapter = new CommentAdapter(commentList, new CommentAdapter.CommentActionListener() {
@@ -139,6 +144,52 @@ public class EventDetailActivity extends AppCompatActivity {
             rvNearbyEvents.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
             nearbyEventAdapter = new NearbyEventAdapter(nearbyEvents, userRole != null ? userRole : "entrant");
             rvNearbyEvents.setAdapter(nearbyEventAdapter);
+        }
+
+        // Find bottom navigation bar items if they exist in the layout
+        navHome = findViewById(R.id.nav_home);
+        navDashboard = findViewById(R.id.nav_dashboard);
+        navCreate = findViewById(R.id.nav_create);
+        navProfile = findViewById(R.id.nav_profile);
+    }
+
+    private void setupNavigation() {
+        if (navHome != null) {
+            navHome.setOnClickListener(v -> {
+                Intent intent = new Intent(this, RoleSelectionActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+            });
+        }
+
+        if (navDashboard != null) {
+            navDashboard.setOnClickListener(v -> {
+                if (isOrganizer) {
+                    Intent intent = new Intent(this, EntrantDashboardActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                } else {
+                    Intent intent = new Intent(this, RoleSelectionActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                }
+            });
+        }
+
+        if (navCreate != null) {
+            navCreate.setOnClickListener(v -> {
+                if (isOrganizer) {
+                    Intent intent = new Intent(this, com.example.eventflow.org_event.OrgEventActivity.class);
+                    startActivity(intent);
+                }
+            });
+        }
+
+        if (navProfile != null) {
+            navProfile.setOnClickListener(v -> {
+                Intent intent = new Intent(this, ProfileActivity.class);
+                startActivity(intent);
+            });
         }
     }
 
@@ -209,6 +260,7 @@ public class EventDetailActivity extends AppCompatActivity {
     private void updateButtonState() {
         if (isAdmin) {
             btnJoinNow.setVisibility(View.GONE);
+            // Admins can only view and delete, not post new comments or reply/react
             etCommentInput.setVisibility(View.GONE);
             btnPostComment.setVisibility(View.GONE);
             return;
@@ -372,11 +424,11 @@ public class EventDetailActivity extends AppCompatActivity {
                 if (ev != null) {
                     ev.setEventId(doc.getId());
                     if (ev.getEventId().equals(eventId)) continue;
-
+                    
                     float[] results = new float[1];
                     Location.distanceBetween(userLocation.getLatitude(), userLocation.getLongitude(),
                             ev.getLocationLatitude(), ev.getLocationLongitude(), results);
-
+                    
                     // Within 50km
                     if (results[0] < 50000) {
                         nearbyEvents.add(ev);

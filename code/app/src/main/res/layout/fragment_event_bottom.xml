@@ -8,6 +8,30 @@
     android:orientation="horizontal"
     android:paddingTop="8dp">
 
+    <!-- Home -->
+    <LinearLayout
+        android:id="@+id/nav_home"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true">
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_home"
+            app:tint="#666666" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Home"
+            android:textColor="#666666"
+            android:textSize="10sp"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
     <!-- Dashboard -->
     <LinearLayout
         android:id="@+id/nav_dashboard"

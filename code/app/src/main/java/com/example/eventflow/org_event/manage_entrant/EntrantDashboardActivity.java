@@ -19,7 +19,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.eventflow.EventDetailActivity;
 import com.example.eventflow.ProfileActivity;
 import com.example.eventflow.R;
+import com.example.eventflow.RoleSelectionActivity;
 import com.example.eventflow.WaitingListActivity;
+import com.example.eventflow.OrganizerEventsActivity;
 import com.example.eventflow.controller.LotteryController;
 import com.example.eventflow.model.entities.Event;
 import com.example.eventflow.org_event.OrgEventActivity;
@@ -45,6 +47,8 @@ public class EntrantDashboardActivity extends AppCompatActivity {
     private OrganizerEventAdapter organizerAdapter;
     private final List<Event> myEvents = new ArrayList<>();
     private LotteryController lotteryController;
+
+    private View navHome, navDashboard, navCreate, navProfile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,12 +99,21 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             organizerAdapter = new OrganizerEventAdapter(myEvents);
             rvOrganizerEvents.setAdapter(organizerAdapter);
         }
+
+        navHome = findViewById(R.id.nav_home);
+        navDashboard = findViewById(R.id.nav_dashboard);
+        navCreate = findViewById(R.id.nav_create);
+        navProfile = findViewById(R.id.nav_profile);
     }
 
     private void setupNavigation() {
-        View navDashboard = findViewById(R.id.nav_dashboard);
-        View navCreate = findViewById(R.id.nav_create);
-        View navProfile = findViewById(R.id.nav_profile);
+        if (navHome != null) {
+            navHome.setOnClickListener(v -> {
+                Intent intent = new Intent(this, RoleSelectionActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+            });
+        }
 
         if (navDashboard != null) {
             if (navDashboard instanceof android.widget.LinearLayout) {
@@ -117,8 +130,9 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                 }
             }
             navDashboard.setOnClickListener(v -> {
+                // Already on the comprehensive dashboard (2nd SS). Refresh data.
+                fetchLatestEvent();
                 loadMyEvents();
-                if (eventId != null) fetchEventDetails(eventId);
             });
         }
 
