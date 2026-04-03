@@ -4,7 +4,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
-import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,16 +13,21 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.eventflow.model.entities.Event;
+import com.example.eventflow.org_event.manage_entrant.CancelledEntrantsActivity;
+import com.example.eventflow.org_event.manage_entrant.NotificationsActivity;
+import com.example.eventflow.org_event.manage_entrant.OrganizerFinalEntrantsActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Activity for Organizers to view and manage all events they own.
- * US 02.08.01, US 02.08.02 — Navigation hub for owner-specific features.
+ * This is now the "Dashboard" (first screen) for organizers.
  */
 public class OrganizerEventsActivity extends AppCompatActivity {
 
@@ -29,27 +35,126 @@ public class OrganizerEventsActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private EventAdapter adapter;
     private final List<Event> myEvents = new ArrayList<>();
+    
+    private TextView tvEventName, tvEventDetails;
+    private String latestEventId;
+    private String latestEventName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_organizer_events);
+        setContentView(R.layout.activity_entrant_dashboard); // Using the Dashboard layout
 
-        ImageButton btnBack = findViewById(R.id.btn_back);
-        if (btnBack != null) btnBack.setOnClickListener(v -> {
-            // Explicitly go back to role selection if finished
-            onBackPressed();
-        });
+        // Initialize UI elements from dashboard
+        tvEventName = findViewById(R.id.tvEventName);
+        tvEventDetails = findViewById(R.id.tvEventDetails);
 
+        // Initialize RecyclerView from the dashboard layout
         recyclerView = findViewById(R.id.rvOrganizerEvents);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        
-        // Use "Organizer" role so EventDetailActivity enables owner features
-        adapter = new EventAdapter(myEvents, "Organizer");
-        recyclerView.setAdapter(adapter);
+        if (recyclerView != null) {
+            recyclerView.setLayoutManager(new LinearLayoutManager(this));
+            adapter = new EventAdapter(myEvents, "Organizer");
+            recyclerView.setAdapter(adapter);
+        }
 
+        // Setup Quick Actions and other UI elements
+        setupDashboardUI();
+        
         loadMyEvents();
         setupBottomNavigation();
+    }
+
+    private void setupDashboardUI() {
+        // Notification Bell
+        View bell = findViewById(R.id.ivNotificationBell);
+        if (bell != null) {
+            bell.setOnClickListener(v -> {
+                if (latestEventId != null) {
+                    Intent intent = new Intent(this, NotificationsActivity.class);
+                    intent.putExtra("eventId", latestEventId);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(this, "No events available", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        // Quick Card: Notifications Center
+        View cardNotifications = findViewById(R.id.cardNotifications);
+        if (cardNotifications != null) {
+            cardNotifications.setOnClickListener(v -> {
+                if (latestEventId != null) {
+                    Intent intent = new Intent(this, NotificationsActivity.class);
+                    intent.putExtra("eventId", latestEventId);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(this, "No events available", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        // Quick Action: Waitlist
+        View cardWaitlist = findViewById(R.id.cardWaitlist);
+        if (cardWaitlist != null) {
+            cardWaitlist.setOnClickListener(v -> {
+                if (latestEventId != null) {
+                    Intent intent = new Intent(this, WaitingListActivity.class);
+                    intent.putExtra("eventId", latestEventId);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(this, "No events available", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        // Quick Action: Cancelled
+        View cardCancelled = findViewById(R.id.cardCancelled);
+        if (cardCancelled != null) {
+            cardCancelled.setOnClickListener(v -> {
+                if (latestEventId != null) {
+                    Intent intent = new Intent(this, CancelledEntrantsActivity.class);
+                    intent.putExtra("eventId", latestEventId);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(this, "No events available", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        // Quick Action: Final Enrolled Entrants
+        View cardEnrolled = findViewById(R.id.cardEnrolled);
+        if (cardEnrolled != null) {
+            cardEnrolled.setOnClickListener(v -> {
+                if (latestEventId != null) {
+                    Intent intent = new Intent(this, OrganizerFinalEntrantsActivity.class);
+                    intent.putExtra("eventId", latestEventId);
+                    intent.putExtra("eventName", latestEventName);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(this, "No events available", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
+
+    private void updateDashboardHeader(Event event) {
+        if (event == null) return;
+        latestEventId = event.getEventId();
+        latestEventName = event.getName();
+        
+        if (tvEventName != null) tvEventName.setText(event.getName());
+        
+        if (tvEventDetails != null) {
+            String details = "";
+            if (event.getEventDate() != null) {
+                SimpleDateFormat sdf = new SimpleDateFormat("MMMM d", Locale.getDefault());
+                details = sdf.format(event.getEventDate().toDate());
+            }
+            if (event.getLocation() != null && !event.getLocation().isEmpty()) {
+                details += " • " + event.getLocation();
+            }
+            tvEventDetails.setText(details);
+        }
     }
 
     private void setupBottomNavigation() {
@@ -62,13 +167,10 @@ public class OrganizerEventsActivity extends AppCompatActivity {
                     startActivity(new Intent(this, ProfileActivity.class));
                     return true;
                 } else if (id == R.id.nav_dashboard) {
-                    // Go back to role selection (MainActivity)
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                    startActivity(intent);
+                    // Already here
                     return true;
-                } else if (id == R.id.nav_admin) {
-                    startActivity(new Intent(this, AdminDashboardActivity.class));
+                } else if (id == R.id.nav_my_events) {
+                    // Refresh or stay
                     return true;
                 }
                 return true;
@@ -95,8 +197,9 @@ public class OrganizerEventsActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
                     }
-                    
-                    // Also check for co-organizer status
+                    if (!myEvents.isEmpty()) {
+                        updateDashboardHeader(myEvents.get(0));
+                    }
                     loadCoOwnedEvents(deviceId);
                 })
                 .addOnFailureListener(e -> {
@@ -114,10 +217,9 @@ public class OrganizerEventsActivity extends AppCompatActivity {
                             Event event = doc.toObject(Event.class);
                             if (event != null) {
                                 event.setEventId(doc.getId());
-                                // Avoid duplicates if user is both owner and co-organizer
                                 boolean exists = false;
                                 for (Event e : myEvents) {
-                                    if (e.getId().equals(event.getId())) {
+                                    if (e.getEventId().equals(event.getEventId())) {
                                         exists = true;
                                         break;
                                     }
@@ -128,11 +230,10 @@ public class OrganizerEventsActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
                     }
-                    adapter.notifyDataSetChanged();
-                    
-                    if (myEvents.isEmpty()) {
-                        Toast.makeText(this, "No events found", Toast.LENGTH_SHORT).show();
+                    if (latestEventId == null && !myEvents.isEmpty()) {
+                        updateDashboardHeader(myEvents.get(0));
                     }
+                    if (adapter != null) adapter.notifyDataSetChanged();
                 });
     }
 }

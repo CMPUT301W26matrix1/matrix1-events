@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.eventflow.model.entities.Event;
+import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.squareup.picasso.Picasso;
@@ -161,8 +162,16 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         }
 
         holder.itemView.setOnClickListener(v -> {
-            Intent intent = new Intent(v.getContext(), EventDetailActivity.class);
+            Intent intent;
+            if ("organizer".equalsIgnoreCase(userRole)) {
+                // If the user is an organizer, navigate to EntrantDashboardActivity
+                intent = new Intent(v.getContext(), EntrantDashboardActivity.class);
+            } else {
+                // Otherwise, navigate to EventDetailActivity (Entrant/Admin view)
+                intent = new Intent(v.getContext(), EventDetailActivity.class);
+            }
             intent.putExtra("eventId", event.getId());
+            intent.putExtra("eventName", event.getName());
             intent.putExtra("userRole", userRole);
             v.getContext().startActivity(intent);
         });

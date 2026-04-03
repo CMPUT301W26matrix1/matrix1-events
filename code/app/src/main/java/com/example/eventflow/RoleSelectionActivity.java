@@ -8,6 +8,7 @@ import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.android.material.card.MaterialCardView;
 
 public class RoleSelectionActivity extends AppCompatActivity {
@@ -64,7 +65,8 @@ public class RoleSelectionActivity extends AppCompatActivity {
                 intent = new Intent(this, BrowseEventsActivity.class);
                 break;
             case "Organizer":
-                intent = new Intent(this, OrganizerEventsActivity.class);
+                // Landing page for organizer is now the Event Dashboard
+                intent = new Intent(this, EntrantDashboardActivity.class);
                 break;
             case "Admin":
                 intent = new Intent(this, AdminDashboardActivity.class);

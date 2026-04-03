@@ -139,6 +139,7 @@ public class MainActivity extends AppCompatActivity {
                 intent = new Intent(this, BrowseEventsActivity.class);
                 break;
             case "organizer":
+                // Navigate to OrganizerEventsActivity (which will be the Dashboard - SS 1)
                 intent = new Intent(this, OrganizerEventsActivity.class);
                 break;
             case "admin":
@@ -148,7 +149,6 @@ public class MainActivity extends AppCompatActivity {
                 return;
         }
         startActivity(intent);
-        // Do NOT call finish() here to allow coming back to role selection (MainActivity)
     }
 
     private void handleScanResult(String contents) {
