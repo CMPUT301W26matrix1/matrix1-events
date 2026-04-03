@@ -57,6 +57,7 @@ public class EventDetailActivity extends AppCompatActivity {
     private EditText etCommentInput;
     private ImageButton btnPostComment;
     private RecyclerView rvComments, rvNearbyEvents;
+    private TextView tvNearbyEventsLabel;
 
     private FirebaseFirestore db;
     private final ArrayList<Comment> commentList = new ArrayList<>();
@@ -95,7 +96,14 @@ public class EventDetailActivity extends AppCompatActivity {
         eventController = new EventController(deviceId);
         loadEventDetails();
         loadComments();
-        loadNearbyEvents();
+
+        // Only load nearby events if NOT an organizer
+        if (!isOrganizer) {
+            loadNearbyEvents();
+        } else {
+            if (rvNearbyEvents != null) rvNearbyEvents.setVisibility(View.GONE);
+            if (tvNearbyEventsLabel != null) tvNearbyEventsLabel.setVisibility(View.GONE);
+        }
     }
 
     private void initUI() {
@@ -125,9 +133,13 @@ public class EventDetailActivity extends AppCompatActivity {
         rvComments.setNestedScrollingEnabled(false);
 
         rvNearbyEvents = findViewById(R.id.rvNearbyEvents);
-        rvNearbyEvents.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        nearbyEventAdapter = new NearbyEventAdapter(nearbyEvents, userRole != null ? userRole : "entrant");
-        rvNearbyEvents.setAdapter(nearbyEventAdapter);
+        tvNearbyEventsLabel = findViewById(R.id.tv_nearby_events_label);
+
+        if (rvNearbyEvents != null) {
+            rvNearbyEvents.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+            nearbyEventAdapter = new NearbyEventAdapter(nearbyEvents, userRole != null ? userRole : "entrant");
+            rvNearbyEvents.setAdapter(nearbyEventAdapter);
+        }
     }
 
     private void setupListeners() {
@@ -208,7 +220,7 @@ public class EventDetailActivity extends AppCompatActivity {
         btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(joined ? 0xFF4285F4 : 0xFF4CAF50));
     }
 
-    // FIXED METHOD: Save event to user's joined events
+    // FIXED METHOD: Save event to user's joined events (FROM LEFT SIDE)
     private void saveToUserJoinedEvents(Event event, String status) {
         String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
@@ -220,7 +232,7 @@ public class EventDetailActivity extends AppCompatActivity {
         }
 
         Map<String, Object> participation = new HashMap<>();
-        participation.put("eventId", this.eventId);  // Use this.eventId from activity
+        participation.put("eventId", this.eventId);
         participation.put("eventName", event.getName());
         participation.put("eventDate", dateString);
         participation.put("eventLocation", event.getLocation());
@@ -231,7 +243,7 @@ public class EventDetailActivity extends AppCompatActivity {
         db.collection("users")
                 .document(deviceId)
                 .collection("event_participations")
-                .document(this.eventId)  // Use this.eventId as document ID
+                .document(this.eventId)
                 .set(participation)
                 .addOnSuccessListener(aVoid -> {
                     Log.d("EventDetail", "Event saved to user's joined events: " + event.getName());
@@ -241,14 +253,14 @@ public class EventDetailActivity extends AppCompatActivity {
                 });
     }
 
-    // FIXED METHOD: Remove event from user's joined events
+    // FIXED METHOD: Remove event from user's joined events (FROM LEFT SIDE)
     private void removeFromUserJoinedEvents(Event event) {
         String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
         db.collection("users")
                 .document(deviceId)
                 .collection("event_participations")
-                .document(this.eventId)  // Use this.eventId
+                .document(this.eventId)
                 .delete()
                 .addOnSuccessListener(aVoid -> {
                     Log.d("EventDetail", "Event removed from user's joined events: " + event.getName());
@@ -262,7 +274,7 @@ public class EventDetailActivity extends AppCompatActivity {
         eventController.joinWaitingList(currentEvent, new EventRepository.ActionCallback() {
             @Override
             public void onSuccess() {
-                saveToUserJoinedEvents(currentEvent, "Waiting");
+                saveToUserJoinedEvents(currentEvent, "Waiting");  // FROM LEFT SIDE
                 Toast.makeText(EventDetailActivity.this, "Joined successfully", Toast.LENGTH_SHORT).show();
                 loadEventDetails();
             }
@@ -276,7 +288,7 @@ public class EventDetailActivity extends AppCompatActivity {
         eventController.leaveWaitingList(currentEvent, new EventRepository.ActionCallback() {
             @Override
             public void onSuccess() {
-                removeFromUserJoinedEvents(currentEvent);
+                removeFromUserJoinedEvents(currentEvent);  // FROM LEFT SIDE
                 Toast.makeText(EventDetailActivity.this, "Left successfully", Toast.LENGTH_SHORT).show();
                 loadEventDetails();
             }
