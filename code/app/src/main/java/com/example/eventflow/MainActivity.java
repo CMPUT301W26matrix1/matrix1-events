@@ -51,11 +51,11 @@ public class MainActivity extends AppCompatActivity {
         CardView cardEntrant = findViewById(R.id.card_entrant);
         CardView cardOrganizer = findViewById(R.id.card_organizer);
         CardView cardAdmin = findViewById(R.id.card_admin);
-        
+
         ivEntrant = findViewById(R.id.iv_entrant_icon);
         ivOrganizer = findViewById(R.id.iv_organizer_icon);
         ivAdmin = findViewById(R.id.iv_admin_icon);
-        
+
         Button btnContinue = findViewById(R.id.btn_continue);
 
         // --- ROLE SELECTION LISTENERS ---
@@ -87,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
     private void selectRole(String role) {
         selectedRole = role;
         resetIcons();
-        
+
         // Highlight logic
         switch (role) {
             case "entrant":
@@ -139,8 +139,8 @@ public class MainActivity extends AppCompatActivity {
                 intent = new Intent(this, BrowseEventsActivity.class);
                 break;
             case "organizer":
-                // Navigate to OrganizerEventsActivity (which will be the Dashboard - SS 1)
-                intent = new Intent(this, OrganizerEventsActivity.class);
+                // DIRECT TO DASHBOARD - EntrantDashboardActivity
+                intent = new Intent(this, EntrantDashboardActivity.class);
                 break;
             case "admin":
                 intent = new Intent(this, AdminDashboardActivity.class);

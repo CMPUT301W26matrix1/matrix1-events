@@ -34,17 +34,18 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cancelled_entrants);
 
-        // Get event ID from intent
+        // Get event ID from intent - don't finish if missing, just show empty
         if (getIntent().hasExtra("eventId")) {
             eventId = getIntent().getStringExtra("eventId");
         } else {
-            Toast.makeText(this, "Event ID not found", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
+            eventId = null;
+            Toast.makeText(this, "No event selected - showing empty data", Toast.LENGTH_SHORT).show();
         }
 
-        // Initialize Firestore
-        db = FirebaseFirestore.getInstance();
+        // Initialize Firestore (only if eventId exists)
+        if (eventId != null) {
+            db = FirebaseFirestore.getInstance();
+        }
 
         // Setup Back Button
         ImageView btnBack = findViewById(R.id.btnBack);
@@ -81,16 +82,26 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
             });
         }
 
-        // Setup Draw New Entrant Button
-        if (btnDrawNewEntrant != null) {
+        // Setup Draw New Entrant Button (only if eventId exists)
+        if (btnDrawNewEntrant != null && eventId != null) {
             btnDrawNewEntrant.setOnClickListener(v -> drawNewEntrant());
+        } else if (btnDrawNewEntrant != null) {
+            btnDrawNewEntrant.setEnabled(false);
+            btnDrawNewEntrant.setAlpha(0.5f);
         }
 
-        // Load data from Firestore
-        loadCancelledEntrants();
+        // Load data from Firestore (only if eventId exists)
+        if (eventId != null) {
+            loadCancelledEntrants();
+        } else {
+            // Show empty state
+            updateStatsCounts();
+        }
     }
 
     private void loadCancelledEntrants() {
+        if (eventId == null) return;
+
         // Query participants with status "Cancelled" or "Declined"
         db.collection("events").document(eventId)
                 .collection("participants")
@@ -100,7 +111,6 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
                     cancelledList.clear();
 
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        // Get user details from the document
                         String userId = doc.getString("userId");
                         String name = doc.getString("name");
                         String email = doc.getString("email");
@@ -108,7 +118,6 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
                         String status = doc.getString("status");
                         String cancelledDate = doc.getString("cancelledDate");
 
-                        // If cancelledDate is not available, use the timestamp from Firestore
                         if (cancelledDate == null || cancelledDate.isEmpty()) {
                             cancelledDate = doc.getDate("cancelledAt") != null ?
                                     android.text.format.DateFormat.format("MMM dd, yyyy", doc.getDate("cancelledAt")).toString() :
@@ -158,6 +167,8 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
 
     // Draw New Entrant Method
     private void drawNewEntrant() {
+        if (eventId == null) return;
+
         // Get waiting list from Firestore
         db.collection("events").document(eventId)
                 .collection("participants")
@@ -169,23 +180,19 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
                         return;
                     }
 
-                    // Collect waiting list
                     List<QueryDocumentSnapshot> waitingList = new ArrayList<>();
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         waitingList.add(doc);
                     }
 
-                    // Pick random entrant
                     int randomIndex = (int) (Math.random() * waitingList.size());
                     QueryDocumentSnapshot selected = waitingList.get(randomIndex);
-                    String selectedUserId = selected.getString("userId");
                     String selectedName = selected.getString("name");
 
-                    // Update status to Selected
                     selected.getReference().update("status", "Selected")
                             .addOnSuccessListener(aVoid -> {
                                 Toast.makeText(this, selectedName + " has been selected!", Toast.LENGTH_SHORT).show();
-                                loadCancelledEntrants(); // Refresh the list
+                                loadCancelledEntrants();
                             })
                             .addOnFailureListener(e -> {
                                 Toast.makeText(this, "Failed to draw: " + e.getMessage(), Toast.LENGTH_SHORT).show();

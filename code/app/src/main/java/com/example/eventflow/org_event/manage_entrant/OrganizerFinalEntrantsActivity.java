@@ -42,22 +42,27 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_organizer_final_entrants);
 
-        // Get event info from intent
-        if (getIntent().hasExtra("eventId")) {
-            eventId = getIntent().getStringExtra("eventId");
-            eventName = getIntent().getStringExtra("eventName");
-        } else {
-            Toast.makeText(this, "Event ID not found", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
+        // Get event info from intent - ALLOW NULL
+        eventId = getIntent().getStringExtra("eventId");
+        eventName = getIntent().getStringExtra("eventName");
 
         db = FirebaseFirestore.getInstance();
 
         initViews();
         setupRecyclerView();
         setupListeners();
-        loadEnrolledEntrants();
+
+        // FIX: Even if eventId is null, still show empty state instead of crashing
+        if (eventId != null && !eventId.isEmpty()) {
+            loadEnrolledEntrants();
+        } else {
+            // Show empty state with 0 confirmed attendees
+            updateEmptyState(true);
+            if (tvConfirmedCount != null) {
+                tvConfirmedCount.setText("0");
+            }
+            Toast.makeText(this, "No event selected. Please select an event first.", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void initViews() {
@@ -90,7 +95,9 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
 
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    filterEntrants(s.toString());
+                    if (eventId != null) {
+                        filterEntrants(s.toString());
+                    }
                 }
 
                 @Override
@@ -99,14 +106,33 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
         }
 
         if (btnExportCSV != null) {
-            btnExportCSV.setOnClickListener(v -> exportToCSV());
+            btnExportCSV.setOnClickListener(v -> {
+                if (eventId == null) {
+                    Toast.makeText(this, "No event selected", Toast.LENGTH_SHORT).show();
+                } else {
+                    exportToCSV();
+                }
+            });
         }
+
         if (btnEmailAll != null) {
-            btnEmailAll.setOnClickListener(v -> emailAllEntrants());
+            btnEmailAll.setOnClickListener(v -> {
+                if (eventId == null) {
+                    Toast.makeText(this, "No event selected", Toast.LENGTH_SHORT).show();
+                } else {
+                    emailAllEntrants();
+                }
+            });
         }
     }
 
     private void loadEnrolledEntrants() {
+        // FIX: Add null check here too
+        if (eventId == null || eventId.isEmpty()) {
+            updateEmptyState(true);
+            return;
+        }
+
         db.collection("events").document(eventId)
                 .collection("participants")
                 .whereEqualTo("status", "Selected")
@@ -134,6 +160,7 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Failed to load: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    updateEmptyState(true);
                 });
     }
 
@@ -162,7 +189,11 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
             tvConfirmedCount.setText(String.valueOf(filteredList.size()));
         }
 
-        if (filteredList.isEmpty()) {
+        updateEmptyState(filteredList.isEmpty());
+    }
+
+    private void updateEmptyState(boolean isEmpty) {
+        if (isEmpty) {
             if (tvEmptyState != null) tvEmptyState.setVisibility(TextView.VISIBLE);
             if (rvEnrolledEntrants != null) rvEnrolledEntrants.setVisibility(RecyclerView.GONE);
         } else {

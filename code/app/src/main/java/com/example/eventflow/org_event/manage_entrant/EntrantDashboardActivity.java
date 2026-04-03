@@ -14,7 +14,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.eventflow.R;
 import com.example.eventflow.WaitingListActivity;
 import com.example.eventflow.model.entities.Event;
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 
@@ -35,7 +34,6 @@ public class EntrantDashboardActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
-        // UI Elements
         tvEventName = findViewById(R.id.tvEventName);
         tvEventDetails = findViewById(R.id.tvEventDetails);
         ImageView btnBack = findViewById(R.id.btnBack);
@@ -51,7 +49,6 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         if (eventId != null) {
             fetchEventDetails(eventId);
         } else {
-            // If no eventId, fetch the latest event for this organizer
             fetchLatestEvent();
         }
 
@@ -73,13 +70,14 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                             updateUI(event);
                         }
                     } else {
-                        tvEventName.setText("No Events Found");
+                        tvEventName.setText("No Events Available");
                         tvEventDetails.setText("Create an event to get started");
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.e("EntrantDashboard", "Error fetching latest event", e);
-                    Toast.makeText(this, "Failed to load current event", Toast.LENGTH_SHORT).show();
+                    tvEventName.setText("No Events Available");
+                    tvEventDetails.setText("Create an event to get started");
                 });
     }
 
@@ -98,9 +96,9 @@ public class EntrantDashboardActivity extends AppCompatActivity {
     private void updateUI(Event event) {
         this.eventId = event.getEventId();
         this.eventName = event.getName();
-        
+
         tvEventName.setText(event.getName());
-        
+
         String details = "";
         if (event.getEventDate() != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("MMMM d", Locale.getDefault());
@@ -113,43 +111,57 @@ public class EntrantDashboardActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
+        // Find all cards
         View cardCancelled = findViewById(R.id.cardCancelled);
         View cardWaitlist = findViewById(R.id.cardWaitlist);
         View cardEnrolled = findViewById(R.id.cardEnrolled);
         View cardNotifications = findViewById(R.id.cardNotifications);
 
+        // Log to check if views are found
+        Log.d("Dashboard", "cardCancelled found: " + (cardCancelled != null));
+        Log.d("Dashboard", "cardWaitlist found: " + (cardWaitlist != null));
+        Log.d("Dashboard", "cardEnrolled found: " + (cardEnrolled != null));
+        Log.d("Dashboard", "cardNotifications found: " + (cardNotifications != null));
+        Log.d("Dashboard", "eventId: " + eventId);
+
+        // Cancelled Entrants - Direct click listener
         if (cardCancelled != null) {
             cardCancelled.setOnClickListener(v -> {
-                if (eventId == null) return;
-                Intent intent = new Intent(this, CancelledEntrantsActivity.class);
+                Log.d("Dashboard", "Cancelled Entrants clicked!");
+                Intent intent = new Intent(EntrantDashboardActivity.this, CancelledEntrantsActivity.class);
                 intent.putExtra("eventId", eventId);
                 startActivity(intent);
             });
+        } else {
+            Log.e("Dashboard", "cardCancelled is NULL! Check your XML ID");
         }
 
+        // Manage Waitlist
         if (cardWaitlist != null) {
             cardWaitlist.setOnClickListener(v -> {
-                if (eventId == null) return;
-                Intent intent = new Intent(this, WaitingListActivity.class);
+                Log.d("Dashboard", "Waitlist clicked!");
+                Intent intent = new Intent(EntrantDashboardActivity.this, WaitingListActivity.class);
                 intent.putExtra("eventId", eventId);
                 startActivity(intent);
             });
         }
 
+        // Final Enrolled Entrants
         if (cardEnrolled != null) {
             cardEnrolled.setOnClickListener(v -> {
-                if (eventId == null) return;
-                Intent intent = new Intent(this, OrganizerFinalEntrantsActivity.class);
+                Log.d("Dashboard", "Final Enrolled clicked!");
+                Intent intent = new Intent(EntrantDashboardActivity.this, OrganizerFinalEntrantsActivity.class);
                 intent.putExtra("eventId", eventId);
                 intent.putExtra("eventName", eventName);
                 startActivity(intent);
             });
         }
 
+        // Notifications Center
         if (cardNotifications != null) {
             cardNotifications.setOnClickListener(v -> {
-                if (eventId == null) return;
-                Intent intent = new Intent(this, NotificationsActivity.class);
+                Log.d("Dashboard", "Notifications clicked!");
+                Intent intent = new Intent(EntrantDashboardActivity.this, NotificationsActivity.class);
                 intent.putExtra("eventId", eventId);
                 startActivity(intent);
             });
