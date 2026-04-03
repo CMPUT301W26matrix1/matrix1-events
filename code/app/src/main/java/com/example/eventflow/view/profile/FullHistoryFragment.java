@@ -64,8 +64,8 @@ public class FullHistoryFragment extends Fragment {
 
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> {
-                if (getParentFragmentManager() != null) {
-                    getParentFragmentManager().popBackStack();
+                if (getActivity() != null) {
+                    getActivity().onBackPressed();
                 }
             });
         }

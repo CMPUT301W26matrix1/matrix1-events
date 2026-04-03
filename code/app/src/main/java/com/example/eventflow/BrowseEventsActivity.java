@@ -42,7 +42,11 @@ public class BrowseEventsActivity extends AppCompatActivity {
 
             bottomNav.setOnItemSelectedListener(item -> {
                 int id = item.getItemId();
-                if (id == R.id.nav_profile) {
+                if (id == R.id.nav_home) {
+                    startActivity(new Intent(this, RoleSelectionActivity.class));
+                    finish();
+                    return true;
+                } else if (id == R.id.nav_profile) {
                     startActivity(new Intent(this, ProfileActivity.class));
                     return true;
                 } else if (id == R.id.nav_events) {
