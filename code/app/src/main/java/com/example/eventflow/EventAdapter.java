@@ -38,8 +38,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     }
 
     public static class EventViewHolder extends RecyclerView.ViewHolder {
-        TextView name, location;
-        Button deleteButton, joinLeaveButton;
+        TextView name, location, joinLeaveButton;
+        Button deleteButton;
         ImageView eventImage;
 
         public EventViewHolder(@NonNull View itemView) {
@@ -97,7 +97,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
                 if (currentlyJoined) {
                     db.collection("events")
-                            .document(event.getId())
+                            .document(event.getEventId())
                             .update("waitingList", FieldValue.arrayRemove(deviceId))
                             .addOnSuccessListener(aVoid -> {
                                 if (event.getWaitingList() != null) {
@@ -112,7 +112,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
                                             "Failed to leave.", Toast.LENGTH_SHORT).show());
                 } else {
                     db.collection("events")
-                            .document(event.getId())
+                            .document(event.getEventId())
                             .update("waitingList", FieldValue.arrayUnion(deviceId))
                             .addOnSuccessListener(aVoid -> {
                                 if (event.getWaitingList() == null) {
@@ -144,7 +144,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         if (holder.deleteButton != null) {
             holder.deleteButton.setOnClickListener(v -> {
                 db.collection("events")
-                        .document(event.getId())
+                        .document(event.getEventId())
                         .delete()
                         .addOnSuccessListener(aVoid -> {
                             int currentPosition = holder.getAdapterPosition();
@@ -170,7 +170,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
                 // Otherwise, navigate to EventDetailActivity (Entrant/Admin view)
                 intent = new Intent(v.getContext(), EventDetailActivity.class);
             }
-            intent.putExtra("eventId", event.getId());
+            intent.putExtra("eventId", event.getEventId());
             intent.putExtra("eventName", event.getName());
             intent.putExtra("userRole", userRole);
             v.getContext().startActivity(intent);

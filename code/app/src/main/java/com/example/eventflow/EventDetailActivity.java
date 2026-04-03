@@ -43,6 +43,7 @@ public class EventDetailActivity extends AppCompatActivity {
 
     private boolean isOrganizer;
     private boolean isAdmin;
+    private String userRole;
 
     private EventController eventController;
     private String eventId;
@@ -77,7 +78,7 @@ public class EventDetailActivity extends AppCompatActivity {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         eventId = getIntent().getStringExtra("eventId");
-        String userRole = getIntent().getStringExtra("userRole");
+        userRole = getIntent().getStringExtra("userRole");
         isAdmin = "admin".equalsIgnoreCase(userRole);
         isOrganizer = "organizer".equalsIgnoreCase(userRole);
 
@@ -124,7 +125,7 @@ public class EventDetailActivity extends AppCompatActivity {
 
         rvNearbyEvents = findViewById(R.id.rvNearbyEvents);
         rvNearbyEvents.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        nearbyEventAdapter = new NearbyEventAdapter(nearbyEvents);
+        nearbyEventAdapter = new NearbyEventAdapter(nearbyEvents, userRole != null ? userRole : "entrant");
         rvNearbyEvents.setAdapter(nearbyEventAdapter);
     }
 
@@ -188,10 +189,19 @@ public class EventDetailActivity extends AppCompatActivity {
     }
 
     private void updateButtonState() {
-        if (isOrganizer || isAdmin) {
+        if (isAdmin) {
+            btnJoinNow.setVisibility(View.GONE);
+            // Admins can only view and delete, not post new comments or reply/react
+            etCommentInput.setVisibility(View.GONE);
+            btnPostComment.setVisibility(View.GONE);
+            return;
+        }
+
+        if (isOrganizer) {
             btnJoinNow.setVisibility(View.GONE);
             return;
         }
+
         btnJoinNow.setVisibility(View.VISIBLE);
         boolean joined = eventController.isOnWaitingList(currentEvent);
         btnJoinNow.setText(joined ? "Joined" : "Join");

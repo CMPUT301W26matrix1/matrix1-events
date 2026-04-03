@@ -30,11 +30,16 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     private final List<Event> events;
     private final EventActionListener listener;
     private final String deviceId;
+    private String userRole = "entrant";
 
     public EventAdapter(List<Event> events, EventActionListener listener, String deviceId) {
         this.events = events;
         this.listener = listener;
         this.deviceId = deviceId;
+    }
+
+    public void setUserRole(String userRole) {
+        this.userRole = userRole;
     }
 
     @NonNull
@@ -105,8 +110,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(v.getContext(), EventDetailActivity.class);
-            intent.putExtra("eventId", event.getId());
-            intent.putExtra("userRole", "entrant");
+            intent.putExtra("eventId", event.getEventId());
+            intent.putExtra("userRole", userRole);
             v.getContext().startActivity(intent);
         });
     }

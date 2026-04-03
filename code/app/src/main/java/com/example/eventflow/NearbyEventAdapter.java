@@ -20,9 +20,19 @@ import java.util.Locale;
 public class NearbyEventAdapter extends RecyclerView.Adapter<NearbyEventAdapter.ViewHolder> {
 
     private final List<Event> events;
+    private String userRole;
 
     public NearbyEventAdapter(List<Event> events) {
+        this(events, "entrant");
+    }
+
+    public NearbyEventAdapter(List<Event> events, String userRole) {
         this.events = events;
+        this.userRole = userRole;
+    }
+
+    public void setUserRole(String userRole) {
+        this.userRole = userRole;
     }
 
     @NonNull
@@ -53,6 +63,7 @@ public class NearbyEventAdapter extends RecyclerView.Adapter<NearbyEventAdapter.
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(v.getContext(), EventDetailActivity.class);
             intent.putExtra("eventId", event.getEventId());
+            intent.putExtra("userRole", userRole);
             v.getContext().startActivity(intent);
         });
     }

@@ -134,11 +134,13 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             holder.btnDeleteComment.setVisibility(View.GONE);
         }
         
-        // Admin also has reply option now to keep things consistent, or we can hide it as before
+        // Admin should not be able to reply or react, only view and delete
         if (isAdmin) {
-            holder.tvReply.setVisibility(View.GONE); // Still hiding reply for admin to focus on moderation
+            holder.tvReply.setVisibility(View.GONE);
+            holder.tvReact.setVisibility(View.GONE);
         } else {
             holder.tvReply.setVisibility(View.VISIBLE);
+            holder.tvReact.setVisibility(View.VISIBLE);
         }
     }
 
@@ -202,9 +204,6 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             Comment comment = replies.get(position);
             bindComment(holder, comment);
             
-            // Nested comments can also have replies for non-admins
-            holder.tvReply.setVisibility(isAdmin ? View.GONE : View.VISIBLE);
-
             // Handle further nested replies
             List<Comment> nestedReplies = getRepliesFor(comment.getCommentId());
             if (!nestedReplies.isEmpty()) {
