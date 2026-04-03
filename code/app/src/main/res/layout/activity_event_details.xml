@@ -39,6 +39,16 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_arrow_back"
                     app:tint="#FFFFFF" />
+
+                <ImageButton
+                    android:id="@+id/btn_edit_event"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_margin="16dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_edit"
+                    app:tint="#FFFFFF" />
             </RelativeLayout>
 
             <LinearLayout
@@ -363,6 +373,6 @@
 
     <!-- Hidden views for compatibility -->
     <Button android:id="@+id/btn_view_entrant_map" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-    <ImageButton android:id="@+id/btn_delete_image" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+    <ImageButton android:id="@+id/btn_delete_event" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
 
 </RelativeLayout>
