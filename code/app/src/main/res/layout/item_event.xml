@@ -51,7 +51,26 @@
             android:textStyle="bold"
             android:visibility="gone" />
 
-        <!-- Bottom Left: Name/Location (Hidden for Figma visual match if desired, but kept for functionality) -->
+        <!-- Top Right: Join Button (Badge Style) -->
+        <TextView
+            android:id="@+id/btnJoinLeave"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="16dp"
+            android:background="@drawable/rounded_card_bg"
+            android:backgroundTint="#4285F4"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="6dp"
+            android:text="Join"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="visible" />
+
+        <!-- Bottom Left: Name/Location -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -72,8 +91,7 @@
                 android:textColor="@color/white" />
         </LinearLayout>
 
-        <!-- Standard IDs for backward compatibility -->
-        <Button android:id="@+id/btnJoinLeave" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+        <!-- Hidden views for compatibility -->
         <Button android:id="@+id/deleteEventButton" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
         <TextView android:id="@+id/tvEventDate" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
 

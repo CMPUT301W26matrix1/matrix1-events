@@ -1,23 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:paddingVertical="8dp">
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/rounded_dark_bg"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="12dp">
 
-    <TextView
-        android:id="@+id/tv_scan_name"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Event Name"
-        android:textColor="#FFFFFF"
-        android:textSize="14sp" />
+    <FrameLayout
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/circle_bg_dark">
 
-    <TextView
-        android:id="@+id/tv_scan_code"
-        android:layout_width="match_parent"
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_qr_code"
+            app:tint="#666666" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="EVENT-CODE"
-        android:textColor="#666666"
-        android:textSize="12sp" />
+        android:layout_marginStart="16dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_scan_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tech Summit 2026"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_scan_code"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="EF-TS-2026"
+            android:textColor="#666666"
+            android:textSize="12sp" />
+    </LinearLayout>
+
 </LinearLayout>

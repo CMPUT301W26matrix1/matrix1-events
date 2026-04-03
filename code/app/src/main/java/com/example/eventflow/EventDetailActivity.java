@@ -1,16 +1,11 @@
 package com.example.eventflow;
 
-import android.app.Dialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -21,7 +16,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -38,11 +32,12 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.squareup.picasso.Picasso;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 
 public class EventDetailActivity extends AppCompatActivity {
 
@@ -52,195 +47,180 @@ public class EventDetailActivity extends AppCompatActivity {
     private EventController eventController;
     private String eventId;
     private Event currentEvent;
-    private Button btnJoinNow;
-    private Button btnViewMap;
-
-    // Comment section
+    private com.google.android.material.button.MaterialButton btnJoinNow;
+    
+    // UI components
+    private TextView tvName, tvLocation, tvDate, tvTime, tvSpots, tvTotalSpots, tvRegPeriod, tvDescription, tvCommentsHeader;
+    private ImageView ivPoster;
     private EditText etCommentInput;
-    private Button btnPostComment;
-    private RecyclerView rvComments;
+    private ImageButton btnPostComment;
+    private RecyclerView rvComments, rvNearbyEvents;
+    
     private FirebaseFirestore db;
     private final ArrayList<Comment> commentList = new ArrayList<>();
     private CommentAdapter commentAdapter;
+    private final ArrayList<Event> nearbyEvents = new ArrayList<>();
+    private NearbyEventAdapter nearbyEventAdapter;
+    
     private String userId = "";
     private String userName = "";
-    private String replyingToId = null;
+    private String deviceId;
 
-    // Geolocation check
     private FusedLocationProviderClient fusedLocationClient;
-
-    // Image views
-    private ImageView ivEventPoster;
-    private ImageButton btnDeleteImage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_details);
 
-        // Initialize location client
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         db = FirebaseFirestore.getInstance();
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         eventId = getIntent().getStringExtra("eventId");
         String userRole = getIntent().getStringExtra("userRole");
         isAdmin = "admin".equalsIgnoreCase(userRole);
         isOrganizer = "organizer".equalsIgnoreCase(userRole);
 
+        deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
         userId = getIntent().getStringExtra("userId");
+        if (userId == null || userId.isEmpty()) userId = deviceId;
         userName = getIntent().getStringExtra("userName");
+        if (userName == null || userName.isEmpty()) userName = "User";
 
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
-        if (userId == null || userId.isEmpty()) userId = isAdmin ? "AdminUser" : deviceId;
-        if (userName == null || userName.isEmpty())
-            userName = isAdmin ? "Administrator" : (isOrganizer ? "Organizer" : "Entrant");
+        initUI();
+        setupListeners();
+        
+        eventController = new EventController(deviceId);
+        loadEventDetails();
+        loadComments();
+        loadNearbyEvents();
+    }
 
-        if (eventId == null || eventId.isEmpty()) {
-            Toast.makeText(this, "Event ID missing", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-
+    private void initUI() {
+        tvName = findViewById(R.id.tv_detail_name);
+        tvLocation = findViewById(R.id.tv_event_location);
+        tvDate = findViewById(R.id.tv_detail_date);
+        tvTime = findViewById(R.id.tv_detail_time);
+        tvSpots = findViewById(R.id.tv_detail_spots);
+        tvTotalSpots = findViewById(R.id.tv_detail_total_spots);
+        tvRegPeriod = findViewById(R.id.tv_detail_registration_period);
+        tvDescription = findViewById(R.id.tv_detail_description);
+        tvCommentsHeader = findViewById(R.id.tv_comments_header);
+        ivPoster = findViewById(R.id.iv_detail_poster);
+        
+        btnJoinNow = findViewById(R.id.btn_join_now);
         etCommentInput = findViewById(R.id.etCommentInput);
         btnPostComment = findViewById(R.id.btnPostComment);
+        
         rvComments = findViewById(R.id.rvComments);
-
-        if (isAdmin) {
-            etCommentInput.setVisibility(View.GONE);
-            btnPostComment.setVisibility(View.GONE);
-        }
-
-        commentAdapter = new CommentAdapter(
-                commentList,
-                new CommentAdapter.CommentActionListener() {
-                    @Override
-                    public void onDeleteClick(Comment comment) {
-                        showDeleteConfirmation(comment);
-                    }
-
-                    @Override
-                    public void onReplyClick(Comment comment) {
-                        startReply(comment);
-                    }
-
-                    @Override
-                    public void onReactClick(Comment comment) {
-                        showReactionDialog(comment);
-                    }
-                },
-                isOrganizer,
-                isAdmin
-        );
-
         rvComments.setLayoutManager(new LinearLayoutManager(this));
+        commentAdapter = new CommentAdapter(commentList, new CommentAdapter.CommentActionListener() {
+            @Override public void onDeleteClick(Comment comment) { showDeleteConfirmation(comment); }
+            @Override public void onReplyClick(Comment comment) { etCommentInput.setHint("Reply to " + comment.getUserName()); }
+            @Override public void onReactClick(Comment comment) { showReactionDialog(comment); }
+        }, isOrganizer, isAdmin);
         rvComments.setAdapter(commentAdapter);
         rvComments.setNestedScrollingEnabled(false);
 
-        loadComments();
-        btnPostComment.setOnClickListener(v -> postComment());
+        rvNearbyEvents = findViewById(R.id.rvNearbyEvents);
+        rvNearbyEvents.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        nearbyEventAdapter = new NearbyEventAdapter(nearbyEvents);
+        rvNearbyEvents.setAdapter(nearbyEventAdapter);
+    }
 
-        eventController = new EventController(deviceId);
-        TextView nameText = findViewById(R.id.tv_detail_name);
-        TextView locationText = findViewById(R.id.tv_event_location);
-        TextView descriptionText = findViewById(R.id.tv_detail_description);
-        btnJoinNow = findViewById(R.id.btn_join_now);
-        btnViewMap = findViewById(R.id.btn_view_entrant_map);
+    private void setupListeners() {
         findViewById(R.id.btn_detail_back).setOnClickListener(v -> finish());
+        
+        findViewById(R.id.btn_view_map_text).setOnClickListener(v -> {
+            Intent intent = new Intent(this, EntrantLocationMapActivity.class);
+            intent.putExtra("eventId", eventId);
+            if (currentEvent != null) intent.putExtra("eventName", currentEvent.getName());
+            startActivity(intent);
+        });
 
-        ivEventPoster = findViewById(R.id.iv_detail_poster);
-        btnDeleteImage = findViewById(R.id.btn_delete_image);
-        if (isAdmin) {
-            btnDeleteImage.setVisibility(View.VISIBLE);
-            btnDeleteImage.setOnClickListener(v -> showDeleteOptionsDialog());
+        btnPostComment.setOnClickListener(v -> postComment());
+        
+        btnJoinNow.setOnClickListener(v -> {
+            if (currentEvent == null) return;
+            boolean joined = eventController.isOnWaitingList(currentEvent);
+            if (joined) handleLeave();
+            else handleJoin();
+        });
+    }
+
+    private void loadEventDetails() {
+        eventController.loadEventById(eventId, new EventRepository.EventCallback() {
+            @Override
+            public void onSuccess(Event e) {
+                currentEvent = e;
+                displayEventDetails(e);
+            }
+            @Override public void onFailure(Exception e) {}
+        });
+    }
+
+    private void displayEventDetails(Event e) {
+        tvName.setText(e.getName());
+        tvLocation.setText(e.getLocation());
+        tvDescription.setText(e.getDescription());
+        
+        if (e.getEventDate() != null) {
+            SimpleDateFormat df = new SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault());
+            SimpleDateFormat tf = new SimpleDateFormat("'at' HH:mm", Locale.getDefault());
+            tvDate.setText(df.format(e.getEventDate().toDate()));
+            tvTime.setText(tf.format(e.getEventDate().toDate()));
         }
 
-        loadEventDetails(nameText, locationText, descriptionText);
+        int spotsAvailable = e.getCapacity() - (e.getWaitingList() != null ? e.getWaitingList().size() : 0);
+        tvSpots.setText(Math.max(0, spotsAvailable) + " spots available");
+        tvTotalSpots.setText("of " + e.getCapacity() + " total");
 
-        if (btnViewMap != null) {
-            btnViewMap.setOnClickListener(v -> {
-                Intent intent = new Intent(this, EntrantLocationMapActivity.class);
-                intent.putExtra("eventId", eventId);
-                if (currentEvent != null) intent.putExtra("eventName", currentEvent.getName());
-                startActivity(intent);
-            });
-        }
-    }
-
-    private void startReply(Comment comment) {
-        replyingToId = comment.getCommentId();
-        etCommentInput.setHint("Replying to " + comment.getUserName() + "...");
-        etCommentInput.requestFocus();
-    }
-
-    private void showReactionDialog(Comment comment) {
-        String[] emojis = {"👍", "❤️", "😂", "😮", "😢", "🔥"};
-        new AlertDialog.Builder(this)
-                .setTitle("React")
-                .setItems(emojis, (dialog, which) -> addReaction(comment, emojis[which]))
-                .show();
-    }
-
-    private void addReaction(Comment comment, String emoji) {
-        Map<String, Object> reactions = comment.getReactions();
-        if (reactions == null) reactions = new HashMap<>();
-
-        for (String key : new ArrayList<>(reactions.keySet())) {
-            if (!(reactions.get(key) instanceof List)) reactions.put(key, new ArrayList<String>());
+        if (e.getRegistrationStart() != null && e.getRegistrationEnd() != null) {
+            SimpleDateFormat rf = new SimpleDateFormat("MMM d", Locale.getDefault());
+            tvRegPeriod.setText(rf.format(e.getRegistrationStart().toDate()) + " - " + rf.format(e.getRegistrationEnd().toDate()) + ", " + new SimpleDateFormat("yyyy", Locale.getDefault()).format(e.getRegistrationEnd().toDate()));
         }
 
-        boolean alreadyHas = false;
-        List<String> targetList = (List<String>) reactions.get(emoji);
-        if (targetList == null) {
-            targetList = new ArrayList<>();
-            reactions.put(emoji, targetList);
+        if (e.getPosterUrl() != null && !e.getPosterUrl().isEmpty()) {
+            Picasso.get().load(e.getPosterUrl()).placeholder(R.drawable.ic_placeholder).into(ivPoster);
         }
-        if (targetList.contains(userId)) alreadyHas = true;
 
-        for (Object listObj : reactions.values()) {
-            if (listObj instanceof List) ((List<String>) listObj).remove(userId);
-        }
-        if (!alreadyHas) targetList.add(userId);
-
-        db.collection("events").document(eventId).collection("comments")
-                .document(comment.getCommentId()).update("reactions", reactions);
+        updateButtonState();
     }
 
-    private void saveNotificationToBoth(Notification notification, String userId) {
-        if (notification.getId() == null) notification.setId(UUID.randomUUID().toString());
-        notification.setUserId(userId);
-        db.collection("users").document(userId).collection("notifications").document(notification.getId()).set(notification);
-        db.collection("notifications").document(notification.getId()).set(notification);
+    private void updateButtonState() {
+        boolean joined = eventController.isOnWaitingList(currentEvent);
+        btnJoinNow.setText(joined ? "Joined" : "Join");
+        btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(joined ? 0xFF4285F4 : 0xFF4CAF50));
     }
 
-    private void showDeleteOptionsDialog() {
-        String[] options = {"Delete Image", "Delete Event"};
-        new AlertDialog.Builder(this).setItems(options, (d, w) -> {
-            if (w == 0) showDeleteImageConfirmation();
-            else showDeleteEventConfirmation();
-        }).show();
+    private void handleJoin() {
+        eventController.joinWaitingList(currentEvent, new EventRepository.ActionCallback() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(EventDetailActivity.this, "Joined successfully", Toast.LENGTH_SHORT).show();
+                loadEventDetails();
+            }
+            @Override public void onFailure(Exception e) {
+                Toast.makeText(EventDetailActivity.this, "Join failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
-    private void showDeleteImageConfirmation() {
-        new AlertDialog.Builder(this).setMessage("Delete image?").setPositiveButton("Delete", (d, w) -> deleteEventImage()).show();
-    }
-
-    private void showDeleteEventConfirmation() {
-        new AlertDialog.Builder(this).setMessage("Delete event?").setPositiveButton("Delete", (d, w) -> deleteEvent()).show();
-    }
-
-    private void deleteEventImage() {
-        if (currentEvent != null && currentEvent.getPosterUrl() != null) {
-            db.collection("events").document(eventId).update("posterUrl", null).addOnSuccessListener(a -> ivEventPoster.setImageResource(R.drawable.ic_placeholder));
-        }
-    }
-
-    private void deleteEvent() {
-        db.collection("events").document(eventId).delete().addOnSuccessListener(a -> finish());
+    private void handleLeave() {
+        eventController.leaveWaitingList(currentEvent, new EventRepository.ActionCallback() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(EventDetailActivity.this, "Left successfully", Toast.LENGTH_SHORT).show();
+                loadEventDetails();
+            }
+            @Override public void onFailure(Exception e) {}
+        });
     }
 
     private void postComment() {
         String text = etCommentInput.getText().toString().trim();
         if (text.isEmpty()) return;
+        
         String cid = db.collection("events").document(eventId).collection("comments").document().getId();
         Map<String, Object> data = new HashMap<>();
         data.put("commentId", cid);
@@ -248,19 +228,17 @@ public class EventDetailActivity extends AppCompatActivity {
         data.put("userName", userName);
         data.put("text", text);
         data.put("timestamp", Timestamp.now());
-        data.put("parentCommentId", replyingToId);
-        data.put("role", isAdmin ? "Admin" : (isOrganizer ? "Organizer" : "Entrant"));
+        
         db.collection("events").document(eventId).collection("comments").document(cid).set(data).addOnSuccessListener(a -> {
             etCommentInput.setText("");
-            etCommentInput.setHint("Write a comment...");
-            replyingToId = null;
+            etCommentInput.setHint("Add a comment...");
         });
     }
 
     private void loadComments() {
         db.collection("events").document(eventId).collection("comments").orderBy("timestamp", Query.Direction.ASCENDING)
                 .addSnapshotListener((v, e) -> {
-                    if (e != null || v == null) return;
+                    if (v == null) return;
                     commentList.clear();
                     for (DocumentSnapshot doc : v.getDocuments()) {
                         Comment c = doc.toObject(Comment.class);
@@ -270,120 +248,87 @@ public class EventDetailActivity extends AppCompatActivity {
                         }
                     }
                     commentAdapter.refreshComments();
+                    tvCommentsHeader.setText("Comments (" + commentList.size() + ")");
                 });
     }
 
-    private void showDeleteConfirmation(Comment c) {
-        new AlertDialog.Builder(this).setMessage("Delete comment?").setPositiveButton("Yes", (d, w) -> deleteComment(c)).show();
-    }
-
-    private void deleteComment(Comment c) {
-        db.collection("events").document(eventId).collection("comments").document(c.getCommentId()).delete();
-    }
-
-    private void loadEventDetails(TextView n, TextView l, TextView d) {
-        eventController.loadEventById(eventId, new EventRepository.EventCallback() {
-            @Override
-            public void onSuccess(Event e) {
-                currentEvent = e;
-                if (n != null) n.setText(e.getName());
-                if (l != null) l.setText(e.getLocation());
-                if (d != null) d.setText(e.getDescription());
-                if (e.getPosterUrl() != null && !e.getPosterUrl().isEmpty())
-                    Picasso.get().load(e.getPosterUrl()).placeholder(R.drawable.ic_placeholder).into(ivEventPoster);
-                updateButtonState();
-                updateCommentBoxVisibility();
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-            }
-        });
-    }
-
-    private void updateCommentBoxVisibility() {
-        if (isAdmin) return;
-        if (isOrganizer) {
-            String did = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
-            boolean ok = currentEvent != null && (did.equals(currentEvent.getOrganizerId()) || (currentEvent.getCoOrganizerIds() != null && currentEvent.getCoOrganizerIds().contains(did)));
-            etCommentInput.setVisibility(ok ? View.VISIBLE : View.GONE);
-            btnPostComment.setVisibility(ok ? View.VISIBLE : View.GONE);
+    private void loadNearbyEvents() {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 100);
+            return;
         }
-    }
 
-    private void updateButtonState() {
-        if (currentEvent == null) return;
-        boolean joined = eventController.isOnWaitingList(currentEvent);
-        btnJoinNow.setText(joined ? "Leave Waiting List" : "Join Now");
-        btnJoinNow.setOnClickListener(v -> {
-            if (joined) handleLeave();
-            else handleJoin();
-        });
-    }
-
-    private void handleJoin() {
-        Map<String, Object> data = new HashMap<>();
-        data.put("userId", userId);
-        data.put("userName", userName);
-        data.put("joinedAt", FieldValue.serverTimestamp());
-        db.collection("events").document(eventId).collection("waitingList").document(userId).set(data).addOnSuccessListener(a -> loadEventDetails(null, null, null));
-    }
-
-    private void handleLeave() {
-        eventController.leaveWaitingList(currentEvent, new EventRepository.ActionCallback() {
-            @Override
-            public void onSuccess() {
-                loadEventDetails(null, null, null);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-            }
-        });
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 200) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                checkUserLocationAndJoin();
+        fusedLocationClient.getLastLocation().addOnSuccessListener(this, location -> {
+            if (location != null) {
+                fetchNearbyFromFirestore(location);
             } else {
-                Toast.makeText(this, "Location permission required to join this event", Toast.LENGTH_LONG).show();
+                // Fallback: fetch some events anyway
+                db.collection("events").limit(10).get().addOnSuccessListener(v -> {
+                    nearbyEvents.clear();
+                    for (DocumentSnapshot doc : v.getDocuments()) {
+                        Event ev = doc.toObject(Event.class);
+                        if (ev != null) {
+                            ev.setEventId(doc.getId());
+                            if (!ev.getEventId().equals(eventId)) nearbyEvents.add(ev);
+                        }
+                    }
+                    nearbyEventAdapter.notifyDataSetChanged();
+                });
             }
-        }
+        });
     }
 
-    private void checkUserLocationAndJoin() {
-        // Implementation of checkUserLocationAndJoin
+    private void fetchNearbyFromFirestore(Location userLocation) {
+        db.collection("events").get().addOnSuccessListener(v -> {
+            nearbyEvents.clear();
+            for (DocumentSnapshot doc : v.getDocuments()) {
+                Event ev = doc.toObject(Event.class);
+                if (ev != null) {
+                    ev.setEventId(doc.getId());
+                    if (ev.getEventId().equals(eventId)) continue;
+                    
+                    float[] results = new float[1];
+                    Location.distanceBetween(userLocation.getLatitude(), userLocation.getLongitude(),
+                            ev.getLocationLatitude(), ev.getLocationLongitude(), results);
+                    
+                    // Within 50km
+                    if (results[0] < 50000) {
+                        nearbyEvents.add(ev);
+                    }
+                }
+            }
+            if (nearbyEvents.isEmpty()) {
+                // Add some default ones if none are strictly "nearby" for demo
+                for (DocumentSnapshot doc : v.getDocuments()) {
+                    Event ev = doc.toObject(Event.class);
+                    if (ev != null && !doc.getId().equals(eventId)) {
+                        ev.setEventId(doc.getId());
+                        nearbyEvents.add(ev);
+                        if (nearbyEvents.size() >= 5) break;
+                    }
+                }
+            }
+            nearbyEventAdapter.notifyDataSetChanged();
+        });
     }
 
-    public static class Notification {
-        private String id, title, eventName, message, type, eventId, userId;
+    private void showDeleteConfirmation(Comment c) {
+        new AlertDialog.Builder(this).setMessage("Delete comment?").setPositiveButton("Yes", (d, w) -> {
+            db.collection("events").document(eventId).collection("comments").document(c.getCommentId()).delete();
+        }).show();
+    }
 
-        public Notification(String t, String en, String m, String tp, String ei) {
-            title = t;
-            eventName = en;
-            message = m;
-            type = tp;
-            eventId = ei;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getUserId() {
-            return userId;
-        }
-
-        public void setUserId(String userId) {
-            this.userId = userId;
-        }
+    private void showReactionDialog(Comment comment) {
+        String[] emojis = {"👍", "❤️", "😂"};
+        new AlertDialog.Builder(this).setItems(emojis, (dialog, which) -> {
+            Map<String, Object> reactions = comment.getReactions();
+            if (reactions == null) reactions = new HashMap<>();
+            List<String> users = (List<String>) reactions.get(emojis[which]);
+            if (users == null) users = new ArrayList<>();
+            if (!users.contains(userId)) users.add(userId);
+            else users.remove(userId);
+            reactions.put(emojis[which], users);
+            db.collection("events").document(eventId).collection("comments").document(comment.getCommentId()).update("reactions", reactions);
+        }).show();
     }
 }

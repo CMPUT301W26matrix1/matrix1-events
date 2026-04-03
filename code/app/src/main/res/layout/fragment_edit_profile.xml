@@ -178,7 +178,7 @@
                     app:tint="#999999" />
             </RelativeLayout>
 
-            <!-- Role Field (Read-only) - ADD THIS SECTION -->
+            <!-- Role (Display only) -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -191,15 +191,14 @@
             <TextView
                 android:id="@+id/tvEditRole"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="8dp"
-                android:padding="16dp"
+                android:background="@drawable/bg_profile_input"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp"
                 android:text="Loading..."
                 android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:background="@drawable/bg_profile_input"
-                android:enabled="false"
-                android:focusable="false" />
+                android:textSize="16sp" />
 
             <!-- Geo-location Switch -->
             <RelativeLayout
@@ -250,20 +249,18 @@
             </RelativeLayout>
 
             <!-- Save Changes Button -->
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnUpdateProfile"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
                 android:layout_marginTop="40dp"
-                android:layout_gravity="center"
-                android:background="@drawable/bg_profile_button"
-                android:backgroundTint="@null"
+                android:backgroundTint="#4CAF50"
                 android:text="Save Changes"
                 android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:paddingHorizontal="32dp"
-                android:paddingVertical="12dp" />
+                android:textColor="#000000"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="10dp" />
 
             <!-- Change Password Link -->
             <TextView

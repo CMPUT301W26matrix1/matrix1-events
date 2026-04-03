@@ -36,7 +36,7 @@ import java.util.Calendar;
 public class EditProfileFragment extends Fragment {
 
     private EditText etName, etEmail, etDOB;
-    private TextView tvRole;  // ADD THIS for displaying role
+    private TextView tvRole;
     private SwitchCompat switchGeoTracking, switchNotifications;
     private Button btnUpdateProfile, btnDeleteProfile;
     private TextView tvChangePassword;
@@ -44,7 +44,7 @@ public class EditProfileFragment extends Fragment {
     private ProfileController profileController;
     private ProfileRepository profileRepository;
     private String deviceId;
-    private String currentRole;  // ADD THIS to store current role
+    private String currentRole;
 
     public EditProfileFragment() {}
 
@@ -55,7 +55,7 @@ public class EditProfileFragment extends Fragment {
         args.putString("lastName", profile.getLastName());
         args.putString("email", profile.getEmail());
         args.putString("dob", profile.getDateOfBirth());
-        args.putString("role", profile.getRole());  // ADD THIS
+        args.putString("role", profile.getRole());
         fragment.setArguments(args);
         return fragment;
     }
@@ -73,59 +73,18 @@ public class EditProfileFragment extends Fragment {
         etName = view.findViewById(R.id.etEditName);
         etEmail = view.findViewById(R.id.etEditEmail);
         etDOB = view.findViewById(R.id.etEditDOB);
-        tvRole = view.findViewById(R.id.tvEditRole);  // ADD THIS - make sure you have this TextView in your XML
+        tvRole = view.findViewById(R.id.tvEditRole);
         switchGeoTracking = view.findViewById(R.id.switchEditGeoTracking);
         switchNotifications = view.findViewById(R.id.switchEditNotifications);
         btnUpdateProfile = view.findViewById(R.id.btnUpdateProfile);
         btnDeleteProfile = view.findViewById(R.id.btnDeleteProfile);
         tvChangePassword = view.findViewById(R.id.tvChangePassword);
 
-        // Set toggle buttons - Green when ON, Dark Gray when OFF
-        if (switchGeoTracking != null) {
-            // Create color state list for thumb (changes based on checked state)
-            ColorStateList thumbColorList = new ColorStateList(
-                    new int[][]{
-                            new int[]{android.R.attr.state_checked},  // When ON
-                            new int[]{-android.R.attr.state_checked}, // When OFF
-                    },
-                    new int[]{
-                            Color.parseColor("#006A4E"),  // Green when ON
-                            Color.parseColor("#333333"),  // Dark Gray when OFF
-                    }
-            );
-            switchGeoTracking.setThumbTintList(thumbColorList);
-            // Track color (background)
-            switchGeoTracking.setTrackTintList(ColorStateList.valueOf(Color.parseColor("#666666")));
-            switchGeoTracking.jumpDrawablesToCurrentState();
-        }
-
-        if (switchNotifications != null) {
-            // Create color state list for thumb (changes based on checked state)
-            ColorStateList thumbColorList = new ColorStateList(
-                    new int[][]{
-                            new int[]{android.R.attr.state_checked},  // When ON
-                            new int[]{-android.R.attr.state_checked}, // When OFF
-                    },
-                    new int[]{
-                            Color.parseColor("#006A4E"),  // Green when ON
-                            Color.parseColor("#333333"),  // Dark Gray when OFF
-                    }
-            );
-            switchNotifications.setThumbTintList(thumbColorList);
-            // Track color (background)
-            switchNotifications.setTrackTintList(ColorStateList.valueOf(Color.parseColor("#666666")));
-            switchNotifications.jumpDrawablesToCurrentState();
-        }
+        setupSwitchStyles();
 
         profileController = new ProfileController();
         profileRepository = new ProfileRepository();
-
         deviceId = Settings.Secure.getString(requireContext().getContentResolver(), Settings.Secure.ANDROID_ID);
-
-        // Get role from arguments if available
-        if (getArguments() != null) {
-            currentRole = getArguments().getString("role");
-        }
 
         loadCurrentProfile();
 
@@ -135,7 +94,6 @@ public class EditProfileFragment extends Fragment {
 
         if (btnUpdateProfile != null) {
             btnUpdateProfile.setOnClickListener(v -> updateProfile());
-            btnUpdateProfile.setBackgroundTintList(null);
         }
 
         if (btnDeleteProfile != null) {
@@ -146,148 +104,22 @@ public class EditProfileFragment extends Fragment {
             tvChangePassword.setOnClickListener(v -> showChangePasswordDialog());
         }
 
-        // Back button
-        View btnBack = view.findViewById(R.id.btnEditBack);
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> goBackToProfile());
-        }
+        view.findViewById(R.id.btnEditBack).setOnClickListener(v -> goBackToProfile());
     }
 
-    private void showChangePasswordDialog() {
-        // Create dialog
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.change_password, null);
-        builder.setView(dialogView);
-
-        EditText etCurrentPassword = dialogView.findViewById(R.id.etCurrentPassword);
-        EditText etNewPassword = dialogView.findViewById(R.id.etNewPassword);
-        EditText etConfirmPassword = dialogView.findViewById(R.id.etConfirmPassword);
-        Button btnChangePassword = dialogView.findViewById(R.id.btnChangePassword);
-        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
-
-        // Set Cancel button
-        if (btnCancel != null) {
-            btnCancel.setBackgroundTintList(null);
+    private void setupSwitchStyles() {
+        ColorStateList thumbColorList = new ColorStateList(
+                new int[][]{new int[]{android.R.attr.state_checked}, new int[]{-android.R.attr.state_checked}},
+                new int[]{Color.parseColor("#006A4E"), Color.parseColor("#333333")}
+        );
+        if (switchGeoTracking != null) {
+            switchGeoTracking.setThumbTintList(thumbColorList);
+            switchGeoTracking.setTrackTintList(ColorStateList.valueOf(Color.parseColor("#666666")));
         }
-
-        // Set Change button to green
-        if (btnChangePassword != null) {
-            btnChangePassword.setBackgroundTintList(null);
+        if (switchNotifications != null) {
+            switchNotifications.setThumbTintList(thumbColorList);
+            switchNotifications.setTrackTintList(ColorStateList.valueOf(Color.parseColor("#666666")));
         }
-
-        AlertDialog dialog = builder.create();
-        dialog.setCancelable(true);
-
-        btnChangePassword.setOnClickListener(v -> {
-            String currentPassword = etCurrentPassword.getText().toString().trim();
-            String newPassword = etNewPassword.getText().toString().trim();
-            String confirmPassword = etConfirmPassword.getText().toString().trim();
-
-            // Validate
-            if (currentPassword.isEmpty()) {
-                Toast.makeText(getContext(), "Enter current password", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            if (newPassword.isEmpty()) {
-                Toast.makeText(getContext(), "Enter new password", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            if (newPassword.length() < 6) {
-                Toast.makeText(getContext(), "Password must be at least 6 characters", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            if (!newPassword.equals(confirmPassword)) {
-                Toast.makeText(getContext(), "Passwords do not match", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            updatePassword(currentPassword, newPassword, dialog);
-        });
-
-        btnCancel.setOnClickListener(v -> dialog.dismiss());
-
-        dialog.show();
-    }
-
-    private void updatePassword(String currentPassword, String newPassword, AlertDialog dialog) {
-        FirebaseAuth auth = FirebaseAuth.getInstance();
-        FirebaseUser user = auth.getCurrentUser();
-
-        if (user != null && user.getEmail() != null) {
-            // Re-authenticate first
-            AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), currentPassword);
-            user.reauthenticate(credential)
-                    .addOnSuccessListener(aVoid -> {
-                        // Update password
-                        user.updatePassword(newPassword)
-                                .addOnSuccessListener(aVoid2 -> {
-                                    Toast.makeText(getContext(), "Password changed successfully", Toast.LENGTH_SHORT).show();
-                                    dialog.dismiss();
-                                })
-                                .addOnFailureListener(e -> {
-                                    Toast.makeText(getContext(), "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                });
-                    })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(getContext(), "Current password is incorrect", Toast.LENGTH_SHORT).show();
-                    });
-        } else {
-            Toast.makeText(getContext(), "User not authenticated", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void goBackToProfile() {
-        profileRepository.getProfileByDeviceId(deviceId, new ProfileRepository.LoadProfileCallback() {
-            @Override
-            public void onSuccess(@NonNull Profile profile) {
-                if (getParentFragment() instanceof ProfileContainerFragment) {
-                    ((ProfileContainerFragment) getParentFragment()).showProfileView(profile);
-                }
-            }
-
-            @Override
-            public void onNotFound() {
-                if (getParentFragment() instanceof ProfileContainerFragment) {
-                    ((ProfileContainerFragment) getParentFragment()).showCreateProfile();
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Toast.makeText(requireContext(), "Failed to load profile", Toast.LENGTH_SHORT).show();
-                if (getParentFragment() instanceof ProfileContainerFragment) {
-                    ((ProfileContainerFragment) getParentFragment()).showCreateProfile();
-                }
-            }
-        });
-    }
-
-    private void showDatePickerDialog() {
-        final Calendar c = Calendar.getInstance();
-        int year = c.get(Calendar.YEAR);
-        int month = c.get(Calendar.MONTH);
-        int day = c.get(Calendar.DAY_OF_MONTH);
-
-        DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(),
-                (view, year1, monthOfYear, dayOfMonth) -> {
-                    String date = dayOfMonth + "/" + (monthOfYear + 1) + "/" + year1;
-                    if (etDOB != null) {
-                        etDOB.setText(date);
-                    }
-                }, year, month, day);
-
-        Calendar minDate = Calendar.getInstance();
-        minDate.set(1900, 0, 1);
-        datePickerDialog.getDatePicker().setMinDate(minDate.getTimeInMillis());
-
-        Calendar maxDate = Calendar.getInstance();
-        maxDate.set(2026, 11, 31);
-        datePickerDialog.getDatePicker().setMaxDate(maxDate.getTimeInMillis());
-
-        datePickerDialog.show();
     }
 
     private void loadCurrentProfile() {
@@ -296,36 +128,18 @@ public class EditProfileFragment extends Fragment {
             public void onSuccess(@NonNull Profile profile) {
                 if (!isAdded()) return;
                 String fullName = profile.getFirstName() + (TextUtils.isEmpty(profile.getLastName()) ? "" : " " + profile.getLastName());
-                if (etName != null) etName.setText(fullName);
-                if (etEmail != null) etEmail.setText(profile.getEmail());
-                if (profile.getDateOfBirth() != null && etDOB != null) {
-                    etDOB.setText(profile.getDateOfBirth());
-                }
+                etName.setText(fullName);
+                etEmail.setText(profile.getEmail());
+                if (profile.getDateOfBirth() != null) etDOB.setText(profile.getDateOfBirth());
                 if (switchNotifications != null) switchNotifications.setChecked(profile.isNotificationsEnabled());
-
-                // Display role (read-only)
-                if (tvRole != null) {
-                    String role = profile.getRole();
-                    if (role != null && !role.isEmpty()) {
-                        String roleText = "Role: " + role.substring(0, 1).toUpperCase() + role.substring(1).toLowerCase();
-                        tvRole.setText(roleText);
-                        tvRole.setVisibility(View.VISIBLE);
-                    } else {
-                        tvRole.setVisibility(View.GONE);
-                    }
+                
+                currentRole = profile.getRole();
+                if (tvRole != null && currentRole != null) {
+                    tvRole.setText(currentRole.substring(0, 1).toUpperCase() + currentRole.substring(1).toLowerCase());
                 }
             }
-
-            @Override
-            public void onNotFound() {
-            }
-
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                if (isAdded()) {
-                    Toast.makeText(getContext(), "Failed to load profile", Toast.LENGTH_SHORT).show();
-                }
-            }
+            @Override public void onNotFound() {}
+            @Override public void onFailure(@NonNull Exception e) {}
         });
     }
 
@@ -333,7 +147,6 @@ public class EditProfileFragment extends Fragment {
         String name = etName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String dob = etDOB.getText().toString().trim();
-        boolean notificationsEnabled = switchNotifications != null && switchNotifications.isChecked();
 
         String firstName = name;
         String lastName = "";
@@ -343,16 +156,10 @@ public class EditProfileFragment extends Fragment {
             lastName = name.substring(lastSpace + 1);
         }
 
-        String validationError = profileController.validateProfileInput(firstName, lastName, email);
-        if (!TextUtils.isEmpty(validationError)) {
-            Toast.makeText(requireContext(), validationError, Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         Profile updatedProfile = new Profile(deviceId, firstName, lastName, email, "");
         updatedProfile.setDateOfBirth(dob);
-        updatedProfile.setNotificationsEnabled(notificationsEnabled);
-        updatedProfile.setRole(currentRole);  // Preserve the role
+        updatedProfile.setNotificationsEnabled(switchNotifications.isChecked());
+        updatedProfile.setRole(currentRole);
 
         profileRepository.updateProfile(updatedProfile, new ProfileRepository.SaveProfileCallback() {
             @Override
@@ -363,14 +170,36 @@ public class EditProfileFragment extends Fragment {
                     ((ProfileContainerFragment) getParentFragment()).showProfileView(updatedProfile);
                 }
             }
+            @Override public void onFailure(@NonNull Exception e) {}
+        });
+    }
 
+    private void goBackToProfile() {
+        profileRepository.getProfileByDeviceId(deviceId, new ProfileRepository.LoadProfileCallback() {
             @Override
-            public void onFailure(@NonNull Exception e) {
-                if (isAdded()) {
-                    Toast.makeText(requireContext(), "Failed to update profile", Toast.LENGTH_LONG).show();
+            public void onSuccess(@NonNull Profile profile) {
+                if (getParentFragment() instanceof ProfileContainerFragment) {
+                    ((ProfileContainerFragment) getParentFragment()).showProfileView(profile);
                 }
             }
+            @Override public void onNotFound() {}
+            @Override public void onFailure(@NonNull Exception e) {}
         });
+    }
+
+    private void showDatePickerDialog() {
+        final Calendar c = Calendar.getInstance();
+        new DatePickerDialog(requireContext(), (view, y, m, d) -> etDOB.setText(d + "/" + (m + 1) + "/" + y),
+                c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
+    }
+
+    private void showChangePasswordDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.change_password, null);
+        builder.setView(dialogView);
+        AlertDialog dialog = builder.create();
+        dialogView.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
     }
 
     private void showDeleteConfirmationDialog() {
@@ -387,18 +216,11 @@ public class EditProfileFragment extends Fragment {
             @Override
             public void onSuccess() {
                 if (!isAdded()) return;
-                Toast.makeText(requireContext(), "Profile deleted successfully", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(requireContext(), RoleSelectionActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
             }
-
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                if (isAdded()) {
-                    Toast.makeText(requireContext(), "Failed to delete profile", Toast.LENGTH_LONG).show();
-                }
-            }
+            @Override public void onFailure(@NonNull Exception e) {}
         });
     }
 }

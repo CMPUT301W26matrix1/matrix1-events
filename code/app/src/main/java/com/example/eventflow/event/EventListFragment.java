@@ -21,6 +21,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.eventflow.CustomScannerActivity;
 import com.example.eventflow.NotificationsActivity;
 import com.example.eventflow.R;
 import com.example.eventflow.controller.EventController;
@@ -101,9 +102,33 @@ public class EventListFragment extends Fragment {
         
         eventAdapter = new EventAdapter(displayedEvents, new EventAdapter.EventActionListener() {
             @Override
-            public void onJoinWaitingList(Event event) {}
+            public void onJoinWaitingList(Event event) {
+                eventController.joinWaitingList(event, new EventRepository.ActionCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(getContext(), "Joined waiting list", Toast.LENGTH_SHORT).show();
+                        fetchAllEvents(); // Refresh
+                    }
+                    @Override
+                    public void onFailure(Exception e) {
+                        Toast.makeText(getContext(), "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
             @Override
-            public void onLeaveWaitingList(Event event) {}
+            public void onLeaveWaitingList(Event event) {
+                eventController.leaveWaitingList(event, new EventRepository.ActionCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(getContext(), "Left waiting list", Toast.LENGTH_SHORT).show();
+                        fetchAllEvents(); // Refresh
+                    }
+                    @Override
+                    public void onFailure(Exception e) {
+                        Toast.makeText(getContext(), "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
         }, deviceId);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -136,6 +161,7 @@ public class EventListFragment extends Fragment {
             options.setPrompt("Scan an event QR code");
             options.setBeepEnabled(true);
             options.setOrientationLocked(false);
+            options.setCaptureActivity(CustomScannerActivity.class);
             barcodeLauncher.launch(options);
         });
 
@@ -192,6 +218,7 @@ public class EventListFragment extends Fragment {
     }
 
     private void fetchAllEvents() {
+        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
         eventController.loadAllEvents(new EventRepository.EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {

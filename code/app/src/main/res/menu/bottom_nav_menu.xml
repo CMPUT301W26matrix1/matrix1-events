@@ -12,11 +12,6 @@
         android:title="My Events" />
 
     <item
-        android:id="@+id/nav_dashboard"
-        android:icon="@drawable/ic_grid_view"
-        android:title="Dashboard" />
-
-    <item
         android:id="@+id/nav_admin"
         android:icon="@drawable/ic_admin_shield"
         android:title="Admin" />

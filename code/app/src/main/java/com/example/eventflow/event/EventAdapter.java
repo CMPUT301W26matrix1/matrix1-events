@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -83,8 +82,11 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             } else {
                 holder.btnJoinLeave.setVisibility(View.VISIBLE);
                 holder.btnJoinLeave.setText("Join");
-                // The green color is set in the layout XML via backgroundTint
-                holder.btnJoinLeave.setOnClickListener(v -> listener.onJoinWaitingList(event));
+                holder.btnJoinLeave.setOnClickListener(v -> {
+                    if (listener != null) {
+                        listener.onJoinWaitingList(event);
+                    }
+                });
             }
         }
 
@@ -115,8 +117,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     }
 
     static class EventViewHolder extends RecyclerView.ViewHolder {
-        TextView tvEventName, tvEventLocation, tvEventCategory, tvJoinedBadge;
-        Button btnJoinLeave;
+        TextView tvEventName, tvEventLocation, tvEventCategory, tvJoinedBadge, btnJoinLeave;
         ImageView ivEventImage;
 
         EventViewHolder(@NonNull View itemView) {

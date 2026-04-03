@@ -25,6 +25,8 @@ public class Notification {
     public static final String TYPE_CO_ORGANIZER = "CO_ORGANIZER";
     public static final String TYPE_SELECTED = "SELECTED";
     public static final String TYPE_LOST_LOTTERY = "LOST_LOTTERY";
+    public static final String TYPE_REGISTRATION_CONFIRMED = "REGISTRATION_CONFIRMED";
+    public static final String TYPE_EVENT_REMINDER = "EVENT_REMINDER";
 
     /**
      * Default constructor required for Firestore deserialization.
