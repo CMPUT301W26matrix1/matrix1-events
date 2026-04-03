@@ -9,6 +9,7 @@ import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.android.material.card.MaterialCardView;
 
 public class RoleSelectionActivity extends AppCompatActivity {
@@ -42,7 +43,8 @@ public class RoleSelectionActivity extends AppCompatActivity {
             if ("Entrant".equals(selectedRole)) {
                 startActivity(new Intent(RoleSelectionActivity.this, BrowseEventsActivity.class));
             } else if ("Organizer".equals(selectedRole)) {
-                startActivity(new Intent(RoleSelectionActivity.this, OrganizerEventsActivity.class));
+                // Navigate to the comprehensive EntrantDashboardActivity (Organizer Dashboard) instead of the simplified list
+                startActivity(new Intent(RoleSelectionActivity.this, EntrantDashboardActivity.class));
             } else if ("Admin".equals(selectedRole)) {
                 startActivity(new Intent(RoleSelectionActivity.this, AdminDashboardActivity.class));
             }
