@@ -14,14 +14,24 @@ public class BrowseEventsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_fragment_container);
-        
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, new EventListFragment())
-                .commit();
-        }
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        
+        if (savedInstanceState == null) {
+            boolean showMyEvents = getIntent().getBooleanExtra("SHOW_MY_EVENTS", false);
+            if (showMyEvents) {
+                getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, new FullHistoryFragment())
+                    .commit();
+                if (bottomNav != null) bottomNav.setSelectedItemId(R.id.nav_my_events);
+            } else {
+                getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, new EventListFragment())
+                    .commit();
+                if (bottomNav != null) bottomNav.setSelectedItemId(R.id.nav_events);
+            }
+        }
+
         if (bottomNav != null) {
             // Remove Admin option from Bottom Navigation for Entrants
             Menu menu = bottomNav.getMenu();
@@ -30,18 +40,10 @@ public class BrowseEventsActivity extends AppCompatActivity {
                 adminItem.setVisible(false);
             }
 
-            bottomNav.setSelectedItemId(R.id.nav_events);
             bottomNav.setOnItemSelectedListener(item -> {
                 int id = item.getItemId();
                 if (id == R.id.nav_profile) {
                     startActivity(new Intent(this, ProfileActivity.class));
-                    return true;
-                } else if (id == R.id.nav_dashboard) {
-                    startActivity(new Intent(this, RoleSelectionActivity.class));
-                    finish();
-                    return true;
-                } else if (id == R.id.nav_admin) {
-                    startActivity(new Intent(this, AdminDashboardActivity.class));
                     return true;
                 } else if (id == R.id.nav_events) {
                     getSupportFragmentManager().beginTransaction()

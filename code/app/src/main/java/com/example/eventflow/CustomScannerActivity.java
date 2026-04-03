@@ -33,6 +33,7 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
     private CaptureManager capture;
     private DecoratedBarcodeView barcodeScannerView;
     private ImageButton btnFlash;
+    private TextView tvFlashStatus;
     private boolean isFlashOn = false;
     private RecyclerView rvRecentScans;
     private RecentScanAdapter recentScanAdapter;
@@ -51,6 +52,7 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
         barcodeScannerView.setTorchListener(this);
 
         btnFlash = findViewById(R.id.btn_flash);
+        tvFlashStatus = findViewById(R.id.tv_flash_status);
         ImageButton btnBack = findViewById(R.id.btn_scanner_back);
         Button btnJoin = findViewById(R.id.btn_manual_join);
         EditText etManualCode = findViewById(R.id.et_manual_code);
@@ -59,7 +61,6 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
 
         // Setup RecyclerView
         recentScanAdapter = new RecentScanAdapter(recentEvents, event -> {
-            // Handle clicking a recent scan
             navigateToEventDetails(event.getEventId());
         });
         rvRecentScans.setLayoutManager(new LinearLayoutManager(this));
@@ -107,7 +108,7 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
         barcodeScannerView.pause();
         
         String eventId = rawResult;
-        // Check if it's a URL format used in MainActivity
+        // Check if it's a URL format
         if (rawResult.startsWith("eventflow://details?id=")) {
             eventId = rawResult.substring("eventflow://details?id=".length());
         }
@@ -118,7 +119,6 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
                 Event event = documentSnapshot.toObject(Event.class);
                 if (event != null) {
                     event.setEventId(documentSnapshot.getId());
-                    // Add to recent if not already there
                     addToRecent(event);
                     navigateToEventDetails(finalEventId);
                 }
@@ -133,7 +133,6 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
     }
 
     private void addToRecent(Event event) {
-        // Simple in-memory recent list for now. 
         for (int i = 0; i < recentEvents.size(); i++) {
             if (recentEvents.get(i).getEventId().equals(event.getEventId())) {
                 recentEvents.remove(i);
@@ -148,6 +147,7 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
     }
 
     private void loadRecentScans() {
+        // In a real app, this might come from local storage
         updateRecentUI();
     }
 
@@ -158,20 +158,16 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
         } else {
             rvRecentScans.setVisibility(android.view.View.VISIBLE);
             tvNoRecentScans.setVisibility(android.view.View.GONE);
-            recentScanAdapter.updateData(recentEvents);
+            recentScanAdapter.updateData(new ArrayList<>(recentEvents));
         }
     }
 
     private void navigateToEventDetails(String eventId) {
-        // Use the Entrant view: EventDetailActivity
         Intent intent = new Intent(this, EventDetailActivity.class);
         intent.putExtra("eventId", eventId);
-        
-        // Pass necessary extras that EventDetailActivity expects
         String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
         intent.putExtra("userId", deviceId);
         intent.putExtra("userRole", "entrant");
-        
         startActivity(intent);
     }
 
@@ -207,10 +203,12 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
     @Override
     public void onTorchOn() {
         isFlashOn = true;
+        tvFlashStatus.setText("Flash On");
     }
 
     @Override
     public void onTorchOff() {
         isFlashOn = false;
+        tvFlashStatus.setText("Flash Off");
     }
 }

@@ -24,7 +24,7 @@ import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.eventflow.R;
-import com.example.eventflow.SignupActivity;
+import com.example.eventflow.RoleSelectionActivity;
 import com.example.eventflow.controller.ProfileController;
 import com.example.eventflow.model.entities.Profile;
 import com.example.eventflow.model.repositories.ProfileRepository;
@@ -47,21 +47,17 @@ public class EditProfileFragment extends Fragment {
     private ProfileRepository profileRepository;
     private String deviceId;
     private String currentRole;
-    private Profile currentProfile; // Store current profile
 
     public EditProfileFragment() {}
 
     public static EditProfileFragment newInstance(@NonNull Profile profile) {
         EditProfileFragment fragment = new EditProfileFragment();
         Bundle args = new Bundle();
-        args.putString("deviceId", profile.getDeviceId());
         args.putString("firstName", profile.getFirstName());
         args.putString("lastName", profile.getLastName());
         args.putString("email", profile.getEmail());
-        args.putString("phone", profile.getPhoneNumber());
         args.putString("dob", profile.getDateOfBirth());
         args.putString("role", profile.getRole());
-        args.putBoolean("notifications", profile.isNotificationsEnabled());
         fragment.setArguments(args);
         return fragment;
     }
@@ -86,23 +82,17 @@ public class EditProfileFragment extends Fragment {
         btnDeleteProfile = view.findViewById(R.id.btnDeleteProfile);
         tvChangePassword = view.findViewById(R.id.tvChangePassword);
 
-        // FIX: Make Save Changes button green (remove any tint that might be overriding)
+        // FIX: Make Save Changes button GREEN
         if (btnUpdateProfile != null) {
-            btnUpdateProfile.setBackgroundTintList(null);
+            btnUpdateProfile.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4CAF50")));
         }
 
-        // Set toggle buttons - Green when ON, Dark Gray when OFF
-        setupSwitchColors();
+        setupSwitchStyles();
 
         profileController = new ProfileController();
         profileRepository = new ProfileRepository();
-
         deviceId = Settings.Secure.getString(requireContext().getContentResolver(), Settings.Secure.ANDROID_ID);
 
-        // Load profile data from arguments first
-        loadProfileFromArguments();
-
-        // Also try to load from Firestore to get latest data
         loadCurrentProfile();
 
         if (etDOB != null) {
@@ -121,26 +111,19 @@ public class EditProfileFragment extends Fragment {
             tvChangePassword.setOnClickListener(v -> showChangePasswordDialog());
         }
 
-        // Back button
-        View btnBack = view.findViewById(R.id.btnEditBack);
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> goBackToProfile());
-        }
+        view.findViewById(R.id.btnEditBack).setOnClickListener(v -> goBackToProfile());
     }
 
     private String getRoleFromPreferences() {
-        // Try multiple SharedPreferences locations
         SharedPreferences prefs = requireActivity().getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
         String role = prefs.getString("userRole", "");
 
         if (role.isEmpty()) {
-            // Try UserPrefs
             SharedPreferences userPrefs = requireActivity().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
             role = userPrefs.getString("selectedRole", "");
         }
 
         if (role.isEmpty()) {
-            // Try getting from userName or default
             role = prefs.getString("userName", "entrant").toLowerCase();
             if (role.contains("admin")) {
                 role = "admin";
@@ -154,88 +137,119 @@ public class EditProfileFragment extends Fragment {
         return role;
     }
 
-    private void loadProfileFromArguments() {
-        Bundle args = getArguments();
-        if (args != null) {
-            String firstName = args.getString("firstName", "");
-            String lastName = args.getString("lastName", "");
-            String email = args.getString("email", "");
-            String dob = args.getString("dob", "");
-            currentRole = args.getString("role", "entrant");
-            boolean notificationsEnabled = args.getBoolean("notifications", false);
-
-            // FIX: Get the actual role from SharedPreferences
-            String savedRole = getRoleFromPreferences();
-            if (!savedRole.isEmpty() && !savedRole.equals("entrant")) {
-                currentRole = savedRole;
-            }
-
-            // Set full name
-            String fullName = firstName;
-            if (!TextUtils.isEmpty(lastName)) {
-                fullName = firstName + " " + lastName;
-            }
-            if (TextUtils.isEmpty(fullName)) {
-                fullName = email.split("@")[0];
-            }
-
-            if (etName != null) etName.setText(fullName);
-            if (etEmail != null) etEmail.setText(email);
-            if (etDOB != null && !TextUtils.isEmpty(dob)) etDOB.setText(dob);
-            if (switchNotifications != null) switchNotifications.setChecked(notificationsEnabled);
-
-            // Display role - FIXED to show correct role
-            if (tvRole != null) {
-                String displayRole = currentRole;
-                if (!TextUtils.isEmpty(displayRole)) {
-                    displayRole = displayRole.substring(0, 1).toUpperCase() + displayRole.substring(1).toLowerCase();
-                } else {
-                    displayRole = "Entrant";
-                }
-                tvRole.setText("Role: " + displayRole);
-                tvRole.setVisibility(View.VISIBLE);
-            }
-
-            // Create current profile object
-            currentProfile = new Profile(deviceId, firstName, lastName, email, "");
-            currentProfile.setDateOfBirth(dob);
-            currentProfile.setRole(currentRole);
-            currentProfile.setNotificationsEnabled(notificationsEnabled);
-        } else {
-            // No arguments, try to get role from SharedPreferences
-            String savedRole = getRoleFromPreferences();
-            if (!savedRole.isEmpty()) {
-                currentRole = savedRole;
-                if (tvRole != null) {
-                    String displayRole = currentRole.substring(0, 1).toUpperCase() + currentRole.substring(1).toLowerCase();
-                    tvRole.setText("Role: " + displayRole);
-                    tvRole.setVisibility(View.VISIBLE);
-                }
-            }
-        }
-    }
-
-    private void setupSwitchColors() {
+    private void setupSwitchStyles() {
         ColorStateList thumbColorList = new ColorStateList(
-                new int[][]{
-                        new int[]{android.R.attr.state_checked},
-                        new int[]{-android.R.attr.state_checked},
-                },
-                new int[]{
-                        Color.parseColor("#006A4E"),
-                        Color.parseColor("#333333"),
-                }
+                new int[][]{new int[]{android.R.attr.state_checked}, new int[]{-android.R.attr.state_checked}},
+                new int[]{Color.parseColor("#006A4E"), Color.parseColor("#333333")}
         );
-
         if (switchGeoTracking != null) {
             switchGeoTracking.setThumbTintList(thumbColorList);
             switchGeoTracking.setTrackTintList(ColorStateList.valueOf(Color.parseColor("#666666")));
         }
-
         if (switchNotifications != null) {
             switchNotifications.setThumbTintList(thumbColorList);
             switchNotifications.setTrackTintList(ColorStateList.valueOf(Color.parseColor("#666666")));
         }
+    }
+
+    private void loadCurrentProfile() {
+        profileRepository.getProfileByDeviceId(deviceId, new ProfileRepository.LoadProfileCallback() {
+            @Override
+            public void onSuccess(@NonNull Profile profile) {
+                if (!isAdded()) return;
+                String fullName = profile.getFirstName() + (TextUtils.isEmpty(profile.getLastName()) ? "" : " " + profile.getLastName());
+                etName.setText(fullName);
+                etEmail.setText(profile.getEmail());
+                if (profile.getDateOfBirth() != null) etDOB.setText(profile.getDateOfBirth());
+                if (switchNotifications != null) switchNotifications.setChecked(profile.isNotificationsEnabled());
+
+                // FIX: Get correct role from SharedPreferences
+                currentRole = profile.getRole();
+                if (currentRole == null || currentRole.isEmpty() || currentRole.equals("entrant")) {
+                    currentRole = getRoleFromPreferences();
+                }
+
+                if (tvRole != null && currentRole != null) {
+                    String displayRole = currentRole.substring(0, 1).toUpperCase() + currentRole.substring(1).toLowerCase();
+                    tvRole.setText(displayRole);
+                }
+            }
+            @Override public void onNotFound() {
+                // Try to get role from SharedPreferences
+                String role = getRoleFromPreferences();
+                if (tvRole != null && !role.isEmpty()) {
+                    String displayRole = role.substring(0, 1).toUpperCase() + role.substring(1).toLowerCase();
+                    tvRole.setText(displayRole);
+                }
+            }
+            @Override public void onFailure(@NonNull Exception e) {
+                String role = getRoleFromPreferences();
+                if (tvRole != null && !role.isEmpty()) {
+                    String displayRole = role.substring(0, 1).toUpperCase() + role.substring(1).toLowerCase();
+                    tvRole.setText(displayRole);
+                }
+            }
+        });
+    }
+
+    private void updateProfile() {
+        String name = etName.getText().toString().trim();
+        String email = etEmail.getText().toString().trim();
+        String dob = etDOB.getText().toString().trim();
+
+        String firstName = name;
+        String lastName = "";
+        if (name.contains(" ")) {
+            int lastSpace = name.lastIndexOf(" ");
+            firstName = name.substring(0, lastSpace);
+            lastName = name.substring(lastSpace + 1);
+        }
+
+        Profile updatedProfile = new Profile(deviceId, firstName, lastName, email, "");
+        updatedProfile.setDateOfBirth(dob);
+        updatedProfile.setNotificationsEnabled(switchNotifications.isChecked());
+        updatedProfile.setRole(currentRole);
+
+        profileRepository.updateProfile(updatedProfile, new ProfileRepository.SaveProfileCallback() {
+            @Override
+            public void onSuccess() {
+                if (!isAdded()) return;
+                Toast.makeText(requireContext(), "Profile updated successfully", Toast.LENGTH_SHORT).show();
+                if (getParentFragment() instanceof ProfileContainerFragment) {
+                    ((ProfileContainerFragment) getParentFragment()).showProfileView(updatedProfile);
+                }
+            }
+            @Override public void onFailure(@NonNull Exception e) {
+                Toast.makeText(requireContext(), "Failed to update profile: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void goBackToProfile() {
+        profileRepository.getProfileByDeviceId(deviceId, new ProfileRepository.LoadProfileCallback() {
+            @Override
+            public void onSuccess(@NonNull Profile profile) {
+                if (getParentFragment() instanceof ProfileContainerFragment) {
+                    ((ProfileContainerFragment) getParentFragment()).showProfileView(profile);
+                }
+            }
+            @Override public void onNotFound() {
+                if (getActivity() != null) {
+                    getActivity().onBackPressed();
+                }
+            }
+            @Override public void onFailure(@NonNull Exception e) {
+                if (getActivity() != null) {
+                    getActivity().onBackPressed();
+                }
+            }
+        });
+    }
+
+    private void showDatePickerDialog() {
+        final Calendar c = Calendar.getInstance();
+        new DatePickerDialog(requireContext(), (view, y, m, d) -> etDOB.setText(d + "/" + (m + 1) + "/" + y),
+                c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
     }
 
     private void showChangePasswordDialog() {
@@ -250,7 +264,6 @@ public class EditProfileFragment extends Fragment {
         Button btnCancel = dialogView.findViewById(R.id.btnCancel);
 
         AlertDialog dialog = builder.create();
-        dialog.setCancelable(true);
 
         btnChangePassword.setOnClickListener(v -> {
             String currentPassword = etCurrentPassword.getText().toString().trim();
@@ -261,17 +274,14 @@ public class EditProfileFragment extends Fragment {
                 Toast.makeText(getContext(), "Enter current password", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             if (newPassword.isEmpty()) {
                 Toast.makeText(getContext(), "Enter new password", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             if (newPassword.length() < 6) {
                 Toast.makeText(getContext(), "Password must be at least 6 characters", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             if (!newPassword.equals(confirmPassword)) {
                 Toast.makeText(getContext(), "Passwords do not match", Toast.LENGTH_SHORT).show();
                 return;
@@ -309,194 +319,10 @@ public class EditProfileFragment extends Fragment {
         }
     }
 
-    private void goBackToProfile() {
-        // Go back to ProfileViewFragment with the current profile
-        if (getParentFragment() instanceof ProfileContainerFragment) {
-            if (currentProfile != null) {
-                ((ProfileContainerFragment) getParentFragment()).showProfileView(currentProfile);
-            } else {
-                // If no current profile, try to load from Firestore
-                profileRepository.getProfileByDeviceId(deviceId, new ProfileRepository.LoadProfileCallback() {
-                    @Override
-                    public void onSuccess(@NonNull Profile profile) {
-                        if (getParentFragment() instanceof ProfileContainerFragment) {
-                            ((ProfileContainerFragment) getParentFragment()).showProfileView(profile);
-                        }
-                    }
-
-                    @Override
-                    public void onNotFound() {
-                        if (getActivity() != null) {
-                            getActivity().onBackPressed();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        if (getActivity() != null) {
-                            getActivity().onBackPressed();
-                        }
-                    }
-                });
-            }
-        } else if (getActivity() != null) {
-            getActivity().onBackPressed();
-        }
-    }
-
-    private void showDatePickerDialog() {
-        final Calendar c = Calendar.getInstance();
-        int year = c.get(Calendar.YEAR);
-        int month = c.get(Calendar.MONTH);
-        int day = c.get(Calendar.DAY_OF_MONTH);
-
-        DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(),
-                (view, year1, monthOfYear, dayOfMonth) -> {
-                    String date = dayOfMonth + "/" + (monthOfYear + 1) + "/" + year1;
-                    if (etDOB != null) {
-                        etDOB.setText(date);
-                    }
-                }, year, month, day);
-
-        Calendar minDate = Calendar.getInstance();
-        minDate.set(1900, 0, 1);
-        datePickerDialog.getDatePicker().setMinDate(minDate.getTimeInMillis());
-
-        Calendar maxDate = Calendar.getInstance();
-        maxDate.set(2026, 11, 31);
-        datePickerDialog.getDatePicker().setMaxDate(maxDate.getTimeInMillis());
-
-        datePickerDialog.show();
-    }
-
-    private void loadCurrentProfile() {
-        profileRepository.getProfileByDeviceId(deviceId, new ProfileRepository.LoadProfileCallback() {
-            @Override
-            public void onSuccess(@NonNull Profile profile) {
-                if (!isAdded()) return;
-
-                // Update current profile
-                currentProfile = profile;
-                currentRole = profile.getRole();
-
-                String fullName = profile.getFirstName() + (TextUtils.isEmpty(profile.getLastName()) ? "" : " " + profile.getLastName());
-                if (etName != null && TextUtils.isEmpty(etName.getText().toString())) {
-                    etName.setText(fullName);
-                }
-                if (etEmail != null && TextUtils.isEmpty(etEmail.getText().toString())) {
-                    etEmail.setText(profile.getEmail());
-                }
-                if (profile.getDateOfBirth() != null && etDOB != null && TextUtils.isEmpty(etDOB.getText().toString())) {
-                    etDOB.setText(profile.getDateOfBirth());
-                }
-                if (switchNotifications != null) {
-                    switchNotifications.setChecked(profile.isNotificationsEnabled());
-                }
-
-                // Display role - get from SharedPreferences if profile role is wrong
-                if (tvRole != null) {
-                    String role = profile.getRole();
-                    // If role is null, empty, or "entrant" but user is actually admin/organizer
-                    if (role == null || role.isEmpty() || role.equals("entrant")) {
-                        role = getRoleFromPreferences();
-                    }
-                    if (role != null && !role.isEmpty()) {
-                        String displayRole = role.substring(0, 1).toUpperCase() + role.substring(1).toLowerCase();
-                        tvRole.setText("Role: " + displayRole);
-                    } else {
-                        tvRole.setText("Role: Entrant");
-                    }
-                    tvRole.setVisibility(View.VISIBLE);
-                }
-            }
-
-            @Override
-            public void onNotFound() {
-                if (tvRole != null) {
-                    String role = getRoleFromPreferences();
-                    String displayRole = role.substring(0, 1).toUpperCase() + role.substring(1).toLowerCase();
-                    tvRole.setText("Role: " + displayRole);
-                    tvRole.setVisibility(View.VISIBLE);
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                if (tvRole != null) {
-                    String role = getRoleFromPreferences();
-                    String displayRole = role.substring(0, 1).toUpperCase() + role.substring(1).toLowerCase();
-                    tvRole.setText("Role: " + displayRole);
-                    tvRole.setVisibility(View.VISIBLE);
-                }
-            }
-        });
-    }
-
-    private void updateProfile() {
-        String name = etName.getText().toString().trim();
-        String email = etEmail.getText().toString().trim();
-        String dob = etDOB.getText().toString().trim();
-        boolean notificationsEnabled = switchNotifications != null && switchNotifications.isChecked();
-
-        if (TextUtils.isEmpty(name)) {
-            Toast.makeText(requireContext(), "Name is required", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (TextUtils.isEmpty(email)) {
-            Toast.makeText(requireContext(), "Email is required", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String firstName = name;
-        String lastName = "";
-        if (name.contains(" ")) {
-            int lastSpace = name.lastIndexOf(" ");
-            firstName = name.substring(0, lastSpace);
-            lastName = name.substring(lastSpace + 1);
-        }
-
-        Profile updatedProfile = new Profile(deviceId, firstName, lastName, email, "");
-        updatedProfile.setDateOfBirth(dob);
-        updatedProfile.setNotificationsEnabled(notificationsEnabled);
-        updatedProfile.setRole(currentRole != null ? currentRole : "entrant");
-
-        profileRepository.updateProfile(updatedProfile, new ProfileRepository.SaveProfileCallback() {
-            @Override
-            public void onSuccess() {
-                if (!isAdded()) return;
-
-                // Update current profile
-                currentProfile = updatedProfile;
-
-                // Update SharedPreferences with new name/email
-                SharedPreferences prefs = requireActivity().getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
-                prefs.edit()
-                        .putString("userName", name)
-                        .putString("userEmail", email)
-                        .apply();
-
-                Toast.makeText(requireContext(), "Profile updated successfully", Toast.LENGTH_SHORT).show();
-
-                // Go back to profile view
-                if (getParentFragment() instanceof ProfileContainerFragment) {
-                    ((ProfileContainerFragment) getParentFragment()).showProfileView(updatedProfile);
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                if (isAdded()) {
-                    Toast.makeText(requireContext(), "Failed to update profile: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                }
-            }
-        });
-    }
-
     private void showDeleteConfirmationDialog() {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Delete Profile")
-                .setMessage("Are you sure you want to delete your profile? This action cannot be undone.")
+                .setMessage("Are you sure you want to delete your profile?")
                 .setPositiveButton("Delete", (dialog, which) -> deleteProfile())
                 .setNegativeButton("Cancel", null)
                 .show();
@@ -512,26 +338,12 @@ public class EditProfileFragment extends Fragment {
                 SharedPreferences prefs = requireActivity().getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
                 prefs.edit().clear().apply();
 
-                SharedPreferences rolePrefs = requireActivity().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-                rolePrefs.edit().clear().apply();
-
-                Toast.makeText(requireContext(), "Profile deleted successfully", Toast.LENGTH_SHORT).show();
-
-                // Navigate to SignupActivity
-                Intent intent = new Intent(requireContext(), SignupActivity.class);
+                Intent intent = new Intent(requireContext(), RoleSelectionActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
-
-                if (getActivity() != null) {
-                    getActivity().finish();
-                }
             }
-
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                if (isAdded()) {
-                    Toast.makeText(requireContext(), "Failed to delete profile: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                }
+            @Override public void onFailure(@NonNull Exception e) {
+                Toast.makeText(requireContext(), "Failed to delete profile: " + e.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
     }
