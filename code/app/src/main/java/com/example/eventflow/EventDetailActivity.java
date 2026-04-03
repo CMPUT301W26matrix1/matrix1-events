@@ -148,7 +148,12 @@ public class EventDetailActivity extends AppCompatActivity {
         findViewById(R.id.btn_view_map_text).setOnClickListener(v -> {
             Intent intent = new Intent(this, EntrantLocationMapActivity.class);
             intent.putExtra("eventId", eventId);
-            if (currentEvent != null) intent.putExtra("eventName", currentEvent.getName());
+            if (currentEvent != null) {
+                intent.putExtra("eventName", currentEvent.getName());
+                intent.putExtra("eventLat", currentEvent.getLocationLatitude());
+                intent.putExtra("eventLng", currentEvent.getLocationLongitude());
+            }
+            intent.putExtra("userRole", userRole);
             startActivity(intent);
         });
 
