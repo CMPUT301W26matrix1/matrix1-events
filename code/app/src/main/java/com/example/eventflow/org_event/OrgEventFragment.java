@@ -24,6 +24,7 @@ import androidx.fragment.app.Fragment;
 import com.example.eventflow.ProfileActivity;
 import com.example.eventflow.R;
 import com.example.eventflow.RoleSelectionActivity;
+import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
@@ -166,7 +167,7 @@ public class OrgEventFragment extends Fragment {
         // Navigation bar actions
         if (navDashboard != null) {
             navDashboard.setOnClickListener(v -> {
-                Intent intent = new Intent(getContext(), RoleSelectionActivity.class);
+                Intent intent = new Intent(getContext(), EntrantDashboardActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(intent);
             });

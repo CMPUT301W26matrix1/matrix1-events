@@ -45,7 +45,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav_container"
         app:layout_constraintTop_toBottomOf="@id/rlHeader">
 
         <LinearLayout
@@ -164,16 +164,14 @@
         </LinearLayout>
     </ScrollView>
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_navigation"
+    <!-- Bottom Nav -->
+    <FrameLayout
+        android:id="@+id/bottom_nav_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#000000"
-        app:itemIconTint="@color/bottom_nav_colors"
-        app:itemTextColor="@color/bottom_nav_colors"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:menu="@menu/organizer_bottom_nav"
-        app:itemRippleColor="@android:color/transparent"
-        app:labelVisibilityMode="labeled" />
+        android:layout_alignParentBottom="true"
+        app:layout_constraintBottom_toBottomOf="parent">
+        <include layout="@layout/fragment_event_bottom" />
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

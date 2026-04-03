@@ -66,10 +66,14 @@ public class ProfileActivity extends AppCompatActivity {
                 bottomNav.setSelectedItemId(R.id.nav_profile);
                 bottomNav.setOnItemSelectedListener(item -> {
                     int id = item.getItemId();
-                    if (id == R.id.nav_dashboard) {
-                        // For organizer, dashboard might mean the role selection or their management view
-                        // According to request, Dashboard should go to role selection
+                    if (id == R.id.nav_home) {
+                        // Home button goes to role selection
                         startActivity(new Intent(this, RoleSelectionActivity.class));
+                        finish();
+                        return true;
+                    } else if (id == R.id.nav_dashboard) {
+                        // Dashboard button goes to the comprehensive organizer dashboard
+                        startActivity(new Intent(this, EntrantDashboardActivity.class));
                         finish();
                         return true;
                     } else if (id == R.id.nav_create) {
