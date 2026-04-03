@@ -205,6 +205,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             // Nested comments can also have replies for non-admins
             holder.tvReply.setVisibility(isAdmin ? View.GONE : View.VISIBLE);
 
+            // Handle further nested replies
             List<Comment> nestedReplies = getRepliesFor(comment.getCommentId());
             if (!nestedReplies.isEmpty()) {
                 holder.rvReplies.setVisibility(View.VISIBLE);

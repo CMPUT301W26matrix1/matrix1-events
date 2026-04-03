@@ -78,6 +78,7 @@ public class EventDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_details);
 
+        // Initialize location client
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         db = FirebaseFirestore.getInstance();
 
@@ -91,7 +92,8 @@ public class EventDetailActivity extends AppCompatActivity {
 
         String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
         if (userId == null || userId.isEmpty()) userId = isAdmin ? "AdminUser" : deviceId;
-        if (userName == null || userName.isEmpty()) userName = isAdmin ? "Administrator" : (isOrganizer ? "Organizer" : "Entrant");
+        if (userName == null || userName.isEmpty())
+            userName = isAdmin ? "Administrator" : (isOrganizer ? "Organizer" : "Entrant");
 
         if (eventId == null || eventId.isEmpty()) {
             Toast.makeText(this, "Event ID missing", Toast.LENGTH_SHORT).show();
@@ -112,11 +114,19 @@ public class EventDetailActivity extends AppCompatActivity {
                 commentList,
                 new CommentAdapter.CommentActionListener() {
                     @Override
-                    public void onDeleteClick(Comment comment) { showDeleteConfirmation(comment); }
+                    public void onDeleteClick(Comment comment) {
+                        showDeleteConfirmation(comment);
+                    }
+
                     @Override
-                    public void onReplyClick(Comment comment) { startReply(comment); }
+                    public void onReplyClick(Comment comment) {
+                        startReply(comment);
+                    }
+
                     @Override
-                    public void onReactClick(Comment comment) { showReactionDialog(comment); }
+                    public void onReactClick(Comment comment) {
+                        showReactionDialog(comment);
+                    }
                 },
                 isOrganizer,
                 isAdmin
@@ -205,7 +215,8 @@ public class EventDetailActivity extends AppCompatActivity {
     private void showDeleteOptionsDialog() {
         String[] options = {"Delete Image", "Delete Event"};
         new AlertDialog.Builder(this).setItems(options, (d, w) -> {
-            if (w == 0) showDeleteImageConfirmation(); else showDeleteEventConfirmation();
+            if (w == 0) showDeleteImageConfirmation();
+            else showDeleteEventConfirmation();
         }).show();
     }
 
@@ -232,12 +243,17 @@ public class EventDetailActivity extends AppCompatActivity {
         if (text.isEmpty()) return;
         String cid = db.collection("events").document(eventId).collection("comments").document().getId();
         Map<String, Object> data = new HashMap<>();
-        data.put("commentId", cid); data.put("userId", userId); data.put("userName", userName);
-        data.put("text", text); data.put("timestamp", Timestamp.now());
+        data.put("commentId", cid);
+        data.put("userId", userId);
+        data.put("userName", userName);
+        data.put("text", text);
+        data.put("timestamp", Timestamp.now());
         data.put("parentCommentId", replyingToId);
         data.put("role", isAdmin ? "Admin" : (isOrganizer ? "Organizer" : "Entrant"));
         db.collection("events").document(eventId).collection("comments").document(cid).set(data).addOnSuccessListener(a -> {
-            etCommentInput.setText(""); etCommentInput.setHint("Write a comment..."); replyingToId = null;
+            etCommentInput.setText("");
+            etCommentInput.setHint("Write a comment...");
+            replyingToId = null;
         });
     }
 
@@ -248,7 +264,10 @@ public class EventDetailActivity extends AppCompatActivity {
                     commentList.clear();
                     for (DocumentSnapshot doc : v.getDocuments()) {
                         Comment c = doc.toObject(Comment.class);
-                        if (c != null) { c.setCommentId(doc.getId()); commentList.add(c); }
+                        if (c != null) {
+                            c.setCommentId(doc.getId());
+                            commentList.add(c);
+                        }
                     }
                     commentAdapter.refreshComments();
                 });
@@ -264,13 +283,21 @@ public class EventDetailActivity extends AppCompatActivity {
 
     private void loadEventDetails(TextView n, TextView l, TextView d) {
         eventController.loadEventById(eventId, new EventRepository.EventCallback() {
-            @Override public void onSuccess(Event e) {
+            @Override
+            public void onSuccess(Event e) {
                 currentEvent = e;
-                if (n != null) n.setText(e.getName()); if (l != null) l.setText(e.getLocation()); if (d != null) d.setText(e.getDescription());
-                if (e.getPosterUrl() != null && !e.getPosterUrl().isEmpty()) Picasso.get().load(e.getPosterUrl()).placeholder(R.drawable.ic_placeholder).into(ivEventPoster);
-                updateButtonState(); updateCommentBoxVisibility();
+                if (n != null) n.setText(e.getName());
+                if (l != null) l.setText(e.getLocation());
+                if (d != null) d.setText(e.getDescription());
+                if (e.getPosterUrl() != null && !e.getPosterUrl().isEmpty())
+                    Picasso.get().load(e.getPosterUrl()).placeholder(R.drawable.ic_placeholder).into(ivEventPoster);
+                updateButtonState();
+                updateCommentBoxVisibility();
             }
-            @Override public void onFailure(Exception e) {}
+
+            @Override
+            public void onFailure(Exception e) {
+            }
         });
     }
 
@@ -288,25 +315,75 @@ public class EventDetailActivity extends AppCompatActivity {
         if (currentEvent == null) return;
         boolean joined = eventController.isOnWaitingList(currentEvent);
         btnJoinNow.setText(joined ? "Leave Waiting List" : "Join Now");
-        btnJoinNow.setOnClickListener(v -> { if (joined) handleLeave(); else handleJoin(); });
+        btnJoinNow.setOnClickListener(v -> {
+            if (joined) handleLeave();
+            else handleJoin();
+        });
     }
 
     private void handleJoin() {
-        Map<String, Object> data = new HashMap<>(); data.put("userId", userId); data.put("userName", userName); data.put("joinedAt", FieldValue.serverTimestamp());
+        Map<String, Object> data = new HashMap<>();
+        data.put("userId", userId);
+        data.put("userName", userName);
+        data.put("joinedAt", FieldValue.serverTimestamp());
         db.collection("events").document(eventId).collection("waitingList").document(userId).set(data).addOnSuccessListener(a -> loadEventDetails(null, null, null));
     }
 
     private void handleLeave() {
         eventController.leaveWaitingList(currentEvent, new EventRepository.ActionCallback() {
-            @Override public void onSuccess() { loadEventDetails(null, null, null); }
-            @Override public void onFailure(Exception e) {}
+            @Override
+            public void onSuccess() {
+                loadEventDetails(null, null, null);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+            }
         });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 200) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                checkUserLocationAndJoin();
+            } else {
+                Toast.makeText(this, "Location permission required to join this event", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private void checkUserLocationAndJoin() {
+        // Implementation of checkUserLocationAndJoin
     }
 
     public static class Notification {
         private String id, title, eventName, message, type, eventId, userId;
-        public Notification(String t, String en, String m, String tp, String ei) { title = t; eventName = en; message = m; type = tp; eventId = ei; }
-        public String getId() { return id; } public void setId(String id) { this.id = id; }
-        public String getUserId() { return userId; } public void setUserId(String userId) { this.userId = userId; }
+
+        public Notification(String t, String en, String m, String tp, String ei) {
+            title = t;
+            eventName = en;
+            message = m;
+            type = tp;
+            eventId = ei;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getUserId() {
+            return userId;
+        }
+
+        public void setUserId(String userId) {
+            this.userId = userId;
+        }
     }
 }
