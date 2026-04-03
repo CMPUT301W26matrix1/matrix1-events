@@ -18,6 +18,9 @@ import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     private static final String TAG = "FCMService";
@@ -28,18 +31,31 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         super.onNewToken(token);
         Log.d(TAG, "New token: " + token);
 
-        // Save token to Firestore
         String deviceId = Settings.Secure.getString(
                 getContentResolver(),
                 Settings.Secure.ANDROID_ID
         );
 
+        // Try to update existing document first
         FirebaseFirestore.getInstance()
                 .collection("profiles")
                 .document(deviceId)
                 .update("fcmToken", token)
-                .addOnSuccessListener(aVoid -> Log.d(TAG, "Token saved"))
-                .addOnFailureListener(e -> Log.e(TAG, "Failed to save token", e));
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "Token saved to existing profile"))
+                .addOnFailureListener(e -> {
+                    // If document doesn't exist, create it with the token
+                    Log.d(TAG, "Profile not found, creating new document");
+                    Map<String, Object> newProfile = new HashMap<>();
+                    newProfile.put("fcmToken", token);
+                    newProfile.put("deviceId", deviceId);
+
+                    FirebaseFirestore.getInstance()
+                            .collection("profiles")
+                            .document(deviceId)
+                            .set(newProfile)
+                            .addOnSuccessListener(aVoid2 -> Log.d(TAG, "New profile created with token"))
+                            .addOnFailureListener(e2 -> Log.e(TAG, "Failed to create profile", e2));
+                });
     }
 
     @Override
@@ -47,18 +63,15 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         super.onMessageReceived(remoteMessage);
         Log.d(TAG, "Message received: " + remoteMessage.getFrom());
 
-        // Get notification title and body
         String title = remoteMessage.getNotification() != null ?
                 remoteMessage.getNotification().getTitle() : "EventFlow Update";
         String body = remoteMessage.getNotification() != null ?
                 remoteMessage.getNotification().getBody() : "You have a new notification";
 
-        // Show the notification
         sendNotification(title, body);
     }
 
     private void sendNotification(String title, String messageBody) {
-        // Create intent to open app when notification is tapped
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
@@ -67,7 +80,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        // Create notification channel (required for Android 8.0+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
@@ -84,7 +96,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         NotificationCompat.Builder notificationBuilder =
                 new NotificationCompat.Builder(this, CHANNEL_ID)
-                        .setSmallIcon(R.drawable.ic_notification)
+                        .setSmallIcon(R.drawable.ic_fcm_notification)
                         .setContentTitle(title)
                         .setContentText(messageBody)
                         .setAutoCancel(true)

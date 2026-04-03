@@ -11,12 +11,12 @@ public class ProfileRepository {
 
     private final FirebaseFirestore db;
     private final CollectionReference profilesCollection;
-    private final CollectionReference usersCollection;  // ADD THIS
+    private final CollectionReference usersCollection;
 
     public ProfileRepository() {
         db = FirebaseFirestore.getInstance();
         profilesCollection = db.collection("profiles");
-        usersCollection = db.collection("users");  // ADD THIS
+        usersCollection = db.collection("users");
     }
 
     public interface SaveProfileCallback {
@@ -43,7 +43,7 @@ public class ProfileRepository {
                 .document(userId)
                 .set(profile, SetOptions.merge())
                 .addOnSuccessListener(unused -> {
-                    usersCollection  // CHANGE: use usersCollection
+                    usersCollection
                             .document(userId)
                             .set(profile, SetOptions.merge())
                             .addOnSuccessListener(aVoid -> callback.onSuccess())
@@ -60,7 +60,7 @@ public class ProfileRepository {
                 .document(userId)
                 .set(profile, SetOptions.merge())
                 .addOnSuccessListener(unused -> {
-                    usersCollection  // CHANGE: use usersCollection
+                    usersCollection
                             .document(userId)
                             .set(profile, SetOptions.merge())
                             .addOnSuccessListener(aVoid -> callback.onSuccess())
@@ -75,7 +75,7 @@ public class ProfileRepository {
                 .document(deviceId)
                 .delete()
                 .addOnSuccessListener(unused -> {
-                    usersCollection  // CHANGE: use usersCollection
+                    usersCollection
                             .document(deviceId)
                             .delete()
                             .addOnSuccessListener(aVoid -> callback.onSuccess())
@@ -84,9 +84,9 @@ public class ProfileRepository {
                 .addOnFailureListener(callback::onFailure);
     }
 
-    // LOAD PROFILE - FIX THIS ONE - Load from users collection
+    // LOAD PROFILE BY DEVICE ID - Load from users collection
     public void getProfileByDeviceId(@NonNull String deviceId, @NonNull LoadProfileCallback callback) {
-        usersCollection  // CHANGE: use usersCollection instead of profilesCollection
+        usersCollection
                 .document(deviceId)
                 .get()
                 .addOnSuccessListener(doc -> {
@@ -104,11 +104,31 @@ public class ProfileRepository {
                 .addOnFailureListener(callback::onFailure);
     }
 
+    // ADD THIS: LOAD PROFILE BY EMAIL
+    public void getProfileByEmail(@NonNull String email, @NonNull LoadProfileCallback callback) {
+        usersCollection
+                .whereEqualTo("email", email)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        Profile profile = queryDocumentSnapshots.getDocuments().get(0).toObject(Profile.class);
+                        if (profile != null) {
+                            callback.onSuccess(profile);
+                        } else {
+                            callback.onNotFound();
+                        }
+                    } else {
+                        callback.onNotFound();
+                    }
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+
     public CollectionReference getProfilesCollection() {
         return profilesCollection;
     }
 
-    public CollectionReference getUsersCollection() {  // ADD THIS
+    public CollectionReference getUsersCollection() {
         return usersCollection;
     }
 }

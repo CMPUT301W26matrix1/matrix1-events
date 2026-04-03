@@ -20,7 +20,6 @@ import androidx.fragment.app.Fragment;
 
 import com.example.eventflow.LoginActivity;
 import com.example.eventflow.R;
-import com.example.eventflow.RoleSelectionActivity;
 import com.example.eventflow.model.entities.Profile;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -41,7 +40,7 @@ public class ProfileViewFragment extends Fragment {
     private TextView tvFullName, tvName, tvEmail, tvPhone, tvUserRole;
     private ImageView ivProfilePic;
     private Profile currentProfile;
-    private String currentDeviceId; // Added to store device ID for event loading
+    private String currentDeviceId;
 
     public ProfileViewFragment() {}
 
@@ -80,10 +79,7 @@ public class ProfileViewFragment extends Fragment {
         cvEditProfile = view.findViewById(R.id.cv_edit_profile);
         btnBack = view.findViewById(R.id.btnBack);
 
-        // Find Event History LinearLayout (with icon)
         LinearLayout llEventHistoryHeader = view.findViewById(R.id.llEventHistoryHeader);
-
-        // Find stats views
         TextView tvEventHistoryHeader = view.findViewById(R.id.tvEventHistoryHeader);
         LinearLayout llStatsRow = view.findViewById(R.id.llStatsRow);
         LinearLayout llEventsList = view.findViewById(R.id.llEventsList);
@@ -102,12 +98,23 @@ public class ProfileViewFragment extends Fragment {
             String dob = args.getString(ARG_DOB, "");
             String role = args.getString(ARG_ROLE, "entrant");
 
-            currentDeviceId = deviceId; // Store device ID for event loading
+            currentDeviceId = deviceId;
             currentProfile = new Profile(deviceId, firstName, lastName, email, phone);
             currentProfile.setDateOfBirth(dob);
             currentProfile.setRole(role);
 
-            String fullName = firstName + " " + lastName;
+            // Handle display name correctly
+            String fullName = "";
+            if ((firstName == null || firstName.isEmpty()) && (lastName == null || lastName.isEmpty())) {
+                if (currentProfile.getFullName() != null && !currentProfile.getFullName().isEmpty()) {
+                    fullName = currentProfile.getFullName();
+                } else {
+                    fullName = email != null && !email.isEmpty() ? email.split("@")[0] : "User";
+                }
+            } else {
+                fullName = (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
+            }
+
             if (fullName.trim().isEmpty()) fullName = "User";
 
             tvFullName.setText(fullName);
@@ -115,17 +122,16 @@ public class ProfileViewFragment extends Fragment {
             tvEmail.setText(email != null && !email.isEmpty() ? email : "Not set");
             tvPhone.setText(phone != null && !phone.isEmpty() ? phone : "Not set");
 
-            // Set role text and visibility
-            tvUserRole.setText(role != null && !role.isEmpty() ? role : "entrant");
+            // FIX: Get the correct role from SharedPreferences for the badge under username
+            String displayRole = getCorrectRole(role);
+            tvUserRole.setText(displayRole);
             tvUserRole.setVisibility(View.VISIBLE);
 
             // Show event stats for entrants
             if (role != null && role.equalsIgnoreCase("entrant")) {
-                // Make Event History header (with icon) visible
                 if (llEventHistoryHeader != null) {
                     llEventHistoryHeader.setVisibility(View.VISIBLE);
                 }
-                // Make all stats views visible
                 if (tvEventHistoryHeader != null) {
                     tvEventHistoryHeader.setVisibility(View.VISIBLE);
                 }
@@ -142,8 +148,6 @@ public class ProfileViewFragment extends Fragment {
                         }
                     });
                 }
-
-                // Load user events from Firestore
                 loadUserEvents(deviceId);
             } else {
                 // Hide stats for admin/organizer
@@ -176,10 +180,34 @@ public class ProfileViewFragment extends Fragment {
         }
     }
 
+    // FIX: New method to get the correct role from SharedPreferences
+    private String getCorrectRole(String defaultRole) {
+        // First check eventflow_prefs
+        SharedPreferences prefs = requireActivity().getSharedPreferences("eventflow_prefs", android.content.Context.MODE_PRIVATE);
+        String savedRole = prefs.getString("userRole", "");
+
+        if (savedRole.isEmpty()) {
+            // Check UserPrefs
+            SharedPreferences userPrefs = requireActivity().getSharedPreferences("UserPrefs", android.content.Context.MODE_PRIVATE);
+            savedRole = userPrefs.getString("selectedRole", "");
+        }
+
+        if (!savedRole.isEmpty() && !savedRole.equals("entrant")) {
+            // Capitalize first letter
+            return savedRole.substring(0, 1).toUpperCase() + savedRole.substring(1).toLowerCase();
+        }
+
+        // If no saved role, use the default role from arguments
+        if (defaultRole != null && !defaultRole.isEmpty()) {
+            return defaultRole.substring(0, 1).toUpperCase() + defaultRole.substring(1).toLowerCase();
+        }
+
+        return "Entrant";
+    }
+
     private void loadUserEvents(String deviceId) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        // Query user's event participations
         db.collection("users").document(deviceId)
                 .collection("event_participations")
                 .get()
@@ -190,7 +218,7 @@ public class ProfileViewFragment extends Fragment {
                     TextView tvRejectedCount = getView().findViewById(R.id.tvRejectedCount);
 
                     if (llEventsList != null) {
-                        llEventsList.removeAllViews(); // Clear existing events
+                        llEventsList.removeAllViews();
                     }
 
                     int selectedCount = 0;
@@ -202,7 +230,6 @@ public class ProfileViewFragment extends Fragment {
                         String eventDate = doc.getString("eventDate");
                         String status = doc.getString("status");
 
-                        // Count stats
                         if (status != null) {
                             if (status.equalsIgnoreCase("Selected")) {
                                 selectedCount++;
@@ -213,15 +240,12 @@ public class ProfileViewFragment extends Fragment {
                             }
                         }
 
-                        // Add event to list
                         addEventToHistory(eventName, eventDate, status);
                     }
 
-                    // Update stats counts
                     if (tvSelectedCount != null) tvSelectedCount.setText(String.valueOf(selectedCount));
                     if (tvWaitingCount != null) tvWaitingCount.setText(String.valueOf(waitingCount));
                     if (tvRejectedCount != null) tvRejectedCount.setText(String.valueOf(rejectedCount));
-
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(getContext(), "Failed to load events: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -244,7 +268,6 @@ public class ProfileViewFragment extends Fragment {
         if (tvEventDate != null) tvEventDate.setText(eventDate != null ? eventDate : "Date not set");
         if (tvEventStatus != null) tvEventStatus.setText(status != null ? status : "Unknown");
 
-        // Set icon and badge based on status
         if (status != null) {
             if (status.equalsIgnoreCase("Selected")) {
                 if (ivEventIcon != null) {
@@ -313,11 +336,9 @@ public class ProfileViewFragment extends Fragment {
     }
 
     private void clearUserData() {
-        // Clear general user preferences
         SharedPreferences userPrefs = requireContext().getSharedPreferences("UserPrefs", android.content.Context.MODE_PRIVATE);
         userPrefs.edit().clear().apply();
 
-        // Clear login specific preferences
         SharedPreferences loginPrefs = requireContext().getSharedPreferences("eventflow_prefs", android.content.Context.MODE_PRIVATE);
         loginPrefs.edit().clear().apply();
     }

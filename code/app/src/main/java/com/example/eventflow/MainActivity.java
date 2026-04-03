@@ -3,8 +3,10 @@ package com.example.eventflow;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -12,6 +14,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
@@ -20,6 +23,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
@@ -41,11 +45,38 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
+    // Permission launcher for notifications (Android 13+)
+    private final ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(),
+                    isGranted -> {
+                        if (isGranted) {
+                            Log.d("MainActivity", "Notification permission granted");
+                        } else {
+                            Log.d("MainActivity", "Notification permission denied");
+                        }
+                    });
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
+        // Request notification permission for Android 13+
+        askNotificationPermission();
+
+        // Get FCM token (silently, no toast)
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        String token = task.getResult();
+                        Log.d("FCMService", "Manual token: " + token);
+                        // Toast removed - no longer shows "FCM Token received!"
+                    } else {
+                        Log.e("FCMService", "Failed to get token", task.getException());
+                        // Toast removed - silent failure
+                    }
+                });
 
         // --- UI INITIALIZATION ---
         CardView cardEntrant = findViewById(R.id.card_entrant);
@@ -81,6 +112,16 @@ public class MainActivity extends AppCompatActivity {
                 v.setPadding(systemBars.left, systemBars.top, systemBars.bottom, systemBars.bottom);
                 return insets;
             });
+        }
+    }
+
+    // Request notification permission
+    private void askNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (android.content.pm.PackageManager.PERMISSION_GRANTED !=
+                    android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS);
+            }
         }
     }
 
@@ -125,9 +166,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveRoleAndNavigate() {
-        // Save role to SharedPreferences so SplashActivity can skip this screen next time
+        // Save role to SharedPreferences
         SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         prefs.edit().putString("selectedRole", selectedRole).apply();
+
+        // Also save to eventflow_prefs for profile to use
+        SharedPreferences eventflowPrefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
+        eventflowPrefs.edit().putString("userRole", selectedRole).apply();
 
         navigateToRoleDashboard();
     }
@@ -139,7 +184,6 @@ public class MainActivity extends AppCompatActivity {
                 intent = new Intent(this, BrowseEventsActivity.class);
                 break;
             case "organizer":
-                // DIRECT TO DASHBOARD - EntrantDashboardActivity
                 intent = new Intent(this, EntrantDashboardActivity.class);
                 break;
             case "admin":
