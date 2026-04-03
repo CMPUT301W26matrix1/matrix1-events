@@ -445,6 +445,6 @@
         app:itemIconTint="@color/bottom_nav_colors"
         app:itemTextColor="@color/bottom_nav_colors"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:menu="@menu/bottom_nav_menu" />
+        app:menu="@menu/admin_bottom_nav" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
