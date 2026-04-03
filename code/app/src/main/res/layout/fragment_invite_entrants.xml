@@ -2,50 +2,67 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
-    android:background="#1E1E1E">
+    android:background="#000000">
 
     <!-- Header -->
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="16dp"
-        android:gravity="center_vertical">
+        android:padding="20dp">
+
+        <ImageView
+            android:id="@+id/btn_invite_back"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="#FFFFFF" />
 
         <TextView
-            android:id="@+id/btn_invite_back"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="← Back"
-            android:textColor="#3B82F6"
-            android:textSize="16sp"
-            android:paddingEnd="16dp"/>
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="16dp"
+            android:layout_toEndOf="@id/btn_invite_back"
             android:text="Invite Entrants"
             android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:textStyle="bold"/>
+            android:textSize="22sp"
+            android:textStyle="bold" />
 
-    </LinearLayout>
+    </RelativeLayout>
 
-    <!-- Search Bar -->
-    <EditText
-        android:id="@+id/et_search_entrant"
+    <!-- Search Bar Section -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginBottom="12dp"
-        android:hint="Search by name, email, or phone"
-        android:textColorHint="#888888"
-        android:textColor="#FFFFFF"
-        android:backgroundTint="#3B82F6"
-        android:inputType="text"
-        android:padding="10dp"/>
+        android:layout_height="50dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/edittext_bg_dark"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_search"
+            app:tint="#666666" />
+
+        <EditText
+            android:id="@+id/et_search_entrant"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="8dp"
+            android:background="@android:color/transparent"
+            android:hint="Search by name, email, or phone"
+            android:textColorHint="#666666"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:singleLine="true"
+            android:imeOptions="actionSearch" />
+    </LinearLayout>
 
     <!-- No Results Message -->
     <TextView
@@ -53,10 +70,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="No entrants found."
-        android:textColor="#888888"
+        android:textColor="#666666"
         android:textSize="14sp"
         android:gravity="center"
-        android:padding="16dp"
+        android:padding="32dp"
         android:visibility="gone"/>
 
     <!-- Search Results -->
@@ -65,6 +82,8 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:paddingHorizontal="16dp"/>
+        android:paddingHorizontal="20dp"
+        android:clipToPadding="false"
+        android:paddingBottom="20dp"/>
 
 </LinearLayout>
