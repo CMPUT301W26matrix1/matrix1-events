@@ -16,6 +16,31 @@
       "api_key": [
         {
           "current_key": "AIzaSyDKbVOO01IsopYhLdfsDhkjwDu_GHg6uqE"
+        },
+        {
+          "current_key": "AIzaSyCNpQDBvUq6kJC6NusJ4_ghipeEeomc4m0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:803667763625:android:cf21116efb4eb50d8864b8",
+        "android_client_info": {
+          "package_name": "console.firebase.google.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKbVOO01IsopYhLdfsDhkjwDu_GHg6uqE"
+        },
+        {
+          "current_key": "AIzaSyCNpQDBvUq6kJC6NusJ4_ghipeEeomc4m0"
         }
       ],
       "services": {
