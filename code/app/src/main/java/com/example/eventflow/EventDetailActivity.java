@@ -188,6 +188,11 @@ public class EventDetailActivity extends AppCompatActivity {
     }
 
     private void updateButtonState() {
+        if (isOrganizer || isAdmin) {
+            btnJoinNow.setVisibility(View.GONE);
+            return;
+        }
+        btnJoinNow.setVisibility(View.VISIBLE);
         boolean joined = eventController.isOnWaitingList(currentEvent);
         btnJoinNow.setText(joined ? "Joined" : "Join");
         btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(joined ? 0xFF4285F4 : 0xFF4CAF50));

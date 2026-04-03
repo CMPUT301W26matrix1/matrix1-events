@@ -34,10 +34,9 @@ public class ProfileViewFragment extends Fragment {
     private static final String ARG_DOB = "dob";
     private static final String ARG_ROLE = "role";
 
-    private LinearLayout btnSignOutLayout, btnDeleteProfileLayout;
-    private View btnBack;
+    private View btnSignOutLayout, btnDeleteProfileLayout;
     private View cvEditProfile;
-    private TextView tvFullName, tvName, tvEmail, tvPhone, tvUserRole;
+    private TextView tvFullName, tvName, tvEmail, tvPhone, tvUserRole, tvAvatarLetter;
     private ImageView ivProfilePic;
     private Profile currentProfile;
     private String currentDeviceId;
@@ -73,20 +72,11 @@ public class ProfileViewFragment extends Fragment {
         tvEmail = view.findViewById(R.id.tvEmail);
         tvPhone = view.findViewById(R.id.tvPhone);
         tvUserRole = view.findViewById(R.id.tvUserRole);
+        tvAvatarLetter = view.findViewById(R.id.tvAvatarLetter);
         ivProfilePic = view.findViewById(R.id.iv_profile_pic);
         btnSignOutLayout = view.findViewById(R.id.btnSignOutLayout);
         btnDeleteProfileLayout = view.findViewById(R.id.btnDeleteProfileLayout);
         cvEditProfile = view.findViewById(R.id.cv_edit_profile);
-        btnBack = view.findViewById(R.id.btnBack);
-
-        LinearLayout llEventHistoryHeader = view.findViewById(R.id.llEventHistoryHeader);
-        TextView tvEventHistoryHeader = view.findViewById(R.id.tvEventHistoryHeader);
-        LinearLayout llStatsRow = view.findViewById(R.id.llStatsRow);
-        LinearLayout llEventsList = view.findViewById(R.id.llEventsList);
-        TextView tvViewFullHistory = view.findViewById(R.id.tvViewFullHistory);
-        TextView tvSelectedCount = view.findViewById(R.id.tvSelectedCount);
-        TextView tvWaitingCount = view.findViewById(R.id.tvWaitingCount);
-        TextView tvRejectedCount = view.findViewById(R.id.tvRejectedCount);
 
         Bundle args = getArguments();
         if (args != null) {
@@ -103,60 +93,20 @@ public class ProfileViewFragment extends Fragment {
             currentProfile.setDateOfBirth(dob);
             currentProfile.setRole(role);
 
-            // Handle display name correctly
-            String fullName = "";
-            if ((firstName == null || firstName.isEmpty()) && (lastName == null || lastName.isEmpty())) {
-                if (currentProfile.getFullName() != null && !currentProfile.getFullName().isEmpty()) {
-                    fullName = currentProfile.getFullName();
-                } else {
-                    fullName = email != null && !email.isEmpty() ? email.split("@")[0] : "User";
-                }
-            } else {
-                fullName = (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
-            }
-
+            String fullName = (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
             if (fullName.trim().isEmpty()) fullName = "User";
 
             tvFullName.setText(fullName);
             tvName.setText(fullName);
-            tvEmail.setText(email != null && !email.isEmpty() ? email : "Not set");
-            tvPhone.setText(phone != null && !phone.isEmpty() ? phone : "Not set");
+            tvEmail.setText(email != null && !email.isEmpty() ? email : "john.doe@example.com");
+            tvPhone.setText(phone != null && !phone.isEmpty() ? phone : "+1 (555) 123-4567");
 
-            // FIX: Get the correct role from SharedPreferences for the badge under username
+            if (!fullName.isEmpty()) {
+                tvAvatarLetter.setText(String.valueOf(fullName.charAt(0)).toUpperCase());
+            }
+
             String displayRole = getCorrectRole(role);
             tvUserRole.setText(displayRole);
-            tvUserRole.setVisibility(View.VISIBLE);
-
-            // Show event stats for entrants
-            if (role != null && role.equalsIgnoreCase("entrant")) {
-                if (llEventHistoryHeader != null) {
-                    llEventHistoryHeader.setVisibility(View.VISIBLE);
-                }
-                if (tvEventHistoryHeader != null) {
-                    tvEventHistoryHeader.setVisibility(View.VISIBLE);
-                }
-                if (llStatsRow != null) {
-                    llStatsRow.setVisibility(View.VISIBLE);
-                }
-                if (llEventsList != null) {
-                    llEventsList.setVisibility(View.VISIBLE);
-                }
-                if (tvViewFullHistory != null) {
-                    tvViewFullHistory.setOnClickListener(v -> {
-                        if (getParentFragment() instanceof ProfileContainerFragment) {
-                            ((ProfileContainerFragment) getParentFragment()).showEventHistory();
-                        }
-                    });
-                }
-                loadUserEvents(deviceId);
-            } else {
-                // Hide stats for admin/organizer
-                if (llEventHistoryHeader != null) llEventHistoryHeader.setVisibility(View.GONE);
-                if (tvEventHistoryHeader != null) tvEventHistoryHeader.setVisibility(View.GONE);
-                if (llStatsRow != null) llStatsRow.setVisibility(View.GONE);
-                if (llEventsList != null) llEventsList.setVisibility(View.GONE);
-                if (tvViewFullHistory != null) tvViewFullHistory.setVisibility(View.GONE);
-            }
         }
 
         if (cvEditProfile != null) {
@@ -174,129 +124,32 @@ public class ProfileViewFragment extends Fragment {
         if (btnDeleteProfileLayout != null) {
             btnDeleteProfileLayout.setOnClickListener(v -> showDeleteConfirmation());
         }
-
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> requireActivity().finish());
-        }
     }
 
-    // FIX: New method to get the correct role from SharedPreferences
     private String getCorrectRole(String defaultRole) {
-        // First check eventflow_prefs
+        // Special case for Admin screen context
+        if (getActivity() != null && (getActivity().getClass().getSimpleName().contains("Admin") || getActivity().getClass().getSimpleName().contains("ProfileDetail"))) {
+            return defaultRole != null && !defaultRole.isEmpty() ? 
+                defaultRole.substring(0, 1).toUpperCase() + defaultRole.substring(1).toLowerCase() : "Entrant";
+        }
+
         SharedPreferences prefs = requireActivity().getSharedPreferences("eventflow_prefs", android.content.Context.MODE_PRIVATE);
         String savedRole = prefs.getString("userRole", "");
 
         if (savedRole.isEmpty()) {
-            // Check UserPrefs
             SharedPreferences userPrefs = requireActivity().getSharedPreferences("UserPrefs", android.content.Context.MODE_PRIVATE);
             savedRole = userPrefs.getString("selectedRole", "");
         }
 
-        if (!savedRole.isEmpty() && !savedRole.equals("entrant")) {
-            // Capitalize first letter
+        if (!savedRole.isEmpty()) {
             return savedRole.substring(0, 1).toUpperCase() + savedRole.substring(1).toLowerCase();
         }
 
-        // If no saved role, use the default role from arguments
         if (defaultRole != null && !defaultRole.isEmpty()) {
             return defaultRole.substring(0, 1).toUpperCase() + defaultRole.substring(1).toLowerCase();
         }
 
         return "Entrant";
-    }
-
-    private void loadUserEvents(String deviceId) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        db.collection("users").document(deviceId)
-                .collection("event_participations")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    LinearLayout llEventsList = getView().findViewById(R.id.llEventsList);
-                    TextView tvSelectedCount = getView().findViewById(R.id.tvSelectedCount);
-                    TextView tvWaitingCount = getView().findViewById(R.id.tvWaitingCount);
-                    TextView tvRejectedCount = getView().findViewById(R.id.tvRejectedCount);
-
-                    if (llEventsList != null) {
-                        llEventsList.removeAllViews();
-                    }
-
-                    int selectedCount = 0;
-                    int waitingCount = 0;
-                    int rejectedCount = 0;
-
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        String eventName = doc.getString("eventName");
-                        String eventDate = doc.getString("eventDate");
-                        String status = doc.getString("status");
-
-                        if (status != null) {
-                            if (status.equalsIgnoreCase("Selected")) {
-                                selectedCount++;
-                            } else if (status.equalsIgnoreCase("Waiting")) {
-                                waitingCount++;
-                            } else if (status.equalsIgnoreCase("Rejected")) {
-                                rejectedCount++;
-                            }
-                        }
-
-                        addEventToHistory(eventName, eventDate, status);
-                    }
-
-                    if (tvSelectedCount != null) tvSelectedCount.setText(String.valueOf(selectedCount));
-                    if (tvWaitingCount != null) tvWaitingCount.setText(String.valueOf(waitingCount));
-                    if (tvRejectedCount != null) tvRejectedCount.setText(String.valueOf(rejectedCount));
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Failed to load events: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    private void addEventToHistory(String eventName, String eventDate, String status) {
-        LinearLayout llEventsList = getView().findViewById(R.id.llEventsList);
-        if (llEventsList == null || getContext() == null) return;
-
-        View eventItem = LayoutInflater.from(getContext())
-                .inflate(R.layout.item_event_history, llEventsList, false);
-
-        TextView tvEventTitle = eventItem.findViewById(R.id.tvHistoryEventTitle);
-        TextView tvEventDate = eventItem.findViewById(R.id.tvHistoryEventDate);
-        TextView tvEventStatus = eventItem.findViewById(R.id.tvHistoryEventStatus);
-        ImageView ivEventIcon = eventItem.findViewById(R.id.ivEventIcon);
-
-        if (tvEventTitle != null) tvEventTitle.setText(eventName != null ? eventName : "Unknown Event");
-        if (tvEventDate != null) tvEventDate.setText(eventDate != null ? eventDate : "Date not set");
-        if (tvEventStatus != null) tvEventStatus.setText(status != null ? status : "Unknown");
-
-        if (status != null) {
-            if (status.equalsIgnoreCase("Selected")) {
-                if (ivEventIcon != null) {
-                    ivEventIcon.setImageResource(R.drawable.ic_check);
-                    ivEventIcon.setColorFilter(Color.parseColor("#4CAF50"));
-                }
-                if (tvEventStatus != null) {
-                    tvEventStatus.setBackgroundResource(R.drawable.badge_status_selected);
-                }
-            } else if (status.equalsIgnoreCase("Waiting")) {
-                if (ivEventIcon != null) {
-                    ivEventIcon.setImageResource(R.drawable.ic_clock);
-                    ivEventIcon.setColorFilter(Color.parseColor("#FF9800"));
-                }
-                if (tvEventStatus != null) {
-                    tvEventStatus.setBackgroundResource(R.drawable.badge_status_waiting);
-                }
-            } else if (status.equalsIgnoreCase("Rejected")) {
-                if (ivEventIcon != null) {
-                    ivEventIcon.setImageResource(R.drawable.ic_cross);
-                    ivEventIcon.setColorFilter(Color.parseColor("#F44336"));
-                }
-                if (tvEventStatus != null) {
-                    tvEventStatus.setBackgroundResource(R.drawable.badge_status_rejected);
-                }
-            }
-        }
-
-        llEventsList.addView(eventItem);
     }
 
     private void signOut() {
