@@ -3,12 +3,10 @@ package com.example.eventflow;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.android.material.card.MaterialCardView;
 
 public class RoleSelectionActivity extends AppCompatActivity {
@@ -31,9 +29,9 @@ public class RoleSelectionActivity extends AppCompatActivity {
         selectCard(cardEntrant, "Entrant");
 
         // Update card click listeners to only select the card, not navigate
-        cardEntrant.setOnClickListener(v -> selectCard(cardEntrant, "Entrant"));
-        cardOrganizer.setOnClickListener(v -> selectCard(cardOrganizer, "Organizer"));
-        cardAdmin.setOnClickListener(v -> selectCard(cardAdmin, "Admin"));
+        if (cardEntrant != null) cardEntrant.setOnClickListener(v -> selectCard(cardEntrant, "Entrant"));
+        if (cardOrganizer != null) cardOrganizer.setOnClickListener(v -> selectCard(cardOrganizer, "Organizer"));
+        if (cardAdmin != null) cardAdmin.setOnClickListener(v -> selectCard(cardAdmin, "Admin"));
 
         if (btnContinue != null) {
             btnContinue.setOnClickListener(v -> navigateToRole(selectedRole));
@@ -65,8 +63,8 @@ public class RoleSelectionActivity extends AppCompatActivity {
                 intent = new Intent(this, BrowseEventsActivity.class);
                 break;
             case "Organizer":
-                // Landing page for organizer is now the Event Dashboard
-                intent = new Intent(this, EntrantDashboardActivity.class);
+                // Landing page for organizer is the OrganizerEventsActivity (Dashboard)
+                intent = new Intent(this, OrganizerEventsActivity.class);
                 break;
             case "Admin":
                 intent = new Intent(this, AdminDashboardActivity.class);

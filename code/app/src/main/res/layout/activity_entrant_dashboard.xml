@@ -27,7 +27,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_toEndOf="@id/btnBack"
-            android:text="Event Dashboard"
+            android:text="Dashboard"
             android:textColor="#FFFFFF"
             android:textSize="22sp"
             android:textStyle="bold" />
@@ -45,7 +45,7 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav_container"
         app:layout_constraintTop_toBottomOf="@id/rlHeader">
 
         <LinearLayout
@@ -54,49 +54,153 @@
             android:orientation="vertical"
             android:padding="20dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="CURRENT EVENT"
-                android:textColor="#444444"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.05" />
-
-            <!-- Current Event Card -->
+            <!-- Event Card Section -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardCurrentEvent"
+                android:id="@+id/cardEventDetails"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
                 app:cardBackgroundColor="#0F0F0F"
-                app:cardCornerRadius="16dp"
-                app:strokeColor="#1A1A1A"
-                app:strokeWidth="1dp">
+                app:cardCornerRadius="24dp"
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="20dp">
+                    android:padding="24dp">
 
                     <TextView
                         android:id="@+id/tvEventName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Tech Summit 2026"
+                        android:text="No Event Selected"
                         android:textColor="#FFFFFF"
-                        android:textSize="24sp"
+                        android:textSize="22sp"
                         android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/tvEventDetails"
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="April 5-6 • Convention Center Hall B"
-                        android:textColor="#666666"
-                        android:textSize="15sp" />
+                        android:layout_marginTop="12dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_clock"
+                            app:tint="#4CAF50" />
+
+                        <TextView
+                            android:id="@+id/tvEventDate"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Date"
+                            android:textColor="#888888"
+                            android:textSize="14sp" />
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginStart="16dp"
+                            android:src="@drawable/ic_location"
+                            app:tint="#2196F3" />
+
+                        <TextView
+                            android:id="@+id/tvEventLocation"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Location"
+                            android:textColor="#888888"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- Stats Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:background="@drawable/rounded_card_bg"
+                            android:backgroundTint="#0A1F0D"
+                            android:padding="12dp">
+                            <TextView
+                                android:id="@+id/tvRegisteredCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#4CAF50"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Registered"
+                                android:textColor="#4CAF50"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:background="@drawable/rounded_card_bg"
+                            android:backgroundTint="#241908"
+                            android:padding="12dp">
+                            <TextView
+                                android:id="@+id/tvAvailableCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#FF9800"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Available"
+                                android:textColor="#FF9800"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:background="@drawable/rounded_card_bg"
+                            android:backgroundTint="#0A1324"
+                            android:padding="12dp">
+                            <TextView
+                                android:id="@+id/tvCapacityCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#2196F3"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Capacity"
+                                android:textColor="#2196F3"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -104,105 +208,118 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
-                android:text="MANAGE"
-                android:textColor="#444444"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.05" />
+                android:text="Manage"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
-            <!-- Cancelled Entrants -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardCancelled"
+            <!-- Manage Actions List -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                app:cardBackgroundColor="#0F0F0F"
-                app:cardCornerRadius="20dp"
-                app:strokeColor="#1A1A1A"
-                app:strokeWidth="1dp"
-                android:clickable="true"
-                android:focusable="true">
-                <RelativeLayout android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                    <View android:id="@+id/iconBgCancelled" android:layout_width="52dp" android:layout_height="52dp" android:background="@drawable/circle_red_muted" />
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:layout_centerInParent="true" android:layout_alignStart="@id/iconBgCancelled" android:layout_alignEnd="@id/iconBgCancelled" android:layout_alignTop="@id/iconBgCancelled" android:layout_alignBottom="@id/iconBgCancelled" android:src="@drawable/ic_close" app:tint="#FF5252" android:padding="4dp" />
-                    <LinearLayout android:layout_toEndOf="@id/iconBgCancelled" android:layout_marginStart="16dp" android:layout_centerVertical="true" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_toStartOf="@id/chevronCancelled">
-                        <TextView android:text="Cancelled Entrants" android:textColor="#FFFFFF" android:textSize="17sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                        <TextView android:text="View all entrants who cancelled" android:textColor="#666666" android:textSize="14sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                    </LinearLayout>
-                    <ImageView android:id="@+id/chevronCancelled" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_chevron_right" app:tint="#333333" />
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
+                android:orientation="vertical"
+                android:layout_marginTop="16dp">
 
-            <!-- Manage Waitlist -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardWaitlist"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                app:cardBackgroundColor="#0F0F0F"
-                app:cardCornerRadius="20dp"
-                app:strokeColor="#1A1A1A"
-                app:strokeWidth="1dp"
-                android:clickable="true"
-                android:focusable="true">
-                <RelativeLayout android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                    <View android:id="@+id/iconBgWaitlist" android:layout_width="52dp" android:layout_height="52dp" android:background="@drawable/circle_yellow_muted" />
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:layout_centerInParent="true" android:layout_alignStart="@id/iconBgWaitlist" android:layout_alignEnd="@id/iconBgWaitlist" android:layout_alignTop="@id/iconBgWaitlist" android:layout_alignBottom="@id/iconBgWaitlist" android:src="@drawable/ic_clock" app:tint="#FFD700" android:padding="4dp" />
-                    <LinearLayout android:layout_toEndOf="@id/iconBgWaitlist" android:layout_marginStart="16dp" android:layout_centerVertical="true" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_toStartOf="@id/chevronWaitlist">
-                        <TextView android:text="Manage Waitlist" android:textColor="#FFFFFF" android:textSize="17sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                        <TextView android:text="Review and remove non-responders" android:textColor="#666666" android:textSize="14sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                    </LinearLayout>
-                    <ImageView android:id="@+id/chevronWaitlist" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_chevron_right" app:tint="#333333" />
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
+                <!-- Cancelled Entrants -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardCancelled"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    app:cardBackgroundColor="#0F0F0F"
+                    app:cardCornerRadius="20dp"
+                    app:strokeWidth="0dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <RelativeLayout android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <View android:id="@+id/iconBgCancelled" android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/circle_bg_dark" android:backgroundTint="#1F0D0D" />
+                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:layout_centerInParent="true" android:layout_alignStart="@id/iconBgCancelled" android:layout_alignEnd="@id/iconBgCancelled" android:layout_alignTop="@id/iconBgCancelled" android:layout_alignBottom="@id/iconBgCancelled" android:src="@drawable/ic_close" app:tint="#F44336" />
+                        <LinearLayout android:layout_toEndOf="@id/iconBgCancelled" android:layout_marginStart="16dp" android:layout_centerVertical="true" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_toStartOf="@id/chevronCancelled">
+                            <TextView android:text="Cancelled Entrants" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                            <TextView android:id="@+id/tvCancelledSubtitle" android:text="0 cancelled registrations" android:textColor="#666666" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                        </LinearLayout>
+                        <ImageView android:id="@+id/chevronCancelled" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_chevron_right" app:tint="#444444" />
+                    </RelativeLayout>
+                </com.google.android.material.card.MaterialCardView>
 
-            <!-- Final Enrolled Entrants -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardEnrolled"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                app:cardBackgroundColor="#0F0F0F"
-                app:cardCornerRadius="20dp"
-                app:strokeColor="#1A1A1A"
-                app:strokeWidth="1dp"
-                android:clickable="true"
-                android:focusable="true">
-                <RelativeLayout android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                    <View android:id="@+id/iconBgEnrolled" android:layout_width="52dp" android:layout_height="52dp" android:background="@drawable/circle_green_muted" />
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:layout_centerInParent="true" android:layout_alignStart="@id/iconBgEnrolled" android:layout_alignEnd="@id/iconBgEnrolled" android:layout_alignTop="@id/iconBgEnrolled" android:layout_alignBottom="@id/iconBgEnrolled" android:src="@drawable/ic_check" app:tint="#4CAF50" android:padding="4dp" />
-                    <LinearLayout android:layout_toEndOf="@id/iconBgEnrolled" android:layout_marginStart="16dp" android:layout_centerVertical="true" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_toStartOf="@id/chevronEnrolled">
-                        <TextView android:text="Final Enrolled Entrants" android:textColor="#FFFFFF" android:textSize="17sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                        <TextView android:text="Export confirmed attendee list" android:textColor="#666666" android:textSize="14sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                    </LinearLayout>
-                    <ImageView android:id="@+id/chevronEnrolled" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_chevron_right" app:tint="#333333" />
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
+                <!-- Manage Waitlist -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardWaitlist"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    app:cardBackgroundColor="#0F0F0F"
+                    app:cardCornerRadius="20dp"
+                    app:strokeWidth="0dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <RelativeLayout android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <View android:id="@+id/iconBgWaitlist" android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/circle_bg_dark" android:backgroundTint="#0A1324" />
+                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:layout_centerInParent="true" android:layout_alignStart="@id/iconBgWaitlist" android:layout_alignEnd="@id/iconBgWaitlist" android:layout_alignTop="@id/iconBgWaitlist" android:layout_alignBottom="@id/iconBgWaitlist" android:src="@drawable/ic_people" app:tint="#2196F3" />
+                        <LinearLayout android:layout_toEndOf="@id/iconBgWaitlist" android:layout_marginStart="16dp" android:layout_centerVertical="true" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_toStartOf="@id/chevronWaitlist">
+                            <TextView android:text="Manage Waitlist" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                            <TextView android:id="@+id/tvWaitlistSubtitle" android:text="0 people in waitlist" android:textColor="#666666" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                        </LinearLayout>
+                        <ImageView android:id="@+id/chevronWaitlist" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_chevron_right" app:tint="#444444" />
+                    </RelativeLayout>
+                </com.google.android.material.card.MaterialCardView>
 
-            <!-- Notifications Center -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardNotifications"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                app:cardBackgroundColor="#0F0F0F"
-                app:cardCornerRadius="20dp"
-                app:strokeColor="#1A1A1A"
-                app:strokeWidth="1dp"
-                android:clickable="true"
-                android:focusable="true">
-                <RelativeLayout android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                    <View android:id="@+id/iconBgNotifications" android:layout_width="52dp" android:layout_height="52dp" android:background="@drawable/circle_blue_muted" />
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:layout_centerInParent="true" android:layout_alignStart="@id/iconBgNotifications" android:layout_alignEnd="@id/iconBgNotifications" android:layout_alignTop="@id/iconBgNotifications" android:layout_alignBottom="@id/iconBgNotifications" android:src="@drawable/ic_notification" app:tint="#5C9AFF" android:padding="4dp" />
-                    <LinearLayout android:layout_toEndOf="@id/iconBgNotifications" android:layout_marginStart="16dp" android:layout_centerVertical="true" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_toStartOf="@id/chevronNotifications">
-                        <TextView android:text="Notifications Center" android:textColor="#FFFFFF" android:textSize="17sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                        <TextView android:text="Send messages to your entrants" android:textColor="#666666" android:textSize="14sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                    </LinearLayout>
-                    <ImageView android:id="@+id/chevronNotifications" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_chevron_right" app:tint="#333333" />
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
+                <!-- Final Enrolled Entrants -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardEnrolled"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    app:cardBackgroundColor="#0F0F0F"
+                    app:cardCornerRadius="20dp"
+                    app:strokeWidth="0dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <RelativeLayout android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <View android:id="@+id/iconBgEnrolled" android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/circle_bg_dark" android:backgroundTint="#0D1F0D" />
+                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:layout_centerInParent="true" android:layout_alignStart="@id/iconBgEnrolled" android:layout_alignEnd="@id/iconBgEnrolled" android:layout_alignTop="@id/iconBgEnrolled" android:layout_alignBottom="@id/iconBgEnrolled" android:src="@drawable/ic_check" app:tint="#4CAF50" />
+                        <LinearLayout android:layout_toEndOf="@id/iconBgEnrolled" android:layout_marginStart="16dp" android:layout_centerVertical="true" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_toStartOf="@id/chevronEnrolled">
+                            <TextView android:text="Final Enrolled Entrants" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                            <TextView android:id="@+id/tvEnrolledSubtitle" android:text="0 confirmed attendees" android:textColor="#666666" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                        </LinearLayout>
+                        <ImageView android:id="@+id/chevronEnrolled" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_chevron_right" app:tint="#444444" />
+                    </RelativeLayout>
+                </com.google.android.material.card.MaterialCardView>
 
+                <!-- Notifications Center -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardNotifications"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    app:cardBackgroundColor="#0F0F0F"
+                    app:cardCornerRadius="20dp"
+                    app:strokeWidth="0dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <RelativeLayout android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <View android:id="@+id/iconBgNotifications" android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/circle_bg_dark" android:backgroundTint="#241B08" />
+                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:layout_centerInParent="true" android:layout_alignStart="@id/iconBgNotifications" android:layout_alignEnd="@id/iconBgNotifications" android:layout_alignTop="@id/iconBgNotifications" android:layout_alignBottom="@id/iconBgNotifications" android:src="@drawable/ic_notification" app:tint="#FF9800" />
+                        <LinearLayout android:layout_toEndOf="@id/iconBgNotifications" android:layout_marginStart="16dp" android:layout_centerVertical="true" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_toStartOf="@id/chevronNotifications">
+                            <TextView android:text="Notifications Center" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                            <TextView android:text="Send messages to entrants" android:textColor="#666666" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                        </LinearLayout>
+                        <ImageView android:id="@+id/chevronNotifications" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_chevron_right" app:tint="#444444" />
+                    </RelativeLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
+
+    <!-- Bottom Nav -->
+    <FrameLayout
+        android:id="@+id/bottom_nav_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        app:layout_constraintBottom_toBottomOf="parent">
+        <include layout="@layout/fragment_event_bottom" />
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

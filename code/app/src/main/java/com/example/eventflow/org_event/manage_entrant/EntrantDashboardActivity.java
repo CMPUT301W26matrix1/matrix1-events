@@ -11,19 +11,25 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.eventflow.ProfileActivity;
 import com.example.eventflow.R;
+import com.example.eventflow.RoleSelectionActivity;
 import com.example.eventflow.WaitingListActivity;
 import com.example.eventflow.model.entities.Event;
+import com.example.eventflow.org_event.OrgEventActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Locale;
 
 public class EntrantDashboardActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
-    private TextView tvEventName, tvEventDetails;
+    private TextView tvEventName, tvEventDate, tvEventLocation;
+    private TextView tvRegisteredCount, tvAvailableCount, tvCapacityCount;
+    private TextView tvCancelledSubtitle, tvWaitlistSubtitle, tvEnrolledSubtitle;
     private String eventId;
     private String eventName;
 
@@ -34,13 +40,8 @@ public class EntrantDashboardActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
-        tvEventName = findViewById(R.id.tvEventName);
-        tvEventDetails = findViewById(R.id.tvEventDetails);
-        ImageView btnBack = findViewById(R.id.btnBack);
-
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> finish());
-        }
+        initViews();
+        setupNavigation();
 
         // Get event info from Intent
         eventId = getIntent().getStringExtra("eventId");
@@ -53,6 +54,81 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         }
 
         setupClickListeners();
+    }
+
+    private void initViews() {
+        tvEventName = findViewById(R.id.tvEventName);
+        tvEventDate = findViewById(R.id.tvEventDate);
+        tvEventLocation = findViewById(R.id.tvEventLocation);
+        
+        tvRegisteredCount = findViewById(R.id.tvRegisteredCount);
+        tvAvailableCount = findViewById(R.id.tvAvailableCount);
+        tvCapacityCount = findViewById(R.id.tvCapacityCount);
+        
+        tvCancelledSubtitle = findViewById(R.id.tvCancelledSubtitle);
+        tvWaitlistSubtitle = findViewById(R.id.tvWaitlistSubtitle);
+        tvEnrolledSubtitle = findViewById(R.id.tvEnrolledSubtitle);
+
+        ImageView btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
+    }
+
+    private void setupNavigation() {
+        View navDashboard = findViewById(R.id.nav_dashboard);
+        View navCreate = findViewById(R.id.nav_create);
+        View navProfile = findViewById(R.id.nav_profile);
+
+        // Make Dashboard appear active
+        if (navDashboard != null) {
+            ImageView icon = navDashboard.findViewById(android.R.id.icon);
+            if (icon == null) icon = navDashboard.findViewWithTag("nav_icon");
+            // If we can't find it easily, just use the parent layout to find children
+            if (navDashboard instanceof android.widget.LinearLayout) {
+                android.widget.LinearLayout layout = (android.widget.LinearLayout) navDashboard;
+                if (layout.getChildCount() >= 2) {
+                    View iconView = layout.getChildAt(0);
+                    View textView = layout.getChildAt(1);
+                    if (iconView instanceof ImageView) {
+                        ((ImageView) iconView).setColorFilter(getResources().getColor(R.color.accent_green, getTheme()));
+                    }
+                    if (textView instanceof TextView) {
+                        ((TextView) textView).setTextColor(getResources().getColor(R.color.accent_green, getTheme()));
+                    }
+                }
+            }
+            
+            navDashboard.setOnClickListener(v -> {
+                // Already here
+            });
+        }
+
+        // Reset Create item to inactive state
+        if (navCreate != null && navCreate instanceof android.widget.LinearLayout) {
+            android.widget.LinearLayout layout = (android.widget.LinearLayout) navCreate;
+            if (layout.getChildCount() >= 2) {
+                View iconView = layout.getChildAt(0);
+                View textView = layout.getChildAt(1);
+                if (iconView instanceof ImageView) {
+                    ((ImageView) iconView).setColorFilter(getResources().getColor(R.color.text_grey, getTheme()));
+                }
+                if (textView instanceof TextView) {
+                    ((TextView) textView).setTextColor(getResources().getColor(R.color.text_grey, getTheme()));
+                }
+            }
+            navCreate.setOnClickListener(v -> {
+                Intent intent = new Intent(this, OrgEventActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        if (navProfile != null) {
+            navProfile.setOnClickListener(v -> {
+                Intent intent = new Intent(this, ProfileActivity.class);
+                startActivity(intent);
+            });
+        }
     }
 
     private void fetchLatestEvent() {
@@ -68,16 +144,21 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                         if (event != null) {
                             event.setEventId(queryDocumentSnapshots.getDocuments().get(0).getId());
                             updateUI(event);
+                            fetchStats(event.getEventId(), event.getCapacity());
                         }
                     } else {
                         tvEventName.setText("No Events Available");
-                        tvEventDetails.setText("Create an event to get started");
+                        tvEventDate.setText("Create an event to get started");
+                        tvEventLocation.setText("");
+                        resetStats();
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.e("EntrantDashboard", "Error fetching latest event", e);
                     tvEventName.setText("No Events Available");
-                    tvEventDetails.setText("Create an event to get started");
+                    tvEventDate.setText("Create an event to get started");
+                    tvEventLocation.setText("");
+                    resetStats();
                 });
     }
 
@@ -88,6 +169,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                     if (event != null) {
                         event.setEventId(documentSnapshot.getId());
                         updateUI(event);
+                        fetchStats(event.getEventId(), event.getCapacity());
                     }
                 })
                 .addOnFailureListener(e -> Log.e("EntrantDashboard", "Error fetching event details", e));
@@ -99,15 +181,58 @@ public class EntrantDashboardActivity extends AppCompatActivity {
 
         tvEventName.setText(event.getName());
 
-        String details = "";
         if (event.getEventDate() != null) {
-            SimpleDateFormat sdf = new SimpleDateFormat("MMMM d", Locale.getDefault());
-            details = sdf.format(event.getEventDate().toDate());
+            SimpleDateFormat sdf = new SimpleDateFormat("MMMM d, yyyy", Locale.getDefault());
+            tvEventDate.setText(sdf.format(event.getEventDate().toDate()));
+        } else {
+            tvEventDate.setText("No date set");
         }
+
         if (event.getLocation() != null && !event.getLocation().isEmpty()) {
-            details += " • " + event.getLocation();
+            tvEventLocation.setText(event.getLocation());
+        } else {
+            tvEventLocation.setText("No location");
         }
-        tvEventDetails.setText(details);
+        
+        tvCapacityCount.setText(String.valueOf(event.getCapacity()));
+    }
+
+    private void fetchStats(String id, int capacity) {
+        // Fetch counts for different statuses
+        db.collection("events").document(id).collection("participants").get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    int waitingCount = 0;
+                    int selectedCount = 0;
+                    int cancelledCount = 0;
+
+                    for (var doc : queryDocumentSnapshots) {
+                        String status = doc.getString("status");
+                        if ("Waiting".equals(status)) {
+                            waitingCount++;
+                        } else if ("Selected".equals(status)) {
+                            selectedCount++;
+                        } else if ("Cancelled".equals(status) || "Declined".equals(status)) {
+                            cancelledCount++;
+                        }
+                    }
+
+                    tvRegisteredCount.setText(String.valueOf(selectedCount));
+                    int available = Math.max(0, capacity - selectedCount);
+                    tvAvailableCount.setText(String.valueOf(available));
+                    
+                    tvCancelledSubtitle.setText(cancelledCount + " cancelled registrations");
+                    tvWaitlistSubtitle.setText(waitingCount + " people in waitlist");
+                    tvEnrolledSubtitle.setText(selectedCount + " confirmed attendees");
+                });
+    }
+
+    private void resetStats() {
+        tvRegisteredCount.setText("0");
+        tvAvailableCount.setText("0");
+        tvCapacityCount.setText("0");
+        tvCancelledSubtitle.setText("0 cancelled registrations");
+        tvWaitlistSubtitle.setText("0 people in waitlist");
+        tvEnrolledSubtitle.setText("0 confirmed attendees");
     }
 
     private void setupClickListeners() {
@@ -117,29 +242,18 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         View cardEnrolled = findViewById(R.id.cardEnrolled);
         View cardNotifications = findViewById(R.id.cardNotifications);
 
-        // Log to check if views are found
-        Log.d("Dashboard", "cardCancelled found: " + (cardCancelled != null));
-        Log.d("Dashboard", "cardWaitlist found: " + (cardWaitlist != null));
-        Log.d("Dashboard", "cardEnrolled found: " + (cardEnrolled != null));
-        Log.d("Dashboard", "cardNotifications found: " + (cardNotifications != null));
-        Log.d("Dashboard", "eventId: " + eventId);
-
-        // Cancelled Entrants - Direct click listener
+        // Cancelled Entrants
         if (cardCancelled != null) {
             cardCancelled.setOnClickListener(v -> {
-                Log.d("Dashboard", "Cancelled Entrants clicked!");
                 Intent intent = new Intent(EntrantDashboardActivity.this, CancelledEntrantsActivity.class);
                 intent.putExtra("eventId", eventId);
                 startActivity(intent);
             });
-        } else {
-            Log.e("Dashboard", "cardCancelled is NULL! Check your XML ID");
         }
 
         // Manage Waitlist
         if (cardWaitlist != null) {
             cardWaitlist.setOnClickListener(v -> {
-                Log.d("Dashboard", "Waitlist clicked!");
                 Intent intent = new Intent(EntrantDashboardActivity.this, WaitingListActivity.class);
                 intent.putExtra("eventId", eventId);
                 startActivity(intent);
@@ -149,7 +263,6 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         // Final Enrolled Entrants
         if (cardEnrolled != null) {
             cardEnrolled.setOnClickListener(v -> {
-                Log.d("Dashboard", "Final Enrolled clicked!");
                 Intent intent = new Intent(EntrantDashboardActivity.this, OrganizerFinalEntrantsActivity.class);
                 intent.putExtra("eventId", eventId);
                 intent.putExtra("eventName", eventName);
@@ -160,7 +273,6 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         // Notifications Center
         if (cardNotifications != null) {
             cardNotifications.setOnClickListener(v -> {
-                Log.d("Dashboard", "Notifications clicked!");
                 Intent intent = new Intent(EntrantDashboardActivity.this, NotificationsActivity.class);
                 intent.putExtra("eventId", eventId);
                 startActivity(intent);

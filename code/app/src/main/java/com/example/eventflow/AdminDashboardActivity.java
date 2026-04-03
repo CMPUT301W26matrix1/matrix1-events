@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -44,7 +46,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.card_organizer).setOnClickListener(v -> {
-            Intent intent = new Intent(this, OrganizerEventsActivity.class);
+            Intent intent = new Intent(this, EntrantDashboardActivity.class);
             startActivity(intent);
         });
     }
