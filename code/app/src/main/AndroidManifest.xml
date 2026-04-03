@@ -14,12 +14,12 @@
         android:label="EventFlow"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
+        android:theme="@style/Theme.EventFlow">
 
         <!-- Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBm028vGV2Wpc2LEACGkZvLXYAW8sx7Z8Q" />
+            android:value="${mapsApiKey}" />
 
         <activity
             android:name=".SplashActivity"
@@ -29,6 +29,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".SignupActivity"
+            android:exported="false" />
 
         <activity
             android:name=".RoleSelectionActivity"
@@ -70,32 +78,26 @@
         <!-- Manage Entrants - All activities in the same package -->
         <activity
             android:name=".org_event.manage_entrant.EntrantDashboardActivity"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             android:exported="false" />
 
         <activity
             android:name=".org_event.manage_entrant.WaitlistMgmtActivity"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             android:exported="false" />
 
         <activity
             android:name=".org_event.manage_entrant.CancelledEntrantsActivity"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             android:exported="false" />
 
         <activity
             android:name=".org_event.manage_entrant.OrganizerFinalEntrantsActivity"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             android:exported="false" />
 
         <activity
             android:name=".org_event.manage_entrant.EnrolledEntrantsActivity"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             android:exported="false" />
 
         <activity
             android:name=".org_event.manage_entrant.NotificationsActivity"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             android:exported="false" />
 
         <provider
@@ -108,15 +110,17 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- NEW: Map Activity for viewing entrant locations -->
+        <!-- Map Activity for viewing entrant locations -->
         <activity
             android:name=".EntrantLocationMapActivity"
             android:label="Entrant Locations" />
 
+        <!-- Location Picker Activity -->
         <activity
             android:name=".LocationPickerActivity"
             android:label="Pick Location" />
 
+        <!-- Admin Profile Management Activity -->
         <activity
             android:name=".AdminProfileListActivity"
             android:label="Manage Profiles" />

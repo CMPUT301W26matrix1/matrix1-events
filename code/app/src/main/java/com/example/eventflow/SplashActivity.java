@@ -2,6 +2,7 @@ package com.example.eventflow;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
@@ -25,60 +26,59 @@ public class SplashActivity extends AppCompatActivity {
 
         profileRepository = new ProfileRepository();
 
-        new Handler().postDelayed(this::checkProfileAndNavigate, 2000); // 2 seconds delay
+        new Handler().postDelayed(this::checkAndNavigate, 2000);
     }
 
     @SuppressLint("HardwareIds")
-    private void checkProfileAndNavigate() {
-        String deviceId = Settings.Secure.getString(
-                getContentResolver(),
-                Settings.Secure.ANDROID_ID
-        );
+    private void checkAndNavigate() {
+        // Check SharedPreferences for login state
+        SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
+        boolean isLoggedIn = prefs.getBoolean("isLoggedIn", false);
 
-        profileRepository.getProfileByDeviceId(deviceId, new ProfileRepository.LoadProfileCallback() {
-            @Override
-            public void onSuccess(@NonNull Profile profile) {
-                // Profile exists, recognized via device ID
-                Log.d(TAG, "Profile found for device ID: " + deviceId);
-                navigateToRoleSelection();
-            }
+        if (isLoggedIn) {
+            // Already logged in — go to MainActivity
+            Log.d(TAG, "User already logged in");
+            navigateToMain();
+        } else {
+            // Check if device has a profile
+            String deviceId = Settings.Secure.getString(
+                    getContentResolver(), Settings.Secure.ANDROID_ID);
 
-            @Override
-            public void onNotFound() {
-                // First launch or profile deleted, create a default profile linked to device ID
-                Log.d(TAG, "No profile found. Creating default for device ID: " + deviceId);
-                createDefaultProfile(deviceId);
-            }
+            profileRepository.getProfileByDeviceId(deviceId,
+                    new ProfileRepository.LoadProfileCallback() {
+                        @Override
+                        public void onSuccess(@NonNull Profile profile) {
+                            // Has profile but not logged in — go to login
+                            navigateToLogin();
+                        }
 
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Log.e(TAG, "Error loading profile", e);
-                navigateToRoleSelection();
-            }
-        });
+                        @Override
+                        public void onNotFound() {
+                            // First time — go to signup
+                            navigateToSignup();
+                        }
+
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.e(TAG, "Error loading profile", e);
+                            navigateToLogin();
+                        }
+                    });
+        }
     }
 
-    private void createDefaultProfile(String deviceId) {
-        Profile newProfile = new Profile(deviceId, "New", "User", "", "");
-        
-        profileRepository.saveProfile(newProfile, new ProfileRepository.SaveProfileCallback() {
-            @Override
-            public void onSuccess() {
-                Log.d(TAG, "Default profile created successfully");
-                navigateToRoleSelection();
-            }
-
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Log.e(TAG, "Failed to create default profile", e);
-                navigateToRoleSelection();
-            }
-        });
+    private void navigateToMain() {
+        startActivity(new Intent(this, MainActivity.class));
+        finish();
     }
 
-    private void navigateToRoleSelection() {
-        Intent intent = new Intent(SplashActivity.this, MainActivity.class);
-        startActivity(intent);
+    private void navigateToLogin() {
+        startActivity(new Intent(this, LoginActivity.class));
+        finish();
+    }
+
+    private void navigateToSignup() {
+        startActivity(new Intent(this, SignupActivity.class));
         finish();
     }
 }
