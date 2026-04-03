@@ -38,7 +38,7 @@ public class AdminImageManagementActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
 
         TextView title = findViewById(R.id.tv_title);
-        title.setText("Manage Events");
+        title.setText("Manage Images"); // Corrected title from "Manage Events" to "Manage Images"
 
         gridView = findViewById(R.id.gridView);
         adapter = new EventImageAdapter(this, eventImages);
