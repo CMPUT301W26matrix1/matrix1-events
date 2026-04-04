@@ -1,5 +1,8 @@
 # 🎟️ Event Flow
 
+https://github.com/user-attachments/assets/05247ed0-b100-4eff-b377-3bfa01a641fb
+
+
 ## Description
 
 This is the repository for the group project for team `matrix1` in CMPUT 301 at the University of Alberta.
