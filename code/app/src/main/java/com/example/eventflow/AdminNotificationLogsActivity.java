@@ -3,6 +3,7 @@ package com.example.eventflow;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -40,10 +41,14 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
 
         // Back button
         ImageButton btnBack = findViewById(R.id.btn_back);
-        btnBack.setOnClickListener(v -> finish());
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
 
         TextView title = findViewById(R.id.tv_title);
-        title.setText("Notification Logs");
+        if (title != null) {
+            title.setText("Notification Logs");
+        }
 
         // Search bar
         EditText searchBar = findViewById(R.id.searchBar);
@@ -55,22 +60,24 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
         loadNotificationLogs();
 
         // Search functionality
-        searchBar.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        if (searchBar != null) {
+            searchBar.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterLogs(s.toString());
-            }
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    filterLogs(s.toString());
+                }
 
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
     }
 
     private void loadNotificationLogs() {
-        // Use the top-level notifications collection instead of collectionGroup
+        // Use the top-level notifications collection for global review
         db.collection("notifications")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .get()
@@ -78,31 +85,50 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
                     allLogs.clear();
 
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        // Get fields from the notification document
-                        String userId = doc.getString("userId");
-                        String eventName = doc.getString("eventName");
-                        String message = doc.getString("message");
-                        String title = doc.getString("title");
-                        String type = doc.getString("type");
-                        Object timestampObj = doc.get("timestamp");
-                        String timestamp = formatTimestamp(timestampObj);
+                        try {
+                            // Get fields from the notification document
+                            String userId = doc.getString("userId");
+                            String eventName = doc.getString("eventName");
+                            String message = doc.getString("message");
+                            String details = doc.getString("details");
+                            String title = doc.getString("title");
+                            String type = doc.getString("type");
+                            Object timestampObj = doc.get("timestamp");
+                            String timestamp = formatTimestamp(timestampObj);
 
-                        // If title is null, use eventName as title
-                        if (title == null || title.isEmpty()) {
-                            title = eventName;
+                            // System notifications (LotteryController) use 'message' as title 
+                            // and 'details' as message body.
+                            // Organizer broadcasts use 'title' and 'message'.
+                            
+                            String displayTitle = title;
+                            String displayMessage = message;
+
+                            if (displayTitle == null || displayTitle.isEmpty()) {
+                                // Fallback for system notifications
+                                displayTitle = message;
+                                displayMessage = details;
+                            }
+
+                            if (displayTitle == null || displayTitle.isEmpty()) {
+                                displayTitle = eventName;
+                            }
+                            
+                            if (displayTitle == null) displayTitle = "Notification";
+
+                            NotificationLog log = new NotificationLog(
+                                    userId, userId, eventName, displayMessage, displayTitle, type, timestamp
+                            );
+                            allLogs.add(log);
+                        } catch (Exception e) {
+                            Log.e("AdminLogs", "Error parsing log", e);
                         }
-
-                        NotificationLog log = new NotificationLog(
-                                userId, userId, eventName, message, title, type, timestamp
-                        );
-                        allLogs.add(log);
                     }
 
                     filteredLogs.clear();
                     filteredLogs.addAll(allLogs);
                     adapter.notifyDataSetChanged();
 
-                    if (filteredLogs.isEmpty()) {
+                    if (allLogs.isEmpty()) {
                         Toast.makeText(this, "No notification logs found", Toast.LENGTH_SHORT).show();
                     }
                 })
@@ -119,9 +145,13 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
         } else {
             String lowerQuery = query.toLowerCase().trim();
             for (NotificationLog log : allLogs) {
-                if (log.userName.toLowerCase().contains(lowerQuery) ||
-                        log.eventName.toLowerCase().contains(lowerQuery) ||
-                        log.message.toLowerCase().contains(lowerQuery)) {
+                // Null-safe checks for filtering
+                boolean matchesUser = log.userName != null && log.userName.toLowerCase().contains(lowerQuery);
+                boolean matchesEvent = log.eventName != null && log.eventName.toLowerCase().contains(lowerQuery);
+                boolean matchesMessage = log.message != null && log.message.toLowerCase().contains(lowerQuery);
+                boolean matchesTitle = log.title != null && log.title.toLowerCase().contains(lowerQuery);
+
+                if (matchesUser || matchesEvent || matchesMessage || matchesTitle) {
                     filteredLogs.add(log);
                 }
             }

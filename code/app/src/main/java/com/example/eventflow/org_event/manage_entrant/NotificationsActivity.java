@@ -40,6 +40,7 @@ public class NotificationsActivity extends AppCompatActivity {
     private List<Entrant> allSpecificUsers;
     private FirebaseFirestore db;
     private String eventId;
+    private String eventName;
 
     private String selectedRecipient = "All Entrants";
 
@@ -89,11 +90,21 @@ public class NotificationsActivity extends AppCompatActivity {
         rvSentMessages.setLayoutManager(new LinearLayoutManager(this));
         rvSentMessages.setAdapter(sentMessagesAdapter);
 
+        loadEventDetails();
         loadCounts();
         loadSpecificUsers();
         loadSentMessages();
 
         btnSend.setOnClickListener(v -> sendNotification());
+    }
+
+    private void loadEventDetails() {
+        if (eventId == null) return;
+        db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
+            if (doc.exists()) {
+                eventName = doc.getString("name");
+            }
+        });
     }
 
     private void loadCounts() {
@@ -326,11 +337,17 @@ public class NotificationsActivity extends AppCompatActivity {
         notification.put("recipientIds", recipientIds);
         notification.put("timestamp", Timestamp.now());
         notification.put("eventId", eventId);
+        notification.put("eventName", eventName);
+        notification.put("type", "ORGANIZER_BROADCAST");
+        notification.put("userId", recipientType); // For compatibility with Admin log display
 
         db.collection("events").document(eventId)
                 .collection("notifications")
                 .add(notification)
                 .addOnSuccessListener(documentReference -> {
+                    // Mirror to top-level notifications collection for Admin review (US 03.08.01)
+                    db.collection("notifications").document(documentReference.getId()).set(notification);
+
                     Toast.makeText(NotificationsActivity.this, "Notification sent to " + recipientType + "!", Toast.LENGTH_SHORT).show();
 
                     String time = new SimpleDateFormat("MMM dd, h:mm a", Locale.getDefault()).format(new Date());
