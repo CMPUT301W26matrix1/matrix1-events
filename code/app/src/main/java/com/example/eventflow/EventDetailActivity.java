@@ -1,6 +1,7 @@
 package com.example.eventflow;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -28,6 +29,7 @@ import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -60,7 +62,6 @@ public class EventDetailActivity extends AppCompatActivity {
     private RecyclerView rvComments, rvNearbyEvents;
     private TextView tvNearbyEventsLabel;
 
-
     // Bottom navigation views
     private View navHome, navDashboard, navCreate, navProfile;
 
@@ -72,9 +73,10 @@ public class EventDetailActivity extends AppCompatActivity {
 
     private String userId = "";
     private String userName = "";
-    private String deviceId;
+    private String uid = "";  // Firebase Auth UID
 
     private FusedLocationProviderClient fusedLocationClient;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,25 +85,32 @@ public class EventDetailActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        mAuth = FirebaseAuth.getInstance();
 
         eventId = getIntent().getStringExtra("eventId");
         userRole = getIntent().getStringExtra("userRole");
         isAdmin = "admin".equalsIgnoreCase(userRole);
         isOrganizer = "organizer".equalsIgnoreCase(userRole);
 
-        deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        // Get Firebase Auth UID
+        if (mAuth.getCurrentUser() != null) {
+            uid = mAuth.getCurrentUser().getUid();
+        }
+
         userId = getIntent().getStringExtra("userId");
-        if (userId == null || userId.isEmpty()) userId = deviceId;
-        userName = getIntent().getStringExtra("userName");
-        if (userName == null || userName.isEmpty()) userName = "User";
+        if (userId == null || userId.isEmpty()) userId = uid;
+
+        // Get username from SharedPreferences
+        SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
+        userName = prefs.getString("userName", "User");
 
         initUI();
         setupListeners();
-        
-        eventController = new EventController(deviceId);
+
+        eventController = new EventController(uid);
         loadEventDetails();
         loadComments();
-        
+
         // Only load nearby events if NOT an organizer
         if (!isOrganizer) {
             loadNearbyEvents();
@@ -122,11 +131,11 @@ public class EventDetailActivity extends AppCompatActivity {
         tvDescription = findViewById(R.id.tv_detail_description);
         tvCommentsHeader = findViewById(R.id.tv_comments_header);
         ivPoster = findViewById(R.id.iv_detail_poster);
-        
+
         btnJoinNow = findViewById(R.id.btn_join_now);
         etCommentInput = findViewById(R.id.etCommentInput);
         btnPostComment = findViewById(R.id.btnPostComment);
-        
+
         rvComments = findViewById(R.id.rvComments);
         rvComments.setLayoutManager(new LinearLayoutManager(this));
         commentAdapter = new CommentAdapter(commentList, new CommentAdapter.CommentActionListener() {
@@ -260,7 +269,6 @@ public class EventDetailActivity extends AppCompatActivity {
     private void updateButtonState() {
         if (isAdmin) {
             btnJoinNow.setVisibility(View.GONE);
-            // Admins can only view and delete, not post new comments or reply/react
             etCommentInput.setVisibility(View.GONE);
             btnPostComment.setVisibility(View.GONE);
             return;
@@ -273,13 +281,22 @@ public class EventDetailActivity extends AppCompatActivity {
 
         btnJoinNow.setVisibility(View.VISIBLE);
         boolean joined = eventController.isOnWaitingList(currentEvent);
-        btnJoinNow.setText(joined ? "Joined" : "Join");
-        btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(joined ? 0xFF4285F4 : 0xFF4CAF50));
+
+        if (joined) {
+            btnJoinNow.setText("On Waiting List");
+            btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4285F4));
+        } else {
+            btnJoinNow.setText("Join");
+            btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
+        }
     }
 
-    // FIXED METHOD: Save event to user's joined events (FROM LEFT SIDE)
+    // FIXED: Save event to user's joined events using UID
     private void saveToUserJoinedEvents(Event event, String status) {
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        if (uid == null || uid.isEmpty()) {
+            Log.e("EventDetail", "User UID is null, cannot save");
+            return;
+        }
 
         // Format the date as a string for display
         String dateString = "";
@@ -295,10 +312,10 @@ public class EventDetailActivity extends AppCompatActivity {
         participation.put("eventLocation", event.getLocation());
         participation.put("status", status);
         participation.put("joinedAt", FieldValue.serverTimestamp());
-        participation.put("userId", deviceId);
+        participation.put("userId", uid);
 
         db.collection("users")
-                .document(deviceId)
+                .document(uid)  // Use UID instead of deviceId
                 .collection("event_participations")
                 .document(this.eventId)
                 .set(participation)
@@ -310,12 +327,12 @@ public class EventDetailActivity extends AppCompatActivity {
                 });
     }
 
-    // FIXED METHOD: Remove event from user's joined events (FROM LEFT SIDE)
+    // FIXED: Remove event from user's joined events using UID
     private void removeFromUserJoinedEvents(Event event) {
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        if (uid == null || uid.isEmpty()) return;
 
         db.collection("users")
-                .document(deviceId)
+                .document(uid)  // Use UID instead of deviceId
                 .collection("event_participations")
                 .document(this.eventId)
                 .delete()
@@ -331,12 +348,16 @@ public class EventDetailActivity extends AppCompatActivity {
         eventController.joinWaitingList(currentEvent, new EventRepository.ActionCallback() {
             @Override
             public void onSuccess() {
-                saveToUserJoinedEvents(currentEvent, "Waiting");  // FROM LEFT SIDE
-                Toast.makeText(EventDetailActivity.this, "Joined successfully", Toast.LENGTH_SHORT).show();
+                saveToUserJoinedEvents(currentEvent, "Waiting");
+                Toast.makeText(EventDetailActivity.this,
+                        "✅ Joined waiting list! You'll be notified if selected.",
+                        Toast.LENGTH_LONG).show();
                 loadEventDetails();
             }
             @Override public void onFailure(Exception e) {
-                Toast.makeText(EventDetailActivity.this, "Join failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(EventDetailActivity.this,
+                        "❌ Join failed: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -345,12 +366,16 @@ public class EventDetailActivity extends AppCompatActivity {
         eventController.leaveWaitingList(currentEvent, new EventRepository.ActionCallback() {
             @Override
             public void onSuccess() {
-                removeFromUserJoinedEvents(currentEvent);  // FROM LEFT SIDE
-                Toast.makeText(EventDetailActivity.this, "Left successfully", Toast.LENGTH_SHORT).show();
+                removeFromUserJoinedEvents(currentEvent);
+                Toast.makeText(EventDetailActivity.this,
+                        "✅ Left waiting list. You can join again if you change your mind.",
+                        Toast.LENGTH_LONG).show();
                 loadEventDetails();
             }
             @Override public void onFailure(Exception e) {
-                Toast.makeText(EventDetailActivity.this, "Failed to leave: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(EventDetailActivity.this,
+                        "❌ Failed to leave: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -362,7 +387,7 @@ public class EventDetailActivity extends AppCompatActivity {
         String cid = db.collection("events").document(eventId).collection("comments").document().getId();
         Map<String, Object> data = new HashMap<>();
         data.put("commentId", cid);
-        data.put("userId", userId);
+        data.put("userId", uid);
         data.put("userName", userName);
         data.put("text", text);
         data.put("timestamp", Timestamp.now());
@@ -400,7 +425,6 @@ public class EventDetailActivity extends AppCompatActivity {
             if (location != null) {
                 fetchNearbyFromFirestore(location);
             } else {
-                // Fallback: fetch some events anyway
                 db.collection("events").limit(10).get().addOnSuccessListener(v -> {
                     nearbyEvents.clear();
                     for (DocumentSnapshot doc : v.getDocuments()) {
@@ -424,19 +448,17 @@ public class EventDetailActivity extends AppCompatActivity {
                 if (ev != null) {
                     ev.setEventId(doc.getId());
                     if (ev.getEventId().equals(eventId)) continue;
-                    
+
                     float[] results = new float[1];
                     Location.distanceBetween(userLocation.getLatitude(), userLocation.getLongitude(),
                             ev.getLocationLatitude(), ev.getLocationLongitude(), results);
-                    
-                    // Within 50km
+
                     if (results[0] < 50000) {
                         nearbyEvents.add(ev);
                     }
                 }
             }
             if (nearbyEvents.isEmpty()) {
-                // Add some default ones if none are strictly "nearby" for demo
                 for (DocumentSnapshot doc : v.getDocuments()) {
                     Event ev = doc.toObject(Event.class);
                     if (ev != null && !doc.getId().equals(eventId)) {
@@ -463,8 +485,8 @@ public class EventDetailActivity extends AppCompatActivity {
             if (reactions == null) reactions = new HashMap<>();
             List<String> users = (List<String>) reactions.get(emojis[which]);
             if (users == null) users = new ArrayList<>();
-            if (!users.contains(userId)) users.add(userId);
-            else users.remove(userId);
+            if (!users.contains(uid)) users.add(uid);
+            else users.remove(uid);
             reactions.put(emojis[which], users);
             db.collection("events").document(eventId).collection("comments").document(comment.getCommentId()).update("reactions", reactions);
         }).show();

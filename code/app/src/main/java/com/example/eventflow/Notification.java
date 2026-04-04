@@ -4,7 +4,7 @@ import com.google.firebase.Timestamp;
 
 /**
  * Model class representing a notification within the EventFlow system.
- * Notifications inform users about lottery results, event invitations, 
+ * Notifications inform users about lottery results, event invitations,
  * and administrative updates.
  */
 public class Notification {
@@ -16,6 +16,7 @@ public class Notification {
     private String type;
     private String eventId;
     private Timestamp timestamp;
+    private Timestamp expiryTimestamp;  // ADDED: For 2-day expiry
     private boolean isRead;
     private boolean accepted;
     private boolean declined;
@@ -27,6 +28,7 @@ public class Notification {
     public static final String TYPE_LOST_LOTTERY = "LOST_LOTTERY";
     public static final String TYPE_REGISTRATION_CONFIRMED = "REGISTRATION_CONFIRMED";
     public static final String TYPE_EVENT_REMINDER = "EVENT_REMINDER";
+    public static final String TYPE_EXPIRED = "EXPIRED";  // ADDED: For expired invitations
 
     /**
      * Default constructor required for Firestore deserialization.
@@ -114,6 +116,10 @@ public class Notification {
     /** @return Creation timestamp. */
     public Timestamp getTimestamp() { return timestamp; }
     public void setTimestamp(Timestamp timestamp) { this.timestamp = timestamp; }
+
+    /** @return Expiry timestamp for SELECTED notifications. */
+    public Timestamp getExpiryTimestamp() { return expiryTimestamp; }
+    public void setExpiryTimestamp(Timestamp expiryTimestamp) { this.expiryTimestamp = expiryTimestamp; }
 
     /** @return True if the user has viewed this notification. */
     public boolean isRead() { return isRead; }

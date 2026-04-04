@@ -31,7 +31,7 @@ public class FullHistoryFragment extends Fragment {
     private MyEventsAdapter adapter;
     private List<EventHistoryItem> allEvents = new ArrayList<>();
     private String deviceId;
-    
+
     private TextView tabJoined, tabSelected, tabNotSelected;
     private String currentTab = "Joined";
 
@@ -55,7 +55,7 @@ public class FullHistoryFragment extends Fragment {
 
         rvMyEvents = view.findViewById(R.id.rvMyEvents);
         ImageButton btnBack = view.findViewById(R.id.btn_back);
-        
+
         tabJoined = view.findViewById(R.id.tab_joined);
         tabSelected = view.findViewById(R.id.tab_selected);
         tabNotSelected = view.findViewById(R.id.tab_not_selected);
@@ -114,20 +114,22 @@ public class FullHistoryFragment extends Fragment {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("users").document(deviceId)
                 .collection("event_participations")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    allEvents.clear();
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        EventHistoryItem item = doc.toObject(EventHistoryItem.class);
-                        if (item != null) {
-                            item.setEventId(doc.getId());
-                            allEvents.add(item);
-                        }
+                .addSnapshotListener((snapshot, error) -> {
+                    if (error != null) {
+                        Toast.makeText(getContext(), "Failed to load events", Toast.LENGTH_SHORT).show();
+                        return;
                     }
-                    filterEvents();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Failed to load events", Toast.LENGTH_SHORT).show();
+                    if (snapshot != null) {
+                        allEvents.clear();
+                        for (QueryDocumentSnapshot doc : snapshot) {
+                            EventHistoryItem item = doc.toObject(EventHistoryItem.class);
+                            if (item != null) {
+                                item.setEventId(doc.getId());
+                                allEvents.add(item);
+                            }
+                        }
+                        filterEvents();
+                    }
                 });
     }
 
@@ -135,18 +137,33 @@ public class FullHistoryFragment extends Fragment {
         List<EventHistoryItem> filtered = new ArrayList<>();
         for (EventHistoryItem item : allEvents) {
             String status = item.getStatus();
-            if (currentTab.equals("Joined") && (status.equalsIgnoreCase("Waiting") || status.equalsIgnoreCase("Joined") || status.equalsIgnoreCase("Pending"))) {
-                filtered.add(item);
-            } else if (currentTab.equals("Selected") && (status.equalsIgnoreCase("Selected") || status.equalsIgnoreCase("Accepted") || status.equalsIgnoreCase("Declined"))) {
-                filtered.add(item);
-            } else if (currentTab.equals("Not Selected") && status.equalsIgnoreCase("Rejected")) {
-                filtered.add(item);
+
+            if (currentTab.equals("Joined")) {
+                // Show: Waiting, Pending, ACCEPTED (Enrolled)
+                if (status.equalsIgnoreCase("Waiting") ||
+                        status.equalsIgnoreCase("Pending") ||
+                        status.equalsIgnoreCase("ACCEPTED")) {
+                    filtered.add(item);
+                }
+            } else if (currentTab.equals("Selected")) {
+                // Show: Selected, ACCEPTED
+                if (status.equalsIgnoreCase("Selected") ||
+                        status.equalsIgnoreCase("ACCEPTED")) {
+                    filtered.add(item);
+                }
+            } else if (currentTab.equals("Not Selected")) {
+                // Show: Rejected, Declined, EXPIRED
+                if (status.equalsIgnoreCase("Rejected") ||
+                        status.equalsIgnoreCase("Declined") ||
+                        status.equalsIgnoreCase("EXPIRED")) {
+                    filtered.add(item);
+                }
             }
         }
         adapter.updateData(filtered, currentTab);
     }
 
-    // Inner Adapter Class for simplicity in this task
+    // Inner Adapter Class
     private class MyEventsAdapter extends RecyclerView.Adapter<MyEventsAdapter.ViewHolder> {
         private List<EventHistoryItem> items;
         private String tab;
@@ -172,10 +189,37 @@ public class FullHistoryFragment extends Fragment {
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             EventHistoryItem item = items.get(position);
+            String status = item.getStatus();
+
             holder.tvTitle.setText(item.getEventName());
             holder.tvDate.setText(item.getEventDate());
             holder.tvLocation.setText(item.getEventLocation());
-            holder.tvStatus.setText(item.getStatus());
+
+            // Set status text and color based on actual status
+            if ("ACCEPTED".equalsIgnoreCase(status)) {
+                holder.tvStatus.setText("Enrolled");
+                holder.tvStatus.setTextColor(Color.parseColor("#4CAF50"));
+                holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#334CAF50")));
+            } else if ("PENDING".equalsIgnoreCase(status)) {
+                holder.tvStatus.setText("Pending");
+                holder.tvStatus.setTextColor(Color.parseColor("#FF9800"));
+                holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33FF9800")));
+            } else if ("Selected".equalsIgnoreCase(status)) {
+                holder.tvStatus.setText("Selected");
+                holder.tvStatus.setTextColor(Color.parseColor("#4CAF50"));
+                holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#334CAF50")));
+            } else if ("Waiting".equalsIgnoreCase(status)) {
+                holder.tvStatus.setText("Waiting");
+                holder.tvStatus.setTextColor(Color.parseColor("#FFA726"));
+                holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33FFA726")));
+            } else if ("Rejected".equalsIgnoreCase(status) || "Declined".equalsIgnoreCase(status)) {
+                holder.tvStatus.setText("Rejected");
+                holder.tvStatus.setTextColor(Color.parseColor("#EF5350"));
+                holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33EF5350")));
+            } else {
+                holder.tvStatus.setText(status);
+                holder.tvStatus.setTextColor(Color.parseColor("#888888"));
+            }
 
             // Reset visibilities
             holder.llActions.setVisibility(View.GONE);
@@ -183,20 +227,10 @@ public class FullHistoryFragment extends Fragment {
 
             if (tab.equals("Joined")) {
                 holder.btnDelete.setVisibility(View.VISIBLE);
-                holder.tvStatus.setTextColor(Color.parseColor("#FFA726"));
-                holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33FFA726")));
             } else if (tab.equals("Selected")) {
                 if (item.getStatus().equalsIgnoreCase("Selected")) {
                     holder.llActions.setVisibility(View.VISIBLE);
-                    holder.tvStatus.setTextColor(Color.parseColor("#4CAF50"));
-                    holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#334CAF50")));
-                } else if (item.getStatus().equalsIgnoreCase("Accepted")) {
-                    holder.tvStatus.setTextColor(Color.parseColor("#4285F4"));
-                    holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#334285F4")));
                 }
-            } else if (tab.equals("Not Selected")) {
-                holder.tvStatus.setTextColor(Color.parseColor("#EF5350"));
-                holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33EF5350")));
             }
         }
 

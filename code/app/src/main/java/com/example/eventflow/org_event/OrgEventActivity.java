@@ -3,6 +3,7 @@ package com.example.eventflow.org_event;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -19,17 +20,18 @@ import androidx.appcompat.widget.SwitchCompat;
 import com.example.eventflow.ProfileActivity;
 import com.example.eventflow.R;
 import com.example.eventflow.RoleSelectionActivity;
-import com.example.eventflow.OrganizerEventsActivity;
 import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.ArrayList;
 
 /**
  * Activity for organizers to create and edit events.
@@ -45,23 +47,28 @@ public class OrgEventActivity extends AppCompatActivity {
     private ImageView ivEventPoster;
     private View btnBack, cvUploadImage;
     private Button btnCreateEvent;
-    
+
     // Bottom navigation views
     private View navHome, navDashboard, navCreate, navProfile;
-    
+
     private FirebaseFirestore db;
     private String currentEventId = "";
     private Uri imageUri;
 
+    // Store selected dates as Date objects
+    private Date selectedEventDate;
+    private Date selectedRegStart;
+    private Date selectedRegEnd;
+    private String selectedTimeString = "";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Uses the dark theme fragment layout
         setContentView(R.layout.fragment_org_event);
         db = FirebaseFirestore.getInstance();
-        
+
         initViews();
-        
+
         // Load data if we are editing an existing event
         currentEventId = getIntent().getStringExtra("EVENT_ID");
         if (currentEventId != null && !currentEventId.isEmpty()) {
@@ -84,16 +91,16 @@ public class OrgEventActivity extends AppCompatActivity {
         etLimit           = findViewById(R.id.et_max_attendees);
         etRegStart        = findViewById(R.id.et_reg_start);
         etRegEnd          = findViewById(R.id.et_reg_end);
-        
+
         ivEventPoster     = findViewById(R.id.iv_event_poster);
         cvUploadImage     = findViewById(R.id.cv_upload_image);
-        
+
         switchGeo         = findViewById(R.id.switchGeolocationRequired);
         switchPrivate     = findViewById(R.id.cb_private_event);
-        
+
         btnBack           = findViewById(R.id.btn_header_back);
         btnCreateEvent    = findViewById(R.id.btn_header_action);
-        
+
         // Find bottom navigation bar items
         navHome           = findViewById(R.id.nav_home);
         navDashboard      = findViewById(R.id.nav_dashboard);
@@ -105,28 +112,25 @@ public class OrgEventActivity extends AppCompatActivity {
      * Sets up click listeners for all interactive buttons.
      */
     private void setupListeners() {
-        // Main action button (Create or Update)
         if (btnCreateEvent != null) {
             btnCreateEvent.setOnClickListener(v -> handleAddEvent());
         }
 
-        // Header back button
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
         }
 
-        // Image upload section
         if (cvUploadImage != null) {
             cvUploadImage.setOnClickListener(v -> openGallery());
         }
 
-        // Date and Time picker dialogs
-        if (etRegStart != null) etRegStart.setOnClickListener(v -> showDatePicker(etRegStart));
-        if (etRegEnd != null) etRegEnd.setOnClickListener(v -> showDatePicker(etRegEnd));
-        if (etDate != null) etDate.setOnClickListener(v -> showDatePicker(etDate));
-        if (etTime != null) etTime.setOnClickListener(v -> showTimePicker(etTime));
-        
-        // Navigation bar logic: Switches between major app sections
+        // Date and Time picker dialogs - UPDATED to store Date objects
+        if (etRegStart != null) etRegStart.setOnClickListener(v -> showDatePickerForRegStart());
+        if (etRegEnd != null) etRegEnd.setOnClickListener(v -> showDatePickerForRegEnd());
+        if (etDate != null) etDate.setOnClickListener(v -> showDatePickerForEventDate());
+        if (etTime != null) etTime.setOnClickListener(v -> showTimePickerForEventTime());
+
+        // Navigation bar logic
         if (navHome != null) {
             navHome.setOnClickListener(v -> {
                 Intent intent = new Intent(OrgEventActivity.this, RoleSelectionActivity.class);
@@ -137,13 +141,12 @@ public class OrgEventActivity extends AppCompatActivity {
 
         if (navDashboard != null) {
             navDashboard.setOnClickListener(v -> {
-                // Return to the main organizer dashboard (Stats view)
                 Intent intent = new Intent(OrgEventActivity.this, EntrantDashboardActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(intent);
             });
         }
-        
+
         if (navProfile != null) {
             navProfile.setOnClickListener(v -> {
                 Intent intent = new Intent(OrgEventActivity.this, ProfileActivity.class);
@@ -153,24 +156,80 @@ public class OrgEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Displays a calendar dialog to select a date.
+     * Shows date picker for Registration Start
      */
-    private void showDatePicker(EditText editText) {
+    private void showDatePickerForRegStart() {
         final Calendar c = Calendar.getInstance();
         new DatePickerDialog(this,
-                (view, year, month, dayOfMonth) ->
-                        editText.setText(String.format(Locale.getDefault(), "%02d/%02d/%d", dayOfMonth, month + 1, year)),
+                (view, year, month, dayOfMonth) -> {
+                    String dateStr = String.format(Locale.getDefault(), "%02d/%02d/%d", dayOfMonth, month + 1, year);
+                    etRegStart.setText(dateStr);
+                    Calendar cal = Calendar.getInstance();
+                    cal.set(year, month, dayOfMonth, 0, 0, 0);
+                    selectedRegStart = cal.getTime();
+                },
                 c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
     }
 
     /**
-     * Displays a clock dialog to select a time.
+     * Shows date picker for Registration End
      */
-    private void showTimePicker(EditText editText) {
+    private void showDatePickerForRegEnd() {
+        final Calendar c = Calendar.getInstance();
+        new DatePickerDialog(this,
+                (view, year, month, dayOfMonth) -> {
+                    String dateStr = String.format(Locale.getDefault(), "%02d/%02d/%d", dayOfMonth, month + 1, year);
+                    etRegEnd.setText(dateStr);
+                    Calendar cal = Calendar.getInstance();
+                    cal.set(year, month, dayOfMonth, 23, 59, 59);
+                    selectedRegEnd = cal.getTime();
+                },
+                c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
+    }
+
+    /**
+     * Shows date picker for Event Date
+     */
+    private void showDatePickerForEventDate() {
+        final Calendar c = Calendar.getInstance();
+        new DatePickerDialog(this,
+                (view, year, month, dayOfMonth) -> {
+                    String dateStr = String.format(Locale.getDefault(), "%02d/%02d/%d", dayOfMonth, month + 1, year);
+                    etDate.setText(dateStr);
+                    // Combine with stored time if available
+                    Calendar cal = Calendar.getInstance();
+                    cal.set(year, month, dayOfMonth);
+                    if (!selectedTimeString.isEmpty()) {
+                        String[] timeParts = selectedTimeString.split(":");
+                        if (timeParts.length == 2) {
+                            cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(timeParts[0]));
+                            cal.set(Calendar.MINUTE, Integer.parseInt(timeParts[1]));
+                        }
+                    }
+                    selectedEventDate = cal.getTime();
+                },
+                c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
+    }
+
+    /**
+     * Shows time picker for Event Time
+     */
+    private void showTimePickerForEventTime() {
         final Calendar c = Calendar.getInstance();
         new TimePickerDialog(this,
-                (view, hourOfDay, minute) ->
-                        editText.setText(String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute)),
+                (view, hourOfDay, minute) -> {
+                    String timeStr = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute);
+                    etTime.setText(timeStr);
+                    selectedTimeString = timeStr;
+                    // Combine with stored event date
+                    if (selectedEventDate != null) {
+                        Calendar cal = Calendar.getInstance();
+                        cal.setTime(selectedEventDate);
+                        cal.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                        cal.set(Calendar.MINUTE, minute);
+                        selectedEventDate = cal.getTime();
+                    }
+                },
                 c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), true).show();
     }
 
@@ -198,7 +257,8 @@ public class OrgEventActivity extends AppCompatActivity {
     }
 
     /**
-     * Validates form data and saves the event to the Firebase Firestore database.
+     * Validates form data and saves the event to Firebase Firestore.
+     * NOW SAVES DATES AS TIMESTAMPS and initializes all arrays!
      */
     private void handleAddEvent() {
         if (etName.getText().toString().isEmpty()) {
@@ -206,49 +266,67 @@ public class OrgEventActivity extends AppCompatActivity {
             return;
         }
 
-        // Reuse ID if updating, otherwise generate a new one
         String eventId = (currentEventId != null && !currentEventId.isEmpty()) ? currentEventId : db.collection("events").document().getId();
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
-        // Map form fields to database fields
+        // Get Firebase Auth UID instead of deviceId
+        String userId = "";
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        }
+
+        if (userId.isEmpty()) {
+            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         Map<String, Object> eventMap = new HashMap<>();
         eventMap.put("eventId", eventId);
-        eventMap.put("organizerId", deviceId);
+        eventMap.put("organizerId", userId);  // Use Firebase Auth UID
         eventMap.put("name", etName.getText().toString());
         eventMap.put("location", etLocation.getText().toString());
+        eventMap.put("description", etDescription.getText().toString());
+
+        // Save dates as TIMESTAMPS
+        if (selectedEventDate != null) {
+            eventMap.put("eventDate", new Timestamp(selectedEventDate));
+        }
+        if (selectedRegStart != null) {
+            eventMap.put("registrationStart", new Timestamp(selectedRegStart));
+        }
+        if (selectedRegEnd != null) {
+            eventMap.put("registrationEnd", new Timestamp(selectedRegEnd));
+        }
+
+        // Keep string versions for display
         eventMap.put("date", etDate.getText().toString());
         eventMap.put("time", etTime.getText().toString());
-        eventMap.put("description", etDescription.getText().toString());
-        
+        eventMap.put("registrationStartStr", etRegStart.getText().toString());
+        eventMap.put("registrationEndStr", etRegEnd.getText().toString());
+
         try {
             int cap = Integer.parseInt(etLimit.getText().toString().trim());
             eventMap.put("capacity", cap);
-            eventMap.put("waitingListLimit", cap); // Assuming capacity as default waitlist limit
         } catch (Exception e) {
             eventMap.put("capacity", 0);
-            eventMap.put("waitingListLimit", 0);
         }
 
-        eventMap.put("registrationStart", etRegStart.getText().toString());
-        eventMap.put("registrationEnd", etRegEnd.getText().toString());
         eventMap.put("geolocationRequired", switchGeo.isChecked());
         eventMap.put("private", switchPrivate.isChecked());
         eventMap.put("posterUrl", imageUri != null ? imageUri.toString() : null);
-        
-        // Initialize lists only for new events
+
+        // Initialize ALL arrays for new events
         if (currentEventId == null || currentEventId.isEmpty()) {
             eventMap.put("createdAt", Timestamp.now());
             eventMap.put("waitingList", new ArrayList<String>());
             eventMap.put("selectedEntrants", new ArrayList<String>());
+            eventMap.put("rejectedEntrants", new ArrayList<String>());
             eventMap.put("coOrganizerIds", new ArrayList<String>());
         }
 
-        // Perform the save operation
         db.collection("events").document(eventId).set(eventMap, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, "Event saved successfully!", Toast.LENGTH_SHORT).show();
-                    
-                    // If it's a private event, navigate directly to Invite screen
+
                     if (switchPrivate.isChecked()) {
                         Intent inviteIntent = new Intent(this, InviteEntrantsActivity.class);
                         inviteIntent.putExtra("EVENT_ID", eventId);
@@ -270,16 +348,31 @@ public class OrgEventActivity extends AppCompatActivity {
                 etDate.setText(doc.getString("date"));
                 etTime.setText(doc.getString("time"));
                 etDescription.setText(doc.getString("description"));
-                etRegStart.setText(doc.getString("registrationStart"));
-                etRegEnd.setText(doc.getString("registrationEnd"));
+                etRegStart.setText(doc.getString("registrationStartStr"));
+                etRegEnd.setText(doc.getString("registrationEndStr"));
                 Object cap = doc.get("capacity");
                 etLimit.setText(cap != null ? String.valueOf(cap) : "");
-                
+
                 Boolean geo = doc.getBoolean("geolocationRequired");
                 switchGeo.setChecked(geo != null && geo);
-                
+
                 Boolean priv = doc.getBoolean("private");
                 switchPrivate.setChecked(priv != null && priv);
+
+                // Load Timestamps back into Date objects
+                Timestamp eventDateTs = doc.getTimestamp("eventDate");
+                if (eventDateTs != null) {
+                    selectedEventDate = eventDateTs.toDate();
+                    selectedTimeString = doc.getString("time");
+                }
+                Timestamp regStartTs = doc.getTimestamp("registrationStart");
+                if (regStartTs != null) {
+                    selectedRegStart = regStartTs.toDate();
+                }
+                Timestamp regEndTs = doc.getTimestamp("registrationEnd");
+                if (regEndTs != null) {
+                    selectedRegEnd = regEndTs.toDate();
+                }
             }
         });
     }

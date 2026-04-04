@@ -5,12 +5,12 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,7 +21,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.eventflow.org_event.manage_entrant.Entrant;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,56 +32,40 @@ public class WaitingListActivity extends AppCompatActivity {
     private EditText etSearch;
     private final List<Entrant> waitingList = new ArrayList<>();
     private final List<Entrant> filteredList = new ArrayList<>();
-
     private WaitingListAdapter adapter;
     private String eventId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setStatusBarColor(android.graphics.Color.BLACK);
         setContentView(R.layout.activity_waiting_list);
 
         db = FirebaseFirestore.getInstance();
 
-        // Initialize views first
         lvWaitingList = findViewById(R.id.lv_waiting_list);
-        etSearch = findViewById(R.id.et_waiting_search);
+        etSearch      = findViewById(R.id.et_waiting_search);
 
         adapter = new WaitingListAdapter(this, filteredList);
         lvWaitingList.setAdapter(adapter);
 
         etSearch.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                 filterList(s.toString());
             }
-
-            @Override
-            public void afterTextChanged(Editable s) {}
+            @Override public void afterTextChanged(Editable s) {}
         });
 
-        // Get eventId from intent
         eventId = getIntent().getStringExtra("eventId");
-
-        // Try SharedPreferences if intent doesn't have eventId
         if (eventId == null || eventId.isEmpty()) {
             SharedPreferences prefs = getSharedPreferences("OrganizerPrefs", MODE_PRIVATE);
             eventId = prefs.getString("current_event_id", null);
         }
 
-        // Load data if event exists, otherwise show empty list
         if (eventId != null && !eventId.isEmpty()) {
-            loadWaitingListFromFirebase();
+            loadWaitingList();
         } else {
-            // Show empty list - no error, no finish()
-            waitingList.clear();
-            filteredList.clear();
-            adapter.notifyDataSetChanged();
-            Toast.makeText(this, "No event selected - showing empty list", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "No event selected", Toast.LENGTH_SHORT).show();
         }
 
         findViewById(R.id.btn_waiting_back).setOnClickListener(v -> finish());
@@ -95,9 +78,8 @@ public class WaitingListActivity extends AppCompatActivity {
         } else {
             String lowerCaseQuery = query.toLowerCase().trim();
             for (Entrant entrant : waitingList) {
-                String name = entrant.getName() != null ? entrant.getName().toLowerCase() : "";
+                String name  = entrant.getName()  != null ? entrant.getName().toLowerCase()  : "";
                 String email = entrant.getEmail() != null ? entrant.getEmail().toLowerCase() : "";
-
                 if (name.contains(lowerCaseQuery) || email.contains(lowerCaseQuery)) {
                     filteredList.add(entrant);
                 }
@@ -106,39 +88,93 @@ public class WaitingListActivity extends AppCompatActivity {
         adapter.notifyDataSetChanged();
     }
 
-    private void loadWaitingListFromFirebase() {
-        if (eventId == null) return;
-
+    private void loadWaitingList() {
         db.collection("events")
                 .document(eventId)
-                .collection("participants")
-                .whereEqualTo("status", "Waiting")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    waitingList.clear();
+                .addSnapshotListener((snapshot, error) -> {
+                    if (error != null || snapshot == null || !snapshot.exists()) return;
 
-                    if (queryDocumentSnapshots.isEmpty()) {
-                        Toast.makeText(this, "No users in waiting list", Toast.LENGTH_SHORT).show();
+                    waitingList.clear();
+                    filteredList.clear();
+                    adapter.notifyDataSetChanged();
+
+                    List<String> waitingListIds = (List<String>) snapshot.get("waitingList");
+
+                    if (waitingListIds == null || waitingListIds.isEmpty()) {
                         adapter.notifyDataSetChanged();
                         return;
                     }
 
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        String name = doc.getString("name");
-                        String email = doc.getString("email");
-                        String status = doc.getString("status");
-
-                        Entrant entrant = new Entrant(name, email, status);
-                        waitingList.add(entrant);
+                    for (String userId : waitingListIds) {
+                        fetchUserProfile(userId);
                     }
+                });
+    }
 
-                    filterList(etSearch.getText().toString());
-
-                    Toast.makeText(this, "Loaded " + waitingList.size() + " waiting users", Toast.LENGTH_SHORT).show();
+    private void fetchUserProfile(String userId) {
+        db.collection("users")
+                .document(userId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        String name = buildName(doc.getString("firstName"), doc.getString("lastName"));
+                        String email = doc.getString("email");
+                        if (email == null) email = "";
+                        waitingList.add(new Entrant(name, email, "Waiting"));
+                        filterList(etSearch.getText().toString());
+                    } else {
+                        resolveUserId(userId, userId);
+                    }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to load waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    resolveUserId(userId, userId);
                 });
+    }
+
+    private void resolveUserId(String userId, String originalUserId) {
+        // Try to find by deviceId field in users collection
+        db.collection("users")
+                .whereEqualTo("deviceId", userId)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    if (!snapshots.isEmpty()) {
+                        String uid = snapshots.getDocuments().get(0).getId();
+                        fetchUserProfile(uid);
+                        return;
+                    }
+
+                    // Then try credentials collection
+                    db.collection("credentials")
+                            .whereEqualTo("deviceId", userId)
+                            .get()
+                            .addOnSuccessListener(credSnapshots -> {
+                                if (!credSnapshots.isEmpty()) {
+                                    String uid = credSnapshots.getDocuments().get(0).getString("uid");
+                                    if (uid != null && !uid.isEmpty()) {
+                                        fetchUserProfile(uid);
+                                        return;
+                                    }
+                                }
+                                // Still not found - show as unknown
+                                waitingList.add(new Entrant("Unknown (" + originalUserId + ")", "", "Waiting"));
+                                filterList(etSearch.getText().toString());
+                            })
+                            .addOnFailureListener(e -> {
+                                waitingList.add(new Entrant("Unknown (" + originalUserId + ")", "", "Waiting"));
+                                filterList(etSearch.getText().toString());
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    waitingList.add(new Entrant("Unknown (" + originalUserId + ")", "", "Waiting"));
+                    filterList(etSearch.getText().toString());
+                });
+    }
+
+    private String buildName(String firstName, String lastName) {
+        if (firstName == null || firstName.isEmpty()) return "Unknown User";
+        if (lastName == null || lastName.isEmpty()) return firstName;
+        return firstName + " " + lastName;
     }
 
     private class WaitingListAdapter extends ArrayAdapter<Entrant> {
@@ -151,90 +187,33 @@ public class WaitingListActivity extends AppCompatActivity {
         @Override
         public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
             if (convertView == null) {
-                convertView = LayoutInflater.from(getContext()).inflate(R.layout.waiting_list_item, parent, false);
+                convertView = LayoutInflater.from(getContext())
+                        .inflate(R.layout.waiting_list_item, parent, false);
             }
 
             Entrant entrant = getItem(position);
-            TextView tvName = convertView.findViewById(R.id.userName);
-            TextView tvEmail = convertView.findViewById(R.id.userEmail);
+
+            TextView tvName        = convertView.findViewById(R.id.userName);
+            TextView tvEmail       = convertView.findViewById(R.id.userEmail);
             TextView tvAvatarLetter = convertView.findViewById(R.id.tvAvatarLetter);
             TextView tvStatusBadge = convertView.findViewById(R.id.tvStatusBadge);
-            ImageView ivActionIcon = convertView.findViewById(R.id.ivActionIcon);
 
             if (entrant != null) {
                 String name = entrant.getName();
                 tvName.setText(name != null ? name : "Unknown");
-                tvEmail.setText(entrant.getEmail() != null ? entrant.getEmail() : "No email");
+                tvEmail.setText(entrant.getEmail() != null ? entrant.getEmail() : "");
 
-                if (name != null && !name.isEmpty()) {
-                    tvAvatarLetter.setText(String.valueOf(name.charAt(0)));
+                if (name != null && !name.isEmpty() && !name.equals("Unknown User") && !name.startsWith("Unknown (")) {
+                    tvAvatarLetter.setText(String.valueOf(name.charAt(0)).toUpperCase());
                 } else {
                     tvAvatarLetter.setText("?");
                 }
 
                 tvStatusBadge.setText("Waiting");
-                tvStatusBadge.setTextColor(Color.parseColor("#FFC107"));
-                tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1AFFC107")));
+                tvStatusBadge.setTextColor(Color.parseColor("#FF9800"));
             }
-
-            ivActionIcon.setOnClickListener(v -> {
-                if (entrant != null && eventId != null) {
-                    removeFromWaitlist(entrant, position);
-                } else {
-                    Toast.makeText(getContext(), "Cannot remove: No event selected", Toast.LENGTH_SHORT).show();
-                }
-            });
 
             return convertView;
-        }
-
-        private void removeFromWaitlist(Entrant entrant, int position) {
-            String email = entrant.getEmail();
-
-            if (email == null || email.isEmpty()) {
-                Toast.makeText(getContext(), "User email not found", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            if (eventId == null) {
-                Toast.makeText(getContext(), "No event selected", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            db.collection("events")
-                    .document(eventId)
-                    .collection("participants")
-                    .whereEqualTo("email", email)
-                    .get()
-                    .addOnSuccessListener(queryDocumentSnapshots -> {
-                        if (queryDocumentSnapshots.isEmpty()) {
-                            Toast.makeText(getContext(), "User not found", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-
-                        for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                            doc.getReference().delete()
-                                    .addOnSuccessListener(aVoid -> {
-                                        waitingList.remove(entrant);
-                                        filteredList.remove(entrant);
-                                        notifyDataSetChanged();
-
-                                        Toast.makeText(getContext(),
-                                                entrant.getName() + " rejected from waitlist",
-                                                Toast.LENGTH_SHORT).show();
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        Toast.makeText(getContext(),
-                                                "Failed to reject: " + e.getMessage(),
-                                                Toast.LENGTH_SHORT).show();
-                                    });
-                        }
-                    })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(getContext(),
-                                "Error: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show();
-                    });
         }
     }
 }

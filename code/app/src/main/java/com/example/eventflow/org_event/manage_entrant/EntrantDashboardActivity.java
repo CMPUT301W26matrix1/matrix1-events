@@ -1,8 +1,8 @@
 package com.example.eventflow.org_event.manage_entrant;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,12 +21,12 @@ import com.example.eventflow.ProfileActivity;
 import com.example.eventflow.R;
 import com.example.eventflow.RoleSelectionActivity;
 import com.example.eventflow.WaitingListActivity;
-import com.example.eventflow.OrganizerEventsActivity;
+import com.example.eventflow.NotificationsActivity;
 import com.example.eventflow.controller.LotteryController;
 import com.example.eventflow.model.entities.Event;
 import com.example.eventflow.org_event.OrgEventActivity;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
 import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
@@ -42,6 +42,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
     private TextView tvCancelledSubtitle, tvWaitlistSubtitle, tvEnrolledSubtitle;
     private String eventId;
     private String eventName;
+    private String userId;
 
     private RecyclerView rvOrganizerEvents;
     private OrganizerEventAdapter organizerAdapter;
@@ -56,12 +57,26 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         setContentView(R.layout.activity_entrant_dashboard);
 
         db = FirebaseFirestore.getInstance();
+
+        // Get Firebase Auth UID with SharedPreferences fallback
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            Log.d("Dashboard", "Got userId from FirebaseAuth: " + userId);
+        } else {
+            SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
+            userId = prefs.getString("userUid", "");
+            Log.d("Dashboard", "Got userId from SharedPreferences: " + userId);
+        }
+
+        // One-time migrations — safe to keep, skips already migrated data
+        migrateOldEvents();
+        migrateAllOldUsers();
+
         lotteryController = new LotteryController();
 
         initViews();
         setupNavigation();
 
-        // Get event info from Intent
         eventId = getIntent().getStringExtra("eventId");
         eventName = getIntent().getStringExtra("eventName");
 
@@ -75,15 +90,130 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         setupClickListeners();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (eventId != null && !eventId.isEmpty() && lotteryController != null) {
+            lotteryController.checkAndAutoRejectExpiredSelections(eventId);
+        }
+    }
+
+    // ─── MIGRATION METHODS ────────────────────────────────────────────────────
+
+    private void migrateOldEvents() {
+        if (userId == null || userId.isEmpty()) return;
+
+        // Find all events where organizerId is an old short deviceId (not a Firebase UID)
+        db.collection("events").get()
+                .addOnSuccessListener(snapshot -> {
+                    for (var doc : snapshot) {
+                        String organizerId = doc.getString("organizerId");
+                        if (organizerId == null) continue;
+
+                        // Old deviceIds are short hex (16 chars), Firebase UIDs are 28 chars
+                        if (organizerId.length() < 20) {
+                            // Check if this old deviceId belongs to current user
+                            db.collection("users")
+                                    .document(organizerId)
+                                    .get()
+                                    .addOnSuccessListener(userDoc -> {
+                                        if (!userDoc.exists()) return;
+                                        String email = userDoc.getString("email");
+                                        if (email == null) return;
+
+                                        // Check credentials to find matching UID
+                                        db.collection("credentials")
+                                                .document(email)
+                                                .get()
+                                                .addOnSuccessListener(credDoc -> {
+                                                    if (!credDoc.exists()) return;
+                                                    String uid = credDoc.getString("uid");
+                                                    if (uid == null || uid.isEmpty()) return;
+
+                                                    // Update organizerId to real UID
+                                                    db.collection("events")
+                                                            .document(doc.getId())
+                                                            .update("organizerId", uid)
+                                                            .addOnSuccessListener(a ->
+                                                                    Log.d("Migration", "✅ Event migrated: " + doc.getId()))
+                                                            .addOnFailureListener(e ->
+                                                                    Log.e("Migration", "❌ Event migration failed: " + e.getMessage()));
+                                                });
+                                    });
+                        }
+                    }
+                    // Reload events after migration
+                    loadMyEvents();
+                    fetchLatestEvent();
+                })
+                .addOnFailureListener(e ->
+                        Log.e("Migration", "❌ Failed to fetch events: " + e.getMessage()));
+    }
+
+    private void migrateAllOldUsers() {
+        db.collection("users").get()
+                .addOnSuccessListener(querySnapshot -> {
+                    for (var doc : querySnapshot) {
+                        String docId = doc.getId();
+
+                        // Old deviceIds are short hex (16 chars)
+                        // Firebase UIDs are long alphanumeric (28 chars)
+                        if (docId.length() > 20) {
+                            Log.d("Migration", "Skipping already migrated: " + docId);
+                            continue;
+                        }
+
+                        String email = doc.getString("email");
+                        if (email == null || email.isEmpty()) {
+                            Log.w("Migration", "No email for doc: " + docId);
+                            continue;
+                        }
+
+                        // Look up real UID from credentials collection
+                        db.collection("credentials")
+                                .document(email)
+                                .get()
+                                .addOnSuccessListener(credDoc -> {
+                                    if (!credDoc.exists()) return;
+
+                                    String uid = credDoc.getString("uid");
+                                    if (uid == null || uid.isEmpty()) return;
+
+                                    // Skip if already under correct UID
+                                    if (docId.equals(uid)) return;
+
+                                    // Copy profile data to UID document
+                                    db.collection("users").document(uid)
+                                            .set(doc.getData())
+                                            .addOnSuccessListener(a -> {
+                                                Log.d("Migration", "✅ User migrated: " + email + " → " + uid);
+                                                // Delete old deviceId document
+                                                db.collection("users").document(docId).delete()
+                                                        .addOnSuccessListener(d ->
+                                                                Log.d("Migration", "🗑 Deleted old doc: " + docId));
+                                            })
+                                            .addOnFailureListener(e ->
+                                                    Log.e("Migration", "❌ Failed to migrate user: " + email + " - " + e.getMessage()));
+                                })
+                                .addOnFailureListener(e ->
+                                        Log.e("Migration", "❌ Credentials not found for: " + email));
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Log.e("Migration", "❌ Failed to fetch users: " + e.getMessage()));
+    }
+
+    // ─── UI METHODS ───────────────────────────────────────────────────────────
+
     private void initViews() {
         tvEventName = findViewById(R.id.tvEventName);
         tvEventDate = findViewById(R.id.tvEventDate);
         tvEventLocation = findViewById(R.id.tvEventLocation);
-        
+
         tvRegisteredCount = findViewById(R.id.tvRegisteredCount);
         tvAvailableCount = findViewById(R.id.tvAvailableCount);
         tvCapacityCount = findViewById(R.id.tvCapacityCount);
-        
+
         tvCancelledSubtitle = findViewById(R.id.tvCancelledSubtitle);
         tvWaitlistSubtitle = findViewById(R.id.tvWaitlistSubtitle);
         tvEnrolledSubtitle = findViewById(R.id.tvEnrolledSubtitle);
@@ -100,10 +230,10 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             rvOrganizerEvents.setAdapter(organizerAdapter);
         }
 
-        navHome = findViewById(R.id.nav_home);
+        navHome      = findViewById(R.id.nav_home);
         navDashboard = findViewById(R.id.nav_dashboard);
-        navCreate = findViewById(R.id.nav_create);
-        navProfile = findViewById(R.id.nav_profile);
+        navCreate    = findViewById(R.id.nav_create);
+        navProfile   = findViewById(R.id.nav_profile);
     }
 
     private void setupNavigation() {
@@ -122,15 +252,16 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                     View iconView = layout.getChildAt(0);
                     View textView = layout.getChildAt(1);
                     if (iconView instanceof ImageView) {
-                        ((ImageView) iconView).setColorFilter(getResources().getColor(R.color.accent_green, getTheme()));
+                        ((ImageView) iconView).setColorFilter(
+                                getResources().getColor(R.color.accent_green, getTheme()));
                     }
                     if (textView instanceof TextView) {
-                        ((TextView) textView).setTextColor(getResources().getColor(R.color.accent_green, getTheme()));
+                        ((TextView) textView).setTextColor(
+                                getResources().getColor(R.color.accent_green, getTheme()));
                     }
                 }
             }
             navDashboard.setOnClickListener(v -> {
-                // Already on the comprehensive dashboard (2nd SS). Refresh data.
                 fetchLatestEvent();
                 loadMyEvents();
             });
@@ -142,39 +273,52 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                 View iconView = layout.getChildAt(0);
                 View textView = layout.getChildAt(1);
                 if (iconView instanceof ImageView) {
-                    ((ImageView) iconView).setColorFilter(getResources().getColor(R.color.text_grey, getTheme()));
+                    ((ImageView) iconView).setColorFilter(
+                            getResources().getColor(R.color.text_grey, getTheme()));
                 }
                 if (textView instanceof TextView) {
-                    ((TextView) textView).setTextColor(getResources().getColor(R.color.text_grey, getTheme()));
+                    ((TextView) textView).setTextColor(
+                            getResources().getColor(R.color.text_grey, getTheme()));
                 }
             }
-            navCreate.setOnClickListener(v -> {
-                Intent intent = new Intent(this, OrgEventActivity.class);
-                startActivity(intent);
-            });
+            navCreate.setOnClickListener(v -> startActivity(
+                    new Intent(this, OrgEventActivity.class)));
         }
 
         if (navProfile != null) {
-            navProfile.setOnClickListener(v -> {
-                Intent intent = new Intent(this, ProfileActivity.class);
-                startActivity(intent);
-            });
+            navProfile.setOnClickListener(v -> startActivity(
+                    new Intent(this, ProfileActivity.class)));
         }
     }
 
     private void fetchLatestEvent() {
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        if (userId == null || userId.isEmpty()) {
+            SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
+            userId = prefs.getString("userUid", "");
+        }
+
+        if (userId == null || userId.isEmpty()) {
+            tvEventName.setText("No Events Available");
+            tvEventDate.setText("Please log in");
+            tvEventLocation.setText("");
+            resetStats();
+            return;
+        }
+
+        Log.d("Dashboard", "fetchLatestEvent for userId: " + userId);
+
         db.collection("events")
-                .whereEqualTo("organizerId", deviceId)
+                .whereEqualTo("organizerId", userId)
                 .limit(1)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
+                    Log.d("Dashboard", "fetchLatestEvent results: " + queryDocumentSnapshots.size());
                     if (!queryDocumentSnapshots.isEmpty()) {
                         Event event = queryDocumentSnapshots.getDocuments().get(0).toObject(Event.class);
                         if (event != null) {
                             event.setEventId(queryDocumentSnapshots.getDocuments().get(0).getId());
                             updateUI(event);
-                            fetchStats(event.getEventId(), event.getCapacity());
+                            fetchStatsFromEvent(event.getEventId());
                         }
                     } else {
                         tvEventName.setText("No Events Available");
@@ -184,7 +328,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("EntrantDashboard", "Error fetching latest event", e);
+                    Log.e("Dashboard", "fetchLatestEvent error: " + e.getMessage());
                     tvEventName.setText("No Events Available");
                     tvEventDate.setText("Create an event to get started");
                     tvEventLocation.setText("");
@@ -199,14 +343,15 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                     if (event != null) {
                         event.setEventId(documentSnapshot.getId());
                         updateUI(event);
-                        fetchStats(event.getEventId(), event.getCapacity());
+                        fetchStatsFromEvent(event.getEventId());
                     }
                 })
-                .addOnFailureListener(e -> Log.e("EntrantDashboard", "Error fetching event details", e));
+                .addOnFailureListener(e ->
+                        Log.e("Dashboard", "fetchEventDetails error: " + e.getMessage()));
     }
 
     private void updateUI(Event event) {
-        this.eventId = event.getEventId();
+        this.eventId   = event.getEventId();
         this.eventName = event.getName();
 
         tvEventName.setText(event.getName());
@@ -218,40 +363,38 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             tvEventDate.setText("No date set");
         }
 
-        if (event.getLocation() != null && !event.getLocation().isEmpty()) {
-            tvEventLocation.setText(event.getLocation());
-        } else {
-            tvEventLocation.setText("No location");
-        }
-        
+        tvEventLocation.setText(
+                (event.getLocation() != null && !event.getLocation().isEmpty())
+                        ? event.getLocation() : "No location");
+
         tvCapacityCount.setText(String.valueOf(event.getCapacity()));
     }
 
-    private void fetchStats(String id, int capacity) {
-        db.collection("events").document(id).collection("participants").get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    int waitingCount = 0;
-                    int selectedCount = 0;
-                    int cancelledCount = 0;
+    private void fetchStatsFromEvent(String id) {
+        db.collection("events").document(id).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (!documentSnapshot.exists()) return;
 
-                    for (var doc : queryDocumentSnapshots) {
-                        String status = doc.getString("status");
-                        if ("Waiting".equals(status)) {
-                            waitingCount++;
-                        } else if ("Selected".equals(status)) {
-                            selectedCount++;
-                        } else if ("Cancelled".equals(status) || "Declined".equals(status)) {
-                            cancelledCount++;
-                        }
-                    }
+                    List<String> waitingList      = (List<String>) documentSnapshot.get("waitingList");
+                    List<String> selectedEntrants = (List<String>) documentSnapshot.get("selectedEntrants");
+                    List<String> rejectedEntrants = (List<String>) documentSnapshot.get("rejectedEntrants");
+                    Long capacity                 = documentSnapshot.getLong("capacity");
+
+                    int waitingCount  = waitingList      != null ? waitingList.size()      : 0;
+                    int selectedCount = selectedEntrants != null ? selectedEntrants.size() : 0;
+                    int rejectedCount = rejectedEntrants != null ? rejectedEntrants.size() : 0;
+                    int maxCapacity   = capacity         != null ? capacity.intValue()     : 0;
 
                     tvRegisteredCount.setText(String.valueOf(selectedCount));
-                    int available = Math.max(0, capacity - selectedCount);
-                    tvAvailableCount.setText(String.valueOf(available));
-                    
-                    tvCancelledSubtitle.setText(cancelledCount + " cancelled registrations");
-                    tvWaitlistSubtitle.setText(waitingCount + " people in waitlist");
-                    tvEnrolledSubtitle.setText(selectedCount + " confirmed attendees");
+                    tvAvailableCount.setText(String.valueOf(Math.max(0, maxCapacity - selectedCount)));
+
+                    tvCancelledSubtitle.setText(rejectedCount + " cancelled registrations");
+                    tvWaitlistSubtitle.setText(waitingCount   + " people in waitlist");
+                    tvEnrolledSubtitle.setText(selectedCount  + " confirmed attendees");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Dashboard", "fetchStatsFromEvent error: " + e.getMessage());
+                    resetStats();
                 });
     }
 
@@ -265,12 +408,24 @@ public class EntrantDashboardActivity extends AppCompatActivity {
     }
 
     private void loadMyEvents() {
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        if (userId == null || userId.isEmpty()) {
+            SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
+            userId = prefs.getString("userUid", "");
+        }
+
+        if (userId == null || userId.isEmpty()) {
+            Log.e("Dashboard", "loadMyEvents — userId is null/empty, cannot load");
+            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Log.d("Dashboard", "loadMyEvents querying organizerId == " + userId);
 
         db.collection("events")
-                .whereEqualTo("organizerId", deviceId)
+                .whereEqualTo("organizerId", userId)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
+                    Log.d("Dashboard", "loadMyEvents found: " + queryDocumentSnapshots.size() + " events");
                     myEvents.clear();
                     for (var doc : queryDocumentSnapshots) {
                         try {
@@ -286,22 +441,22 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                     if (organizerAdapter != null) organizerAdapter.notifyDataSetChanged();
                 })
                 .addOnFailureListener(e -> {
+                    Log.e("Dashboard", "loadMyEvents failed: " + e.getMessage());
                     Toast.makeText(this, "Failed to load events", Toast.LENGTH_SHORT).show();
                 });
     }
 
     private void setupClickListeners() {
-        View cardCancelled = findViewById(R.id.cardCancelled);
-        View cardWaitlist = findViewById(R.id.cardWaitlist);
-        View cardEnrolled = findViewById(R.id.cardEnrolled);
-        View cardNotifications = findViewById(R.id.cardNotifications);
-        
-        View cardDrawLottery = findViewById(R.id.cardDrawLottery);
+        View cardCancelled        = findViewById(R.id.cardCancelled);
+        View cardWaitlist         = findViewById(R.id.cardWaitlist);
+        View cardEnrolled         = findViewById(R.id.cardEnrolled);
+        View cardNotifications    = findViewById(R.id.cardNotifications);
+        View cardDrawLottery      = findViewById(R.id.cardDrawLottery);
         View cardCancelledActions = findViewById(R.id.cardCancelledActions);
 
         if (cardCancelled != null) {
             cardCancelled.setOnClickListener(v -> {
-                Intent intent = new Intent(EntrantDashboardActivity.this, CancelledEntrantsActivity.class);
+                Intent intent = new Intent(this, CancelledEntrantsActivity.class);
                 intent.putExtra("eventId", eventId);
                 startActivity(intent);
             });
@@ -309,7 +464,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
 
         if (cardWaitlist != null) {
             cardWaitlist.setOnClickListener(v -> {
-                Intent intent = new Intent(EntrantDashboardActivity.this, WaitingListActivity.class);
+                Intent intent = new Intent(this, WaitingListActivity.class);
                 intent.putExtra("eventId", eventId);
                 startActivity(intent);
             });
@@ -317,7 +472,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
 
         if (cardEnrolled != null) {
             cardEnrolled.setOnClickListener(v -> {
-                Intent intent = new Intent(EntrantDashboardActivity.this, OrganizerFinalEntrantsActivity.class);
+                Intent intent = new Intent(this, OrganizerFinalEntrantsActivity.class);
                 intent.putExtra("eventId", eventId);
                 intent.putExtra("eventName", eventName);
                 startActivity(intent);
@@ -326,7 +481,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
 
         if (cardNotifications != null) {
             cardNotifications.setOnClickListener(v -> {
-                Intent intent = new Intent(EntrantDashboardActivity.this, NotificationsActivity.class);
+                Intent intent = new Intent(this, NotificationsActivity.class);
                 intent.putExtra("eventId", eventId);
                 startActivity(intent);
             });
@@ -336,9 +491,11 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             cardDrawLottery.setOnClickListener(v -> {
                 if (eventId != null) {
                     lotteryController.runLotteryDraw(eventId);
-                    Toast.makeText(this, "Lottery draw initiated for " + eventName, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Lottery draw initiated for " + eventName,
+                            Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(this, "Select an event from the list below", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Select an event from the list below",
+                            Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -350,7 +507,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
-        
+
         View bell = findViewById(R.id.ivNotificationBell);
         if (bell != null) {
             bell.setOnClickListener(v -> {
@@ -360,6 +517,8 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             });
         }
     }
+
+    // ─── ADAPTER ─────────────────────────────────────────────────────────────
 
     private class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAdapter.ViewHolder> {
         private final List<Event> eventList;
@@ -381,12 +540,13 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             Event event = eventList.get(position);
             holder.tvName.setText(event.getName());
-            
+
             if (event.getEventDate() != null) {
                 holder.tvDate.setText(sdf.format(event.getEventDate().toDate()));
             }
 
-            holder.tvWaitlist.setText(event.getWaitingListCount() + " waitlisted");
+            int waitingCount = event.getWaitingList() != null ? event.getWaitingList().size() : 0;
+            holder.tvWaitlist.setText(waitingCount + " waitlisted");
 
             if (event.getPosterUrl() != null && !event.getPosterUrl().isEmpty()) {
                 Picasso.get().load(event.getPosterUrl())
@@ -394,14 +554,13 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                         .into(holder.ivImage);
             }
 
-            // Clicking the card body updates the current stats on this screen
             holder.itemView.setOnClickListener(v -> {
                 updateUI(event);
-                fetchStats(event.getEventId(), event.getCapacity());
-                Toast.makeText(v.getContext(), "Showing stats for: " + event.getName(), Toast.LENGTH_SHORT).show();
+                fetchStatsFromEvent(event.getEventId());
+                Toast.makeText(v.getContext(), "Showing stats for: " + event.getName(),
+                        Toast.LENGTH_SHORT).show();
             });
 
-            // Clicking the chevron (arrow) navigates to the detailed view page
             if (holder.ivChevron != null) {
                 holder.ivChevron.setOnClickListener(v -> {
                     Intent intent = new Intent(v.getContext(), EventDetailActivity.class);
@@ -413,9 +572,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         }
 
         @Override
-        public int getItemCount() {
-            return eventList.size();
-        }
+        public int getItemCount() { return eventList.size(); }
 
         class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvName, tvDate, tvWaitlist, tvStatus;
@@ -423,12 +580,12 @@ public class EntrantDashboardActivity extends AppCompatActivity {
 
             public ViewHolder(@NonNull View itemView) {
                 super(itemView);
-                tvName = itemView.findViewById(R.id.tvEventName);
-                tvDate = itemView.findViewById(R.id.tvEventDate);
+                tvName     = itemView.findViewById(R.id.tvEventName);
+                tvDate     = itemView.findViewById(R.id.tvEventDate);
                 tvWaitlist = itemView.findViewById(R.id.tvWaitlistCount);
-                tvStatus = itemView.findViewById(R.id.tvEventStatus);
-                ivImage = itemView.findViewById(R.id.ivEventImage);
-                ivChevron = itemView.findViewById(R.id.ivChevron);
+                tvStatus   = itemView.findViewById(R.id.tvEventStatus);
+                ivImage    = itemView.findViewById(R.id.ivEventImage);
+                ivChevron  = itemView.findViewById(R.id.ivChevron);
             }
         }
     }

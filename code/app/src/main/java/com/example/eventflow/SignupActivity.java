@@ -10,17 +10,23 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.eventflow.model.entities.Profile;
 import com.example.eventflow.model.repositories.ProfileRepository;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Signup screen — stores credentials in Firestore (no Firebase Auth needed)
+ * Signup screen — creates Firebase Auth user and stores credentials in Firestore
  */
 public class SignupActivity extends AppCompatActivity {
 
@@ -30,6 +36,7 @@ public class SignupActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
     private ProfileRepository profileRepository;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +45,7 @@ public class SignupActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         profileRepository = new ProfileRepository();
+        mAuth = FirebaseAuth.getInstance();
 
         etUsername        = findViewById(R.id.et_username);
         etEmailPhone      = findViewById(R.id.et_email_phone);
@@ -68,7 +76,32 @@ public class SignupActivity extends AppCompatActivity {
         btnSignup.setEnabled(false);
         btnSignup.setText("Creating account...");
 
-        // Check if email already exists
+        // Create user with Firebase Authentication
+        mAuth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Sign up success, get unique UID
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            String uid = user.getUid();
+
+                            // Save user data to Firestore using UID
+                            saveUserToFirestore(uid, username, email, password);
+                        } else {
+                            // If sign up fails, display a message to the user.
+                            btnSignup.setEnabled(true);
+                            btnSignup.setText("Signup");
+                            Toast.makeText(SignupActivity.this,
+                                    "Authentication failed: " + task.getException().getMessage(),
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+    }
+
+    private void saveUserToFirestore(String uid, String username, String email, String password) {
+        // Check if email already exists in credentials (optional, for backward compatibility)
         db.collection("credentials")
                 .document(email)
                 .get()
@@ -80,31 +113,27 @@ public class SignupActivity extends AppCompatActivity {
                         return;
                     }
 
-                    // Save credentials to Firestore
-                    String deviceId = Settings.Secure.getString(
-                            getContentResolver(), Settings.Secure.ANDROID_ID);
-
+                    // Save credentials to Firestore using UID as reference
                     Map<String, Object> credentials = new HashMap<>();
                     credentials.put("username", username);
                     credentials.put("email", email);
-                    credentials.put("password", password); // In real app use hashing
-                    credentials.put("deviceId", deviceId);
+                    credentials.put("password", password);
+                    credentials.put("uid", uid);  // Store UID for reference
 
                     db.collection("credentials")
                             .document(email)
                             .set(credentials)
                             .addOnSuccessListener(aVoid -> {
-                                // Save profile
+                                // Save profile using UID instead of deviceId
                                 String[] parts = username.split(" ", 2);
                                 String firstName = parts[0];
                                 String lastName  = parts.length > 1 ? parts[1] : "";
 
-                                Profile profile = new Profile(deviceId, firstName, lastName, email, "");
+                                Profile profile = new Profile(uid, firstName, lastName, email, "");
                                 profileRepository.saveProfile(profile, new ProfileRepository.SaveProfileCallback() {
                                     @Override
                                     public void onSuccess() {
-                                        // Save login state
-                                        saveLoginState(email, username);
+                                        saveLoginState(email, username, uid);
                                         Toast.makeText(SignupActivity.this,
                                                 "Account created!", Toast.LENGTH_SHORT).show();
                                         startActivity(new Intent(SignupActivity.this, MainActivity.class));
@@ -112,7 +141,7 @@ public class SignupActivity extends AppCompatActivity {
                                     }
                                     @Override
                                     public void onFailure(Exception e) {
-                                        saveLoginState(email, username);
+                                        saveLoginState(email, username, uid);
                                         startActivity(new Intent(SignupActivity.this, MainActivity.class));
                                         finish();
                                     }
@@ -132,13 +161,13 @@ public class SignupActivity extends AppCompatActivity {
                 });
     }
 
-    private void saveLoginState(String email, String username) {
+    private void saveLoginState(String email, String username, String uid) {
         SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
         prefs.edit()
                 .putBoolean("isLoggedIn", true)
                 .putString("userEmail", email)
                 .putString("userName", username)
+                .putString("userUid", uid)  // Save UID for later use
                 .apply();
     }
 }
-

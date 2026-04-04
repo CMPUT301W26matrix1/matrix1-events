@@ -23,6 +23,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
@@ -71,10 +72,8 @@ public class MainActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         String token = task.getResult();
                         Log.d("FCMService", "Manual token: " + token);
-                        // Toast removed - no longer shows "FCM Token received!"
                     } else {
                         Log.e("FCMService", "Failed to get token", task.getException());
-                        // Toast removed - silent failure
                     }
                 });
 
@@ -202,8 +201,12 @@ public class MainActivity extends AppCompatActivity {
             if (eventId != null && !eventId.isEmpty()) {
                 Intent intent = new Intent(MainActivity.this, EventDetailActivity.class);
                 intent.putExtra("eventId", eventId);
-                String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
-                intent.putExtra("userId", deviceId);
+                // Use Firebase Auth UID instead of deviceId
+                String userId = "";
+                if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                    userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                }
+                intent.putExtra("userId", userId);
                 intent.putExtra("userRole", "entrant");
                 startActivity(intent);
             }

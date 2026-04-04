@@ -8,16 +8,21 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.eventflow.R;
 import com.example.eventflow.model.entities.Entrant;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 public class CancelledEntrantsActivity extends AppCompatActivity {
 
@@ -28,6 +33,8 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
     private LinearLayout btnDrawNewEntrant;
     private FirebaseFirestore db;
     private String eventId;
+    private int currentCapacity = 0;
+    private int currentSelectedCount = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,10 +49,8 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
             Toast.makeText(this, "No event selected - showing empty data", Toast.LENGTH_SHORT).show();
         }
 
-        // Initialize Firestore (only if eventId exists)
-        if (eventId != null) {
-            db = FirebaseFirestore.getInstance();
-        }
+        // Initialize Firestore
+        db = FirebaseFirestore.getInstance();
 
         // Setup Back Button
         ImageView btnBack = findViewById(R.id.btnBack);
@@ -82,65 +87,99 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
             });
         }
 
-        // Setup Draw New Entrant Button (only if eventId exists)
+        // Setup Draw New Entrant Button
         if (btnDrawNewEntrant != null && eventId != null) {
             btnDrawNewEntrant.setOnClickListener(v -> drawNewEntrant());
-        } else if (btnDrawNewEntrant != null) {
-            btnDrawNewEntrant.setEnabled(false);
-            btnDrawNewEntrant.setAlpha(0.5f);
         }
 
-        // Load data from Firestore (only if eventId exists)
+        // Load data from Firestore
         if (eventId != null) {
-            loadCancelledEntrants();
-        } else {
-            updateStatsCounts();
+            loadEventData();
         }
     }
 
-    private void loadCancelledEntrants() {
+    private void loadEventData() {
         if (eventId == null) return;
 
         db.collection("events").document(eventId)
-                .collection("participants")
-                .whereIn("status", java.util.Arrays.asList("Cancelled", "Declined"))
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    cancelledList.clear();
-
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        String name = doc.getString("name");
-                        String email = doc.getString("email");
-                        String phone = doc.getString("phone");
-                        String status = doc.getString("status");
-                        String cancelledDate = doc.getString("cancelledDate");
-
-                        if (cancelledDate == null || cancelledDate.isEmpty()) {
-                            cancelledDate = doc.getDate("cancelledAt") != null ?
-                                    android.text.format.DateFormat.format("MMM dd, yyyy", doc.getDate("cancelledAt")).toString() :
-                                    "Unknown date";
-                        }
-
-                        // FIXED: Use correct constructor with all 5 parameters
-                        // Order: name, email, phoneNumber, inviteDate, status
-                        Entrant entrant = new Entrant(name, email, phone, cancelledDate, status);
-                        cancelledList.add(entrant);
+                .addSnapshotListener((snapshot, error) -> {
+                    if (error != null || snapshot == null || !snapshot.exists()) {
+                        return;
                     }
 
+                    // Get capacity and selected entrants count
+                    Long capacity = snapshot.getLong("capacity");
+                    currentCapacity = capacity != null ? capacity.intValue() : 0;
+
+                    List<String> selectedEntrants = (List<String>) snapshot.get("selectedEntrants");
+                    currentSelectedCount = selectedEntrants != null ? selectedEntrants.size() : 0;
+
+                    // Calculate available spots
+                    int availableSpots = currentCapacity - currentSelectedCount;
+                    tvSpotsAvailable.setText(String.valueOf(availableSpots));
+
+                    // Disable draw button if no spots available
+                    if (availableSpots <= 0) {
+                        btnDrawNewEntrant.setEnabled(false);
+                        btnDrawNewEntrant.setAlpha(0.5f);
+                    } else {
+                        btnDrawNewEntrant.setEnabled(true);
+                        btnDrawNewEntrant.setAlpha(1.0f);
+                    }
+
+                    // Load cancelled/rejected entrants
+                    cancelledList.clear();
+                    List<String> rejectedEntrants = (List<String>) snapshot.get("rejectedEntrants");
+
+                    if (rejectedEntrants != null && !rejectedEntrants.isEmpty()) {
+                        for (String userId : rejectedEntrants) {
+                            fetchUserProfile(userId, "Rejected");
+                        }
+                    } else {
+                        adapter.updateList(cancelledList);
+                        updateStatsCounts();
+                    }
+                });
+    }
+
+    private void fetchUserProfile(String userId, String status) {
+        db.collection("users").document(userId).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    String name = userId;
+                    String email = "";
+                    String phone = "";
+
+                    if (documentSnapshot.exists()) {
+                        String firstName = documentSnapshot.getString("firstName");
+                        String lastName = documentSnapshot.getString("lastName");
+                        if (firstName != null && !firstName.isEmpty()) {
+                            name = firstName;
+                            if (lastName != null && !lastName.isEmpty()) {
+                                name = firstName + " " + lastName;
+                            }
+                        }
+                        email = documentSnapshot.getString("email");
+                        if (email == null) email = "";
+                        phone = documentSnapshot.getString("phone");
+                        if (phone == null) phone = "";
+                    }
+
+                    Entrant entrant = new Entrant(name, email, phone, "", status);
+                    cancelledList.add(entrant);
                     adapter.updateList(cancelledList);
                     updateStatsCounts();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to load: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Entrant entrant = new Entrant(userId, "", "", "", status);
+                    cancelledList.add(entrant);
+                    adapter.updateList(cancelledList);
+                    updateStatsCounts();
                 });
     }
 
     private void updateStatsCounts() {
         if (tvCancelledCount != null) {
             tvCancelledCount.setText(String.valueOf(cancelledList.size()));
-        }
-        if (tvSpotsAvailable != null) {
-            tvSpotsAvailable.setText(String.valueOf(cancelledList.size()));
         }
     }
 
@@ -164,29 +203,57 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
     private void drawNewEntrant() {
         if (eventId == null) return;
 
-        db.collection("events").document(eventId)
-                .collection("participants")
-                .whereEqualTo("status", "Waiting")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    if (queryDocumentSnapshots.isEmpty()) {
+        // Get current event data
+        db.collection("events").document(eventId).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (!documentSnapshot.exists()) {
+                        Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    List<String> waitingList = (List<String>) documentSnapshot.get("waitingList");
+                    List<String> selectedEntrants = (List<String>) documentSnapshot.get("selectedEntrants");
+                    Long capacity = documentSnapshot.getLong("capacity");
+
+                    // Calculate available spots
+                    int currentSelected = selectedEntrants != null ? selectedEntrants.size() : 0;
+                    int maxCapacity = capacity != null ? capacity.intValue() : 0;
+                    int availableSpots = maxCapacity - currentSelected;
+
+                    if (waitingList == null || waitingList.isEmpty()) {
                         Toast.makeText(this, "No waiting entrants available", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    List<QueryDocumentSnapshot> waitingList = new ArrayList<>();
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        waitingList.add(doc);
+                    if (availableSpots <= 0) {
+                        Toast.makeText(this, "Event is full! No available slots (" + currentSelected + "/" + maxCapacity + ")", Toast.LENGTH_SHORT).show();
+                        return;
                     }
 
-                    int randomIndex = (int) (Math.random() * waitingList.size());
-                    QueryDocumentSnapshot selected = waitingList.get(randomIndex);
-                    String selectedName = selected.getString("name");
+                    // Randomly select one entrant from waiting list
+                    int randomIndex = new Random().nextInt(waitingList.size());
+                    String selectedUserId = waitingList.get(randomIndex);
 
-                    selected.getReference().update("status", "Selected")
+                    // Remove from waitingList and add to selectedEntrants
+                    waitingList.remove(randomIndex);
+                    if (selectedEntrants == null) selectedEntrants = new ArrayList<>();
+                    selectedEntrants.add(selectedUserId);
+
+                    // Update Firestore
+                    Map<String, Object> updates = new HashMap<>();
+                    updates.put("waitingList", waitingList);
+                    updates.put("selectedEntrants", selectedEntrants);
+
+                    db.collection("events").document(eventId).update(updates)
                             .addOnSuccessListener(aVoid -> {
-                                Toast.makeText(this, selectedName + " has been selected!", Toast.LENGTH_SHORT).show();
-                                loadCancelledEntrants();
+                                int remainingSlots = availableSpots - 1;
+                                Toast.makeText(this, "Entrant selected! " + remainingSlots + " slots remaining.", Toast.LENGTH_SHORT).show();
+
+                                // Send notification to the selected entrant
+                                sendSelectionNotification(selectedUserId);
+
+                                // Refresh the data
+                                loadEventData();
                             })
                             .addOnFailureListener(e -> {
                                 Toast.makeText(this, "Failed to draw: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -194,6 +261,32 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Failed to get waiting list: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void sendSelectionNotification(String userId) {
+        db.collection("events").document(eventId).get()
+                .addOnSuccessListener(doc -> {
+                    String eventName = doc.getString("name");
+
+                    Map<String, Object> notification = new HashMap<>();
+                    notification.put("title", "You've been selected!");
+                    notification.put("message", "Congratulations! You have been selected for " + eventName);
+                    notification.put("eventId", eventId);
+                    notification.put("eventName", eventName);
+                    notification.put("type", "SELECTED");
+                    notification.put("timestamp", com.google.firebase.Timestamp.now());
+                    notification.put("read", false);
+                    notification.put("accepted", false);
+                    notification.put("declined", false);
+
+                    db.collection("users")
+                            .document(userId)
+                            .collection("notifications")
+                            .add(notification)
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(this, "Notification sent to selected entrant", Toast.LENGTH_SHORT).show();
+                            });
                 });
     }
 }
