@@ -3,9 +3,12 @@ package com.example.eventflow;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -280,8 +283,24 @@ public class EventDetailActivity extends AppCompatActivity {
             tvRegPeriod.setText(rf.format(e.getRegistrationStart().toDate()) + " - " + rf.format(e.getRegistrationEnd().toDate()) + ", " + new SimpleDateFormat("yyyy", Locale.getDefault()).format(e.getRegistrationEnd().toDate()));
         }
 
+        // HANDLE IMAGE DISPLAY: URL vs BASE64
         if (e.getPosterUrl() != null && !e.getPosterUrl().isEmpty()) {
-            Picasso.get().load(e.getPosterUrl()).placeholder(R.drawable.ic_placeholder).into(ivPoster);
+            if (e.getPosterUrl().startsWith("http")) {
+                // Legacy URL support
+                Picasso.get().load(e.getPosterUrl()).placeholder(R.drawable.ic_placeholder).into(ivPoster);
+            } else {
+                // Base64 Support
+                try {
+                    byte[] decodedString = Base64.decode(e.getPosterUrl(), Base64.DEFAULT);
+                    Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                    ivPoster.setImageBitmap(decodedByte);
+                } catch (Exception ex) {
+                    Log.e("EventDetail", "Error decoding Base64 image", ex);
+                    ivPoster.setImageResource(R.drawable.ic_placeholder);
+                }
+            }
+        } else {
+            ivPoster.setImageResource(R.drawable.ic_placeholder);
         }
 
         updateButtonState();

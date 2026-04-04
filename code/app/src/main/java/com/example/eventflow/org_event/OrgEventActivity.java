@@ -1,10 +1,17 @@
 package com.example.eventflow.org_event;
 
 import android.app.DatePickerDialog;
+import android.app.ProgressDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.provider.Settings;
+import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -18,7 +25,6 @@ import androidx.appcompat.widget.SwitchCompat;
 import com.example.eventflow.LocationPickerActivity;
 import com.example.eventflow.ProfileActivity;
 import com.example.eventflow.R;
-import com.example.eventflow.RoleSelectionActivity;
 import com.example.eventflow.org_QR.QRDisplayActivity;
 import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.firebase.Timestamp;
@@ -26,6 +32,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -33,16 +41,11 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Activity for organizers to create and edit events.
- * US 02.02.02 — saves locationLatitude and locationLongitude for map display.
- */
 public class OrgEventActivity extends AppCompatActivity {
 
     private static final int PICK_IMAGE_REQUEST    = 1;
     private static final int PICK_LOCATION_REQUEST = 2;
 
-    // UI elements
     private EditText etName, etLocation, etDate, etTime, etDescription, etLimit, etRegStart, etRegEnd;
     private SwitchCompat switchGeo, switchPrivate;
     private ImageView ivEventPoster;
@@ -52,6 +55,9 @@ public class OrgEventActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
     private String currentEventId = "";
+    private String posterBase64 = null;
+    private String existingPosterUrl = null;
+    private ProgressDialog progressDialog;
     private Uri imageUri;
 
     // Store selected dates as Date objects
@@ -91,16 +97,12 @@ public class OrgEventActivity extends AppCompatActivity {
         etLimit       = findViewById(R.id.et_max_attendees);
         etRegStart    = findViewById(R.id.et_reg_start);
         etRegEnd      = findViewById(R.id.et_reg_end);
-
         ivEventPoster = findViewById(R.id.iv_event_poster);
         cvUploadImage = findViewById(R.id.cv_upload_image);
-
         switchGeo     = findViewById(R.id.switchGeolocationRequired);
         switchPrivate = findViewById(R.id.cb_private_event);
-
         btnBack        = findViewById(R.id.btn_header_back);
         btnCreateEvent = findViewById(R.id.btn_header_action);
-
         navDashboard = findViewById(R.id.nav_dashboard);
         navCreate    = findViewById(R.id.nav_create);
         navProfile   = findViewById(R.id.nav_profile);
@@ -131,8 +133,7 @@ public class OrgEventActivity extends AppCompatActivity {
             });
         }
         if (navProfile != null) {
-            navProfile.setOnClickListener(v ->
-                    startActivity(new Intent(this, ProfileActivity.class)));
+            navProfile.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
         }
     }
 
@@ -206,10 +207,8 @@ public class OrgEventActivity extends AppCompatActivity {
     }
 
     private void openGallery() {
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE_REQUEST);
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(intent, PICK_IMAGE_REQUEST);
     }
 
     @Override
@@ -222,6 +221,9 @@ public class OrgEventActivity extends AppCompatActivity {
                 ivEventPoster.setVisibility(View.VISIBLE);
                 ivEventPoster.setImageURI(imageUri);
             }
+            
+            // Convert to Base64 immediately
+            posterBase64 = encodeImage(imageUri);
             Toast.makeText(this, "Poster selected", Toast.LENGTH_SHORT).show();
         }
 
@@ -234,6 +236,37 @@ public class OrgEventActivity extends AppCompatActivity {
         }
     }
 
+    private String encodeImage(Uri imageUri) {
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(imageUri);
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            
+            // Resize and compress to keep Base64 string small enough for Firestore
+            int maxSize = 800;
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+            if (width > maxSize || height > maxSize) {
+                float ratio = (float) width / height;
+                if (ratio > 1) {
+                    width = maxSize;
+                    height = (int) (maxSize / ratio);
+                } else {
+                    height = maxSize;
+                    width = (int) (maxSize * ratio);
+                }
+                bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream);
+            byte[] byteArray = outputStream.toByteArray();
+            return Base64.encodeToString(byteArray, Base64.DEFAULT);
+        } catch (Exception e) {
+            Log.e("OrgEventActivity", "Error encoding image", e);
+            return null;
+        }
+    }
+
     private void handleAddEvent() {
         String eventNameStr = etName.getText().toString().trim();
         if (eventNameStr.isEmpty()) {
@@ -241,11 +274,6 @@ public class OrgEventActivity extends AppCompatActivity {
             return;
         }
 
-        String eventId = (currentEventId != null && !currentEventId.isEmpty())
-                ? currentEventId
-                : db.collection("events").document().getId();
-
-        // Get Firebase Auth UID
         String userId = "";
         if (FirebaseAuth.getInstance().getCurrentUser() != null) {
             userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
@@ -256,6 +284,21 @@ public class OrgEventActivity extends AppCompatActivity {
             return;
         }
 
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Saving event...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        String eventId = (currentEventId != null && !currentEventId.isEmpty()) 
+                ? currentEventId 
+                : db.collection("events").document().getId();
+        
+        String finalPoster = (posterBase64 != null) ? posterBase64 : existingPosterUrl;
+        
+        saveEventToFirestore(eventId, eventNameStr, finalPoster, userId);
+    }
+
+    private void saveEventToFirestore(String eventId, String eventNameStr, String posterData, String userId) {
         Map<String, Object> eventMap = new HashMap<>();
         eventMap.put("eventId", eventId);
         eventMap.put("organizerId", userId);
@@ -263,7 +306,6 @@ public class OrgEventActivity extends AppCompatActivity {
         eventMap.put("location", etLocation.getText().toString());
         eventMap.put("description", etDescription.getText().toString());
 
-        // Save dates as TIMESTAMPS
         if (selectedEventDate != null) {
             eventMap.put("eventDate", new Timestamp(selectedEventDate));
         }
@@ -274,7 +316,6 @@ public class OrgEventActivity extends AppCompatActivity {
             eventMap.put("registrationEnd", new Timestamp(selectedRegEnd));
         }
 
-        // Keep string versions for display
         eventMap.put("date", etDate.getText().toString());
         eventMap.put("time", etTime.getText().toString());
         eventMap.put("registrationStartStr", etRegStart.getText().toString());
@@ -289,9 +330,8 @@ public class OrgEventActivity extends AppCompatActivity {
 
         eventMap.put("geolocationRequired", switchGeo.isChecked());
         eventMap.put("private", switchPrivate.isChecked());
-        eventMap.put("posterUrl", imageUri != null ? imageUri.toString() : null);
+        eventMap.put("posterUrl", posterData);
 
-        // Generate QR Data (only if NOT private)
         String qrData = null;
         if (!switchPrivate.isChecked()) {
             qrData = "eventflow://event/" + eventId;
@@ -300,14 +340,12 @@ public class OrgEventActivity extends AppCompatActivity {
             eventMap.put("qrData", null);
         }
 
-        // Save coordinates for map display
         if (pickedLat != 0 || pickedLng != 0) {
             eventMap.put("locationLatitude", pickedLat);
             eventMap.put("locationLongitude", pickedLng);
             eventMap.put("locationRadius", pickedRadius);
         }
 
-        // Initialize ALL arrays for new events
         if (currentEventId == null || currentEventId.isEmpty()) {
             eventMap.put("createdAt", Timestamp.now());
             eventMap.put("waitingList", new ArrayList<String>());
@@ -319,6 +357,7 @@ public class OrgEventActivity extends AppCompatActivity {
         final String finalQrData = qrData;
         db.collection("events").document(eventId).set(eventMap, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
+                    if (progressDialog != null) progressDialog.dismiss();
                     Toast.makeText(this, "Event saved successfully!", Toast.LENGTH_SHORT).show();
 
                     if (switchPrivate.isChecked()) {
@@ -331,10 +370,12 @@ public class OrgEventActivity extends AppCompatActivity {
                         qrIntent.putExtra("QR_DATA", finalQrData);
                         startActivity(qrIntent);
                     }
-
                     finish();
                 })
-                .addOnFailureListener(e -> Toast.makeText(this, "Failed to save: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    if (progressDialog != null) progressDialog.dismiss();
+                    Toast.makeText(this, "Failed to save: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void loadEventData(String eventId) {
@@ -349,6 +390,22 @@ public class OrgEventActivity extends AppCompatActivity {
                 etRegEnd.setText(doc.getString("registrationEndStr"));
                 Object cap = doc.get("capacity");
                 etLimit.setText(cap != null ? String.valueOf(cap) : "");
+                
+                existingPosterUrl = doc.getString("posterUrl");
+                if (existingPosterUrl != null && !existingPosterUrl.isEmpty()) {
+                    ivEventPoster.setVisibility(View.VISIBLE);
+                    if (existingPosterUrl.startsWith("http")) {
+                        com.squareup.picasso.Picasso.get().load(existingPosterUrl).into(ivEventPoster);
+                    } else {
+                        try {
+                            byte[] decodedString = Base64.decode(existingPosterUrl, Base64.DEFAULT);
+                            Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                            ivEventPoster.setImageBitmap(decodedByte);
+                        } catch (Exception e) {
+                            Log.e("OrgEventActivity", "Error decoding existing image", e);
+                        }
+                    }
+                }
 
                 Boolean geo = doc.getBoolean("geolocationRequired");
                 switchGeo.setChecked(geo != null && geo);
@@ -356,13 +413,11 @@ public class OrgEventActivity extends AppCompatActivity {
                 Boolean priv = doc.getBoolean("private");
                 switchPrivate.setChecked(priv != null && priv);
 
-                // Load coordinates
                 Double lat = doc.getDouble("locationLatitude");
                 Double lng = doc.getDouble("locationLongitude");
                 if (lat != null) pickedLat = lat;
                 if (lng != null) pickedLng = lng;
 
-                // Load Timestamps
                 Timestamp eventDateTs = doc.getTimestamp("eventDate");
                 if (eventDateTs != null) {
                     selectedEventDate = eventDateTs.toDate();

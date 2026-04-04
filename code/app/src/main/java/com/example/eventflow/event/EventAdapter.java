@@ -1,6 +1,9 @@
 package com.example.eventflow.event;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -95,14 +98,26 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             }
         }
 
-        // Load event poster image
+        // HANDLE IMAGE DISPLAY: URL vs BASE64
         if (holder.ivEventImage != null) {
-            String posterUrl = event.getPosterUrl();
-            if (posterUrl != null && !posterUrl.isEmpty()) {
-                Picasso.get().load(posterUrl)
-                        .placeholder(R.drawable.ic_placeholder)
-                        .error(R.drawable.ic_placeholder)
-                        .into(holder.ivEventImage);
+            String posterData = event.getPosterUrl();
+            if (posterData != null && !posterData.isEmpty()) {
+                if (posterData.startsWith("http")) {
+                    // Legacy URL support
+                    Picasso.get().load(posterData)
+                            .placeholder(R.drawable.ic_placeholder)
+                            .error(R.drawable.ic_placeholder)
+                            .into(holder.ivEventImage);
+                } else {
+                    // Base64 Support
+                    try {
+                        byte[] decodedString = Base64.decode(posterData, Base64.DEFAULT);
+                        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                        holder.ivEventImage.setImageBitmap(decodedByte);
+                    } catch (Exception e) {
+                        holder.ivEventImage.setImageResource(R.drawable.ic_placeholder);
+                    }
+                }
             } else {
                 holder.ivEventImage.setImageResource(R.drawable.ic_placeholder);
             }

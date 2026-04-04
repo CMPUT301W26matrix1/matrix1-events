@@ -1,6 +1,10 @@
 package com.example.eventflow;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -50,14 +54,34 @@ public class NearbyEventAdapter extends RecyclerView.Adapter<NearbyEventAdapter.
         if (event.getEventDate() != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("MMM d", Locale.getDefault());
             holder.tvDate.setText(sdf.format(event.getEventDate().toDate()));
+        } else if (event.getDate() != null && !event.getDate().isEmpty()) {
+            holder.tvDate.setText(event.getDate());
         }
 
-        if (event.getPosterUrl() != null && !event.getPosterUrl().isEmpty()) {
-            Picasso.get().load(event.getPosterUrl())
-                    .placeholder(R.drawable.ic_placeholder)
-                    .into(holder.ivImage);
-        } else {
-            holder.ivImage.setImageResource(R.drawable.ic_placeholder);
+        // HANDLE IMAGE DISPLAY: URL vs BASE64
+        if (holder.ivImage != null) {
+            String posterData = event.getPosterUrl();
+            if (posterData != null && !posterData.isEmpty()) {
+                if (posterData.startsWith("http")) {
+                    // Legacy URL support
+                    Picasso.get().load(posterData)
+                            .placeholder(R.drawable.ic_placeholder)
+                            .error(R.drawable.ic_placeholder)
+                            .into(holder.ivImage);
+                } else {
+                    // Base64 Support
+                    try {
+                        byte[] decodedString = Base64.decode(posterData, Base64.DEFAULT);
+                        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                        holder.ivImage.setImageBitmap(decodedByte);
+                    } catch (Exception e) {
+                        Log.e("NearbyEventAdapter", "Error decoding Base64 image", e);
+                        holder.ivImage.setImageResource(R.drawable.ic_placeholder);
+                    }
+                }
+            } else {
+                holder.ivImage.setImageResource(R.drawable.ic_placeholder);
+            }
         }
 
         holder.itemView.setOnClickListener(v -> {

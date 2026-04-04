@@ -2,7 +2,10 @@ package com.example.eventflow.org_event.manage_entrant;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -41,6 +44,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
     private TextView tvEventName, tvEventDate, tvEventLocation;
     private TextView tvRegisteredCount, tvAvailableCount, tvCapacityCount;
     private TextView tvCancelledSubtitle, tvWaitlistSubtitle, tvEnrolledSubtitle;
+    private ImageView ivEventBackground;
     private String eventId;
     private String eventName;
     private String userId;
@@ -103,7 +107,8 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         tvEventName = findViewById(R.id.tvEventName);
         tvEventDate = findViewById(R.id.tvEventDate);
         tvEventLocation = findViewById(R.id.tvEventLocation);
-
+        ivEventBackground = findViewById(R.id.ivEventBackground);
+        
         tvRegisteredCount = findViewById(R.id.tvRegisteredCount);
         tvAvailableCount = findViewById(R.id.tvAvailableCount);
         tvCapacityCount = findViewById(R.id.tvCapacityCount);
@@ -218,6 +223,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                         tvEventName.setText("No Events Available");
                         tvEventDate.setText("Create an event to get started");
                         tvEventLocation.setText("");
+                        if (ivEventBackground != null) ivEventBackground.setImageDrawable(null);
                         resetStats();
                     }
                 })
@@ -262,6 +268,25 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                         ? event.getLocation() : "No location");
 
         tvCapacityCount.setText(String.valueOf(event.getCapacity()));
+
+        // UPDATE BACKGROUND IMAGE
+        if (ivEventBackground != null) {
+            if (event.getPosterUrl() != null && !event.getPosterUrl().isEmpty()) {
+                if (event.getPosterUrl().startsWith("http")) {
+                    Picasso.get().load(event.getPosterUrl()).into(ivEventBackground);
+                } else {
+                    try {
+                        byte[] decodedString = Base64.decode(event.getPosterUrl(), Base64.DEFAULT);
+                        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                        ivEventBackground.setImageBitmap(decodedByte);
+                    } catch (Exception e) {
+                        ivEventBackground.setImageDrawable(null);
+                    }
+                }
+            } else {
+                ivEventBackground.setImageDrawable(null);
+            }
+        }
     }
 
     // FIXED: Count only ACCEPTED users for confirmed attendees
@@ -519,6 +544,25 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                 });
     }
 
+    private void deleteCurrentEvent() {
+        if (eventId == null) return;
+
+        db.collection("events").document(eventId).delete()
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Event deleted successfully", Toast.LENGTH_SHORT).show();
+                    // Reset UI
+                    eventId = null;
+                    eventName = null;
+                    tvEventName.setText("No Event Selected");
+                    tvEventDate.setText("Date");
+                    tvEventLocation.setText("Location");
+                    if (ivEventBackground != null) ivEventBackground.setImageDrawable(null);
+                    resetStats();
+                    // Load the next available event if any
+                    fetchLatestEvent();
+                });
+    }
+
     // ==================== MIGRATION METHOD 2: Add deviceId field to credentials ====================
 
     private void addDeviceIdToCredentials() {
@@ -594,10 +638,25 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             int waitingCount = event.getWaitingList() != null ? event.getWaitingList().size() : 0;
             holder.tvWaitlist.setText(waitingCount + " waitlisted");
 
+            // HANDLE IMAGE DISPLAY IN THE LIST: URL vs BASE64
             if (event.getPosterUrl() != null && !event.getPosterUrl().isEmpty()) {
-                Picasso.get().load(event.getPosterUrl())
-                        .placeholder(R.drawable.ic_placeholder)
-                        .into(holder.ivImage);
+                if (event.getPosterUrl().startsWith("http")) {
+                    // Legacy URL support
+                    Picasso.get().load(event.getPosterUrl())
+                            .placeholder(R.drawable.ic_placeholder)
+                            .into(holder.ivImage);
+                } else {
+                    // Base64 Support
+                    try {
+                        byte[] decodedString = Base64.decode(event.getPosterUrl(), Base64.DEFAULT);
+                        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                        holder.ivImage.setImageBitmap(decodedByte);
+                    } catch (Exception e) {
+                        holder.ivImage.setImageResource(R.drawable.ic_placeholder);
+                    }
+                }
+            } else {
+                holder.ivImage.setImageResource(R.drawable.ic_placeholder);
             }
 
             holder.itemView.setOnClickListener(v -> {
