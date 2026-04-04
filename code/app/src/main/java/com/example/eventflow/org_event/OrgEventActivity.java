@@ -227,9 +227,14 @@ public class OrgEventActivity extends AppCompatActivity {
         eventMap.put("private", switchPrivate.isChecked());
         eventMap.put("posterUrl", imageUri != null ? imageUri.toString() : null);
 
-        // Generate QR Data (using eventId as the data to scan)
-        String qrData = "eventflow://event/" + eventId;
-        eventMap.put("qrData", qrData);
+        // Generate QR Data (only if NOT private)
+        String qrData = null;
+        if (!switchPrivate.isChecked()) {
+            qrData = "eventflow://event/" + eventId;
+            eventMap.put("qrData", qrData);
+        } else {
+            eventMap.put("qrData", null); // Ensure it's cleared if private
+        }
 
         // US 02.02.02 — save coordinates for map display
         if (pickedLat != 0 || pickedLng != 0) {
@@ -245,15 +250,23 @@ public class OrgEventActivity extends AppCompatActivity {
             eventMap.put("coOrganizerIds", new ArrayList<String>());
         }
 
+        final String finalQrData = qrData;
         db.collection("events").document(eventId).set(eventMap, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, "Event saved successfully!", Toast.LENGTH_SHORT).show();
                     
-                    // Navigate to QR Display screen
-                    Intent qrIntent = new Intent(this, QRDisplayActivity.class);
-                    qrIntent.putExtra("EVENT_NAME", eventNameStr);
-                    qrIntent.putExtra("QR_DATA", qrData);
-                    startActivity(qrIntent);
+                    if (switchPrivate.isChecked()) {
+                        // For private events, go to Invite screen or Dashboard, NOT QR screen
+                        Intent inviteIntent = new Intent(this, InviteEntrantsActivity.class);
+                        inviteIntent.putExtra("EVENT_ID", eventId);
+                        startActivity(inviteIntent);
+                    } else {
+                        // For public events, go to QR Display screen
+                        Intent qrIntent = new Intent(this, QRDisplayActivity.class);
+                        qrIntent.putExtra("EVENT_NAME", eventNameStr);
+                        qrIntent.putExtra("QR_DATA", finalQrData);
+                        startActivity(qrIntent);
+                    }
 
                     finish();
                 })
