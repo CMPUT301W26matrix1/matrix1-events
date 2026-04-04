@@ -65,7 +65,7 @@
                     android:layout_height="30dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_qr_code"
-                    app:tint="#4CAF50" />
+                    app:tint="@color/neon_green" />
             </androidx.cardview.widget.CardView>
 
             <TextView
@@ -141,7 +141,7 @@
                     android:layout_height="56dp"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:backgroundTint="#66BB6A"
+                    android:backgroundTint="@color/neon_green"
                     android:text="Share"
                     android:textAllCaps="false"
                     android:textColor="#000000"
@@ -201,7 +201,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="Create"
-                android:textColor="#66BB6A"
+                android:textColor="@color/neon_green"
                 android:textSize="10sp"
                 android:textStyle="bold" />
         </LinearLayout>
