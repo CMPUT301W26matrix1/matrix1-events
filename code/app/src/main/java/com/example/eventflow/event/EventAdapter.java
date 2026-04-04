@@ -1,6 +1,7 @@
 package com.example.eventflow.event;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
@@ -32,13 +33,13 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
     private final List<Event> events;
     private final EventActionListener listener;
-    private final String deviceId;
+    private final String userId;
     private String userRole = "entrant";
 
-    public EventAdapter(List<Event> events, EventActionListener listener, String deviceId) {
+    public EventAdapter(List<Event> events, EventActionListener listener, String userId) {
         this.events = events;
         this.listener = listener;
-        this.deviceId = deviceId;
+        this.userId = userId;
     }
 
     public void setUserRole(String userRole) {
@@ -76,16 +77,32 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             }
         }
 
-        // Joined badge vs Join button
-        boolean alreadyJoined = event.getWaitingList() != null
-                && event.getWaitingList().contains(deviceId);
-        
+        // Determine participation status across all lists
+        boolean onWaitingList = event.getWaitingList() != null && event.getWaitingList().contains(userId);
+        boolean isSelected = event.getSelectedEntrants() != null && event.getSelectedEntrants().contains(userId);
+        boolean isRejected = event.getRejectedEntrants() != null && event.getRejectedEntrants().contains(userId);
+        boolean hasStatus = isSelected || onWaitingList || isRejected;
+
         if (holder.tvJoinedBadge != null) {
-            holder.tvJoinedBadge.setVisibility(alreadyJoined ? View.VISIBLE : View.GONE);
+            if (hasStatus) {
+                holder.tvJoinedBadge.setVisibility(View.VISIBLE);
+                if (isSelected) {
+                    holder.tvJoinedBadge.setText("Selected");
+                    holder.tvJoinedBadge.setBackgroundTintList(ColorStateList.valueOf(0xFF4CAF50));
+                } else if (onWaitingList) {
+                    holder.tvJoinedBadge.setText("Waiting List");
+                    holder.tvJoinedBadge.setBackgroundTintList(ColorStateList.valueOf(0xFF4285F4));
+                } else {
+                    holder.tvJoinedBadge.setText("Not Selected");
+                    holder.tvJoinedBadge.setBackgroundTintList(ColorStateList.valueOf(0xFF9E9E9E));
+                }
+            } else {
+                holder.tvJoinedBadge.setVisibility(View.GONE);
+            }
         }
 
         if (holder.btnJoinLeave != null) {
-            if (alreadyJoined) {
+            if (hasStatus) {
                 holder.btnJoinLeave.setVisibility(View.GONE);
             } else {
                 holder.btnJoinLeave.setVisibility(View.VISIBLE);

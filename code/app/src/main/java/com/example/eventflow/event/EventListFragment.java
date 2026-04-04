@@ -31,6 +31,8 @@ import com.example.eventflow.model.repositories.EventRepository;
 import com.example.eventflow.model.repositories.ProfileRepository;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 import androidx.activity.result.ActivityResultLauncher;
@@ -53,7 +55,7 @@ public class EventListFragment extends Fragment {
     private LinearLayout llFilterOptions;
     private ImageButton btnFilterToggle;
     private ChipGroup cgAvailability, cgCategories;
-    
+
     private EventAdapter eventAdapter;
     private final List<Event> allEvents = new ArrayList<>();
     private final List<Event> displayedEvents = new ArrayList<>();
@@ -61,7 +63,9 @@ public class EventListFragment extends Fragment {
     private EventController eventController;
     private ProfileRepository profileRepository;
     private String deviceId;
+    private String uid;
     private Profile currentProfile;
+    private ListenerRegistration eventsListener;
 
     private String selectedCategory = "All";
     private String selectedAvailability = "All";
@@ -86,7 +90,10 @@ public class EventListFragment extends Fragment {
                 Settings.Secure.ANDROID_ID
         );
 
-        eventController = new EventController(deviceId);
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        uid = (mAuth.getCurrentUser() != null) ? mAuth.getCurrentUser().getUid() : deviceId;
+
+        eventController = new EventController(uid);
         profileRepository = new ProfileRepository();
 
         recyclerView = view.findViewById(R.id.recyclerViewEvents);
@@ -99,7 +106,7 @@ public class EventListFragment extends Fragment {
         cgCategories = view.findViewById(R.id.cgCategories);
 
         setupUI(view);
-        
+
         eventAdapter = new EventAdapter(displayedEvents, new EventAdapter.EventActionListener() {
             @Override
             public void onJoinWaitingList(Event event) {
@@ -107,7 +114,6 @@ public class EventListFragment extends Fragment {
                     @Override
                     public void onSuccess() {
                         Toast.makeText(getContext(), "Joined waiting list", Toast.LENGTH_SHORT).show();
-                        fetchAllEvents(); // Refresh
                     }
                     @Override
                     public void onFailure(Exception e) {
@@ -121,7 +127,6 @@ public class EventListFragment extends Fragment {
                     @Override
                     public void onSuccess() {
                         Toast.makeText(getContext(), "Left waiting list", Toast.LENGTH_SHORT).show();
-                        fetchAllEvents(); // Refresh
                     }
                     @Override
                     public void onFailure(Exception e) {
@@ -129,7 +134,7 @@ public class EventListFragment extends Fragment {
                     }
                 });
             }
-        }, deviceId);
+        }, uid);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(eventAdapter);
@@ -219,7 +224,13 @@ public class EventListFragment extends Fragment {
 
     private void fetchAllEvents() {
         if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
-        eventController.loadAllEvents(new EventRepository.EventListCallback() {
+        startListeningForEvents();
+    }
+
+    private void startListeningForEvents() {
+        if (eventsListener != null) return;
+
+        eventsListener = eventController.listenAllEvents(new EventRepository.EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
                 if (progressBar != null) progressBar.setVisibility(View.GONE);
@@ -230,39 +241,41 @@ public class EventListFragment extends Fragment {
             @Override
             public void onFailure(Exception e) {
                 if (progressBar != null) progressBar.setVisibility(View.GONE);
-                Toast.makeText(getContext(), "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                if (getContext() != null) {
+                    Toast.makeText(getContext(), "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
 
     private void applyFiltersAndSearch() {
         String query = etSearchEvents.getText().toString().toLowerCase();
-        
+
         List<Event> filtered = new ArrayList<>(allEvents);
 
         // Filter by Category
         if (!selectedCategory.equals("All")) {
             filtered = filtered.stream()
-                .filter(e -> e.getInterests() != null && e.getInterests().contains(selectedCategory))
-                .collect(Collectors.toList());
+                    .filter(e -> e.getInterests() != null && e.getInterests().contains(selectedCategory))
+                    .collect(Collectors.toList());
         }
 
         // Filter by Availability
         if (selectedAvailability.equals("Available")) {
             filtered = filtered.stream()
-                .filter(e -> !e.isWaitingListFull())
-                .collect(Collectors.toList());
+                    .filter(e -> !e.isWaitingListFull())
+                    .collect(Collectors.toList());
         } else if (selectedAvailability.equals("Waitlist Only")) {
             filtered = filtered.stream()
-                .filter(e -> e.isWaitingListFull())
-                .collect(Collectors.toList());
+                    .filter(e -> e.isWaitingListFull())
+                    .collect(Collectors.toList());
         }
 
         // Search by Name
         if (!query.isEmpty()) {
             filtered = filtered.stream()
-                .filter(e -> e.getName().toLowerCase().contains(query))
-                .collect(Collectors.toList());
+                    .filter(e -> e.getName().toLowerCase().contains(query))
+                    .collect(Collectors.toList());
         }
 
         displayedEvents.clear();
@@ -270,6 +283,15 @@ public class EventListFragment extends Fragment {
         tvEventCount.setText(displayedEvents.size() + " events");
         if (eventAdapter != null) {
             eventAdapter.notifyDataSetChanged();
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (eventsListener != null) {
+            eventsListener.remove();
+            eventsListener = null;
         }
     }
 
