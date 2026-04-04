@@ -5,7 +5,7 @@ import java.util.List;
 
 public class Profile {
 
-    private String deviceId;
+    private String userId;      // Changed from deviceId to userId (Firebase Auth UID)
     private String firstName;
     private String lastName;
     private String email;
@@ -15,15 +15,15 @@ public class Profile {
     private List<String> availableDays;
     private String availableTimeOfDay;
     private boolean notificationsEnabled = true;
-    private String role;  // ADDED
+    private String role;
 
     public Profile() {
         this.interests = new ArrayList<>();
         this.availableDays = new ArrayList<>();
     }
 
-    public Profile(String deviceId, String firstName, String lastName, String email, String phoneNumber) {
-        this.deviceId = deviceId;
+    public Profile(String userId, String firstName, String lastName, String email, String phoneNumber) {
+        this.userId = userId;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
@@ -33,8 +33,17 @@ public class Profile {
     }
 
     // Getters and Setters
-    public String getDeviceId() { return deviceId; }
-    public void setDeviceId(String deviceId) { this.deviceId = deviceId; }
+
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
+
+    // Backward-compatibility aliases — prevents crashes in code still using getDeviceId()
+    /** @deprecated Use {@link #getUserId()} instead */
+    @Deprecated
+    public String getDeviceId() { return userId; }
+    /** @deprecated Use {@link #setUserId(String)} instead */
+    @Deprecated
+    public void setDeviceId(String deviceId) { this.userId = deviceId; }
 
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
@@ -64,20 +73,11 @@ public class Profile {
         return firstName + " " + lastName;
     }
 
-    public boolean isNotificationsEnabled() {
-        return notificationsEnabled;
-    }
-
+    public boolean isNotificationsEnabled() { return notificationsEnabled; }
     public void setNotificationsEnabled(boolean notificationsEnabled) {
         this.notificationsEnabled = notificationsEnabled;
     }
 
-    // ADD THESE GETTER AND SETTER
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 }

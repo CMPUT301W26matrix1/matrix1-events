@@ -6,23 +6,37 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.eventflow.R;
+import com.example.eventflow.model.entities.Entrant;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
 
@@ -31,13 +45,12 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
     private TextView tvConfirmedCount, tvEmptyState;
     private LinearLayout btnExportCSV, btnEmailAll;
     private EnrolledEntrantsAdapter adapter;
-    private List<Entrant> enrolledList;
-    private List<Entrant> filteredList;
+    private List<Entrant> enrolledList = new ArrayList<>();
+    private List<Entrant> filteredList = new ArrayList<>();
     private FirebaseFirestore db;
     private String eventId;
     private String eventName;
 
-    // ActivityResultLauncher for creating a document (CSV export)
     private final ActivityResultLauncher<String> createDocumentLauncher = registerForActivityResult(
             new ActivityResultContracts.CreateDocument("text/csv"),
             uri -> {
@@ -52,30 +65,11 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_organizer_final_entrants);
 
-        // Get event info from intent - ALLOW NULL
         eventId = getIntent().getStringExtra("eventId");
         eventName = getIntent().getStringExtra("eventName");
 
         db = FirebaseFirestore.getInstance();
 
-        initViews();
-        setupRecyclerView();
-        setupListeners();
-
-        // FIX: Even if eventId is null, still show empty state instead of crashing
-        if (eventId != null && !eventId.isEmpty()) {
-            loadEnrolledEntrants();
-        } else {
-            // Show empty state with 0 confirmed attendees
-            updateEmptyState(true);
-            if (tvConfirmedCount != null) {
-                tvConfirmedCount.setText("0");
-            }
-            Toast.makeText(this, "No event selected. Please select an event first.", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    private void initViews() {
         rvEnrolledEntrants = findViewById(R.id.rvEnrolledEntrants);
         etSearch = findViewById(R.id.etSearch);
         tvConfirmedCount = findViewById(R.id.tvConfirmedCount);
@@ -87,90 +81,151 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
         }
-    }
 
-    private void setupRecyclerView() {
-        enrolledList = new ArrayList<>();
-        filteredList = new ArrayList<>();
         adapter = new EnrolledEntrantsAdapter(filteredList);
         rvEnrolledEntrants.setLayoutManager(new LinearLayoutManager(this));
         rvEnrolledEntrants.setAdapter(adapter);
-    }
 
-    private void setupListeners() {
         if (etSearch != null) {
             etSearch.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    if (eventId != null) {
-                        filterEntrants(s.toString());
-                    }
+                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    filterEntrants(s.toString());
                 }
-
-                @Override
-                public void afterTextChanged(Editable s) {}
+                @Override public void afterTextChanged(Editable s) {}
             });
         }
 
         if (btnExportCSV != null) {
-            btnExportCSV.setOnClickListener(v -> {
-                if (eventId == null) {
-                    Toast.makeText(this, "No event selected", Toast.LENGTH_SHORT).show();
-                } else {
-                    exportToCSV();
-                }
-            });
+            btnExportCSV.setOnClickListener(v -> exportToCSV());
+        }
+        if (btnEmailAll != null) {
+            btnEmailAll.setOnClickListener(v -> emailAllEntrants());
         }
 
-        if (btnEmailAll != null) {
-            btnEmailAll.setOnClickListener(v -> {
-                if (eventId == null) {
-                    Toast.makeText(this, "No event selected", Toast.LENGTH_SHORT).show();
-                } else {
-                    emailAllEntrants();
-                }
-            });
+        if (eventId != null && !eventId.isEmpty()) {
+            loadConfirmedEntrants();
+        } else {
+            updateEmptyState(true);
+            if (tvConfirmedCount != null) tvConfirmedCount.setText("0");
         }
     }
 
-    private void loadEnrolledEntrants() {
-        // FIX: Add null check here too
-        if (eventId == null || eventId.isEmpty()) {
-            updateEmptyState(true);
-            return;
-        }
+    private void loadConfirmedEntrants() {
+        if (eventId == null) return;
 
-        db.collection("events").document(eventId)
-                .collection("participants")
-                .whereEqualTo("status", "Selected")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
+        db.collection("events").document(eventId).get()
+                .addOnSuccessListener(eventDoc -> {
+                    List<String> selectedIds = (List<String>) eventDoc.get("selectedEntrants");
+
+                    Log.d("FINAL_ENTRANTS", "Selected IDs from event: " + selectedIds);
+                    Log.d("FINAL_ENTRANTS", "Count: " + (selectedIds != null ? selectedIds.size() : 0));
+
+                    if (selectedIds == null || selectedIds.isEmpty()) {
+                        updateEmptyState(true);
+                        if (tvConfirmedCount != null) tvConfirmedCount.setText("0");
+                        return;
+                    }
+
                     enrolledList.clear();
 
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        String name = doc.getString("name");
-                        String email = doc.getString("email");
-                        String phone = doc.getString("phone");
-                        String joinDate = doc.getString("joinDate");
-                        String acceptDate = doc.getString("acceptDate");
-
-                        Entrant entrant = new Entrant(name, email, phone, joinDate, acceptDate);
-                        enrolledList.add(entrant);
+                    for (String userId : selectedIds) {
+                        checkIfAccepted(userId);
                     }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    updateEmptyState(true);
+                });
+    }
 
-                    filteredList.clear();
-                    filteredList.addAll(enrolledList);
-                    if (adapter != null) {
-                        adapter.updateList(filteredList);
+    private void checkIfAccepted(String userId) {
+        db.collection("users").document(userId)
+                .collection("event_participations").document(eventId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        String status = doc.getString("status");
+                        Log.d("FINAL_ENTRANTS", "User " + userId + " status: " + status);
+                        if ("ACCEPTED".equals(status)) {
+                            fetchUserProfile(userId);
+                        }
+                    } else {
+                        Log.d("FINAL_ENTRANTS", "No participation record for: " + userId);
                     }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("FINAL_ENTRANTS", "Error checking status for: " + userId);
+                });
+    }
+
+    private void fetchUserProfile(String userId) {
+        db.collection("users").document(userId).get()
+                .addOnSuccessListener(doc -> {
+                    String name = userId;
+                    String email = "";
+                    String phone = "";
+
+                    if (doc.exists()) {
+                        String firstName = doc.getString("firstName");
+                        String lastName = doc.getString("lastName");
+                        if (firstName != null && !firstName.isEmpty()) {
+                            name = firstName;
+                            if (lastName != null && !lastName.isEmpty()) {
+                                name = firstName + " " + lastName;
+                            }
+                        } else {
+                            // If no name, try to get from credentials
+                            findNameFromCredentials(userId);
+                            return;
+                        }
+                        email = doc.getString("email");
+                        if (email == null) email = "";
+                        phone = doc.getString("phone");
+                        if (phone == null) phone = "";
+
+                        enrolledList.add(new Entrant(name, email, phone, "", "Confirmed"));
+                        filterEntrants(etSearch != null ? etSearch.getText().toString() : "");
+                        updateUI();
+                    } else {
+                        // User document doesn't exist, try to find from credentials
+                        findNameFromCredentials(userId);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // Add with userId as name
+                    enrolledList.add(new Entrant(userId, "", "", "", "Confirmed"));
+                    filterEntrants(etSearch != null ? etSearch.getText().toString() : "");
+                    updateUI();
+                });
+    }
+
+    private void findNameFromCredentials(String userId) {
+        db.collection("credentials")
+                .whereEqualTo("uid", userId)
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    if (!snapshots.isEmpty()) {
+                        String username = snapshots.getDocuments().get(0).getString("username");
+                        String email = snapshots.getDocuments().get(0).getString("email");
+                        if (username != null && !username.isEmpty()) {
+                            enrolledList.add(new Entrant(username, email != null ? email : "", "", "", "Confirmed"));
+                        } else if (email != null && !email.isEmpty()) {
+                            String nameFromEmail = email.split("@")[0];
+                            enrolledList.add(new Entrant(nameFromEmail, email, "", "", "Confirmed"));
+                        } else {
+                            enrolledList.add(new Entrant(userId, "", "", "", "Confirmed"));
+                        }
+                    } else {
+                        enrolledList.add(new Entrant(userId, "", "", "", "Confirmed"));
+                    }
+                    filterEntrants(etSearch != null ? etSearch.getText().toString() : "");
                     updateUI();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to load: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    updateEmptyState(true);
+                    enrolledList.add(new Entrant(userId, "", "", "", "Confirmed"));
+                    filterEntrants(etSearch != null ? etSearch.getText().toString() : "");
+                    updateUI();
                 });
     }
 
@@ -180,17 +235,16 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
         if (query.isEmpty()) {
             filteredList.addAll(enrolledList);
         } else {
-            for (Entrant entrant : enrolledList) {
-                if ((entrant.getName() != null && entrant.getName().toLowerCase().contains(query.toLowerCase())) ||
-                        (entrant.getEmail() != null && entrant.getEmail().toLowerCase().contains(query.toLowerCase()))) {
-                    filteredList.add(entrant);
+            String lowerQuery = query.toLowerCase();
+            for (Entrant e : enrolledList) {
+                if ((e.getName() != null && e.getName().toLowerCase().contains(lowerQuery)) ||
+                        (e.getEmail() != null && e.getEmail().toLowerCase().contains(lowerQuery))) {
+                    filteredList.add(e);
                 }
             }
         }
 
-        if (adapter != null) {
-            adapter.updateList(filteredList);
-        }
+        adapter.updateList(filteredList);
         updateUI();
     }
 
@@ -198,17 +252,16 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
         if (tvConfirmedCount != null) {
             tvConfirmedCount.setText(String.valueOf(filteredList.size()));
         }
-
         updateEmptyState(filteredList.isEmpty());
     }
 
     private void updateEmptyState(boolean isEmpty) {
         if (isEmpty) {
-            if (tvEmptyState != null) tvEmptyState.setVisibility(TextView.VISIBLE);
-            if (rvEnrolledEntrants != null) rvEnrolledEntrants.setVisibility(RecyclerView.GONE);
+            if (tvEmptyState != null) tvEmptyState.setVisibility(View.VISIBLE);
+            if (rvEnrolledEntrants != null) rvEnrolledEntrants.setVisibility(View.GONE);
         } else {
-            if (tvEmptyState != null) tvEmptyState.setVisibility(TextView.GONE);
-            if (rvEnrolledEntrants != null) rvEnrolledEntrants.setVisibility(RecyclerView.VISIBLE);
+            if (tvEmptyState != null) tvEmptyState.setVisibility(View.GONE);
+            if (rvEnrolledEntrants != null) rvEnrolledEntrants.setVisibility(View.VISIBLE);
         }
     }
 
@@ -218,21 +271,19 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
             return;
         }
 
-        String fileName = "enrolled_entrants_" + (eventName != null ? eventName.replaceAll("\\s+", "_") : "event") + "_" + System.currentTimeMillis() + ".csv";
+        String fileName = "confirmed_entrants_" + (eventName != null ? eventName.replaceAll("\\s+", "_") : "event") + "_" + System.currentTimeMillis() + ".csv";
         createDocumentLauncher.launch(fileName);
     }
 
     private void writeCsvToUri(Uri uri) {
         try {
             StringBuilder csv = new StringBuilder();
-            csv.append("Name,Email,Phone,Join Date,Accept Date\n");
-
-            for (Entrant entrant : filteredList) {
-                csv.append("\"").append(entrant.getName()).append("\",");
-                csv.append("\"").append(entrant.getEmail()).append("\",");
-                csv.append("\"").append(entrant.getPhoneNumber() != null ? entrant.getPhoneNumber() : "").append("\",");
-                csv.append("\"").append(entrant.getJoinDate() != null ? entrant.getJoinDate() : "").append("\",");
-                csv.append("\"").append(entrant.getAcceptDate() != null ? entrant.getAcceptDate() : "").append("\"\n");
+            csv.append("Name,Email,Phone,Status\n");
+            for (Entrant e : filteredList) {
+                csv.append("\"").append(e.getName()).append("\",");
+                csv.append("\"").append(e.getEmail()).append("\",");
+                csv.append("\"").append(e.getPhoneNumber() != null ? e.getPhoneNumber() : "").append("\",");
+                csv.append("\"Confirmed\"\n");
             }
 
             OutputStream outputStream = getContentResolver().openOutputStream(uri);
@@ -249,9 +300,9 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
 
     private void emailAllEntrants() {
         List<String> emails = new ArrayList<>();
-        for (Entrant entrant : filteredList) {
-            if (entrant.getEmail() != null && !entrant.getEmail().isEmpty()) {
-                emails.add(entrant.getEmail());
+        for (Entrant e : filteredList) {
+            if (e.getEmail() != null && !e.getEmail().isEmpty()) {
+                emails.add(e.getEmail());
             }
         }
 
@@ -262,29 +313,60 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
 
         Intent emailIntent = new Intent(Intent.ACTION_SENDTO);
         emailIntent.setData(Uri.parse("mailto:"));
-        
-        // Use an array of emails for better compatibility
         emailIntent.putExtra(Intent.EXTRA_EMAIL, emails.toArray(new String[0]));
-        
-        // Professional Subject
-        emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Important Update: " + (eventName != null ? eventName : "Event"));
+        emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Event Update - " + (eventName != null ? eventName : "Event"));
+        startActivity(Intent.createChooser(emailIntent, "Send email"));
+    }
 
-        // Formal Auto-Email Letter Script
-        String emailBody = "Dear Attendee,\n\n" +
-                "We are writing to provide you with an important update regarding our upcoming event: " + (eventName != null ? eventName : "the event") + ".\n\n" +
-                "We are excited to have you join us! Please keep this email for your records. " +
-                "We will be sharing more details and instructions as we get closer to the event date.\n\n" +
-                "If you have any immediate questions or require further assistance, please feel free to reply to this message.\n\n" +
-                "Best regards,\n" +
-                "The Organizing Team\n" +
-                "EventFlow Management";
+    private class EnrolledEntrantsAdapter extends RecyclerView.Adapter<EnrolledEntrantsAdapter.ViewHolder> {
+        private List<Entrant> entrants;
 
-        emailIntent.putExtra(Intent.EXTRA_TEXT, emailBody);
+        EnrolledEntrantsAdapter(List<Entrant> entrants) {
+            this.entrants = entrants != null ? entrants : new ArrayList<>();
+        }
 
-        try {
-            startActivity(Intent.createChooser(emailIntent, "Send email..."));
-        } catch (android.content.ActivityNotFoundException ex) {
-            Toast.makeText(this, "No email app installed", Toast.LENGTH_SHORT).show();
+        void updateList(List<Entrant> newList) {
+            this.entrants = newList != null ? newList : new ArrayList<>();
+            notifyDataSetChanged();
+        }
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_enrolled_entrant, parent, false);
+            return new ViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            if (position < entrants.size()) {
+                Entrant e = entrants.get(position);
+                if (e != null) {
+                    holder.tvName.setText(e.getName() != null ? e.getName() : "Unknown");
+                    holder.tvEmail.setText(e.getEmail() != null ? e.getEmail() : "");
+                    holder.tvPhone.setText(e.getPhoneNumber() != null && !e.getPhoneNumber().isEmpty() ? e.getPhoneNumber() : "No phone");
+                    holder.tvStatus.setText("Confirmed");
+                    holder.tvStatus.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
+                }
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return entrants != null ? entrants.size() : 0;
+        }
+
+        class ViewHolder extends RecyclerView.ViewHolder {
+            TextView tvName, tvEmail, tvPhone, tvStatus;
+
+            ViewHolder(View v) {
+                super(v);
+                tvName = v.findViewById(R.id.tvEnrolledName);
+                tvEmail = v.findViewById(R.id.tvEnrolledEmail);
+                tvPhone = v.findViewById(R.id.tvEnrolledPhone);
+                tvStatus = v.findViewById(R.id.tvEnrolledStatus);
+            }
         }
     }
 }

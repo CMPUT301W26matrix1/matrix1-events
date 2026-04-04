@@ -37,7 +37,12 @@ public class ProfileRepository {
 
     // SAVE PROFILE
     public void saveProfile(@NonNull Profile profile, @NonNull SaveProfileCallback callback) {
-        String userId = profile.getDeviceId();
+        String userId = profile.getUserId();  // Changed from getDeviceId()
+
+        if (userId == null || userId.isEmpty()) {
+            callback.onFailure(new Exception("User ID is null or empty"));
+            return;
+        }
 
         profilesCollection
                 .document(userId)
@@ -54,7 +59,12 @@ public class ProfileRepository {
 
     // UPDATE PROFILE
     public void updateProfile(@NonNull Profile profile, @NonNull SaveProfileCallback callback) {
-        String userId = profile.getDeviceId();
+        String userId = profile.getUserId();  // Changed from getDeviceId()
+
+        if (userId == null || userId.isEmpty()) {
+            callback.onFailure(new Exception("User ID is null or empty"));
+            return;
+        }
 
         profilesCollection
                 .document(userId)
@@ -70,13 +80,19 @@ public class ProfileRepository {
     }
 
     // DELETE PROFILE
-    public void deleteProfile(@NonNull String deviceId, @NonNull DeleteProfileCallback callback) {
+    public void deleteProfile(@NonNull String userId, @NonNull DeleteProfileCallback callback) {
+        // Changed parameter name from deviceId to userId
+        if (userId.isEmpty()) {
+            callback.onFailure(new Exception("User ID is empty"));
+            return;
+        }
+
         profilesCollection
-                .document(deviceId)
+                .document(userId)
                 .delete()
                 .addOnSuccessListener(unused -> {
                     usersCollection
-                            .document(deviceId)
+                            .document(userId)
                             .delete()
                             .addOnSuccessListener(aVoid -> callback.onSuccess())
                             .addOnFailureListener(callback::onFailure);
@@ -84,10 +100,16 @@ public class ProfileRepository {
                 .addOnFailureListener(callback::onFailure);
     }
 
-    // LOAD PROFILE BY DEVICE ID - Load from users collection
-    public void getProfileByDeviceId(@NonNull String deviceId, @NonNull LoadProfileCallback callback) {
+    // LOAD PROFILE BY USER ID (Firebase Auth UID)
+    // Renamed from getProfileByDeviceId() — use this going forward
+    public void getProfileByUserId(@NonNull String userId, @NonNull LoadProfileCallback callback) {
+        if (userId.isEmpty()) {
+            callback.onNotFound();
+            return;
+        }
+
         usersCollection
-                .document(deviceId)
+                .document(userId)
                 .get()
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
@@ -104,7 +126,14 @@ public class ProfileRepository {
                 .addOnFailureListener(callback::onFailure);
     }
 
-    // ADD THIS: LOAD PROFILE BY EMAIL
+    // Backward-compatibility alias — prevents crashes in code still calling getProfileByDeviceId()
+    /** @deprecated Use {@link #getProfileByUserId(String, LoadProfileCallback)} instead */
+    @Deprecated
+    public void getProfileByDeviceId(@NonNull String deviceId, @NonNull LoadProfileCallback callback) {
+        getProfileByUserId(deviceId, callback);
+    }
+
+    // LOAD PROFILE BY EMAIL
     public void getProfileByEmail(@NonNull String email, @NonNull LoadProfileCallback callback) {
         usersCollection
                 .whereEqualTo("email", email)

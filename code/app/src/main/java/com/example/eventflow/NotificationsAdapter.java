@@ -2,7 +2,6 @@ package com.example.eventflow;
 
 import android.content.Intent;
 import android.graphics.Color;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,12 +16,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 import com.squareup.picasso.Picasso;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,10 +64,16 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         Notification n = notifications.get(position);
-        String userId = Settings.Secure.getString(
-                holder.itemView.getContext().getContentResolver(),
-                Settings.Secure.ANDROID_ID
-        );
+
+        final String userId;
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        } else {
+            userId = "";
+        }
+
+        Log.d("NOTIFICATION", "UserId from FirebaseAuth: " + userId);
+        Log.d("NOTIFICATION", "Type: " + n.getType() + ", Accepted: " + n.isAccepted() + ", Declined: " + n.isDeclined());
 
         if (holder instanceof CoOrganizerViewHolder) {
             CoOrganizerViewHolder h = (CoOrganizerViewHolder) holder;
@@ -98,7 +103,6 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
 
             h.unreadDot.setVisibility(n.isRead() ? View.GONE : View.VISIBLE);
 
-            // Set Icon and Color based on Type
             if (Notification.TYPE_SELECTED.equals(n.getType()) || Notification.TYPE_PRIVATE_INVITE.equals(n.getType())) {
                 h.ivIcon.setImageResource(R.drawable.ic_check);
                 h.ivIcon.setColorFilter(Color.parseColor("#4CAF50"));
@@ -109,37 +113,57 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
                 h.ivIcon.setImageResource(R.drawable.ic_events);
                 h.ivIcon.setColorFilter(Color.parseColor("#FF9800"));
             } else if (Notification.TYPE_LOST_LOTTERY.equals(n.getType())) {
+                h.ivIcon.setImageResource(R.drawable.ic_events);
+                h.ivIcon.setColorFilter(Color.parseColor("#FF9800"));
+            } else if (Notification.TYPE_EXPIRED.equals(n.getType())) {
                 h.ivIcon.setImageResource(R.drawable.ic_close);
-                h.ivIcon.setColorFilter(Color.parseColor("#F44336"));
+                h.ivIcon.setColorFilter(Color.parseColor("#666666"));
             } else {
                 h.ivIcon.setImageResource(R.drawable.ic_notification);
                 h.ivIcon.setColorFilter(Color.parseColor("#BBBBBB"));
             }
 
             String eventId = n.getEventId();
+            final String finalUserId = userId;
+
             h.itemView.setOnClickListener(v -> {
                 if (!n.isRead()) {
-                    markNotificationAsRead(n, userId);
+                    markNotificationAsRead(n, finalUserId);
                 }
                 if (eventId != null && !eventId.isEmpty()) {
                     Intent intent = new Intent(v.getContext(), EventDetailActivity.class);
                     intent.putExtra("eventId", eventId);
-                    intent.putExtra("userId", userId);
+                    intent.putExtra("userId", finalUserId);
                     v.getContext().startActivity(intent);
                 }
             });
 
-            // Handle Action Buttons for SELECTED/PRIVATE_INVITE
             if (h.actionsContainer != null) {
                 if (Notification.TYPE_SELECTED.equals(n.getType()) || Notification.TYPE_PRIVATE_INVITE.equals(n.getType())) {
                     if (n.isAccepted() || n.isDeclined()) {
                         h.actionsContainer.setVisibility(View.GONE);
+                        Log.d("NOTIFICATION", "Hiding buttons - already handled");
                     } else {
                         h.actionsContainer.setVisibility(View.VISIBLE);
+                        h.acceptButton.setText("Accept");
+                        h.declineButton.setText("Decline");
                         h.acceptButton.setOnClickListener(v -> handleDefaultAccept(n, userId, h));
                         h.declineButton.setOnClickListener(v -> handleDefaultDecline(n, userId, h));
+                        Log.d("NOTIFICATION", "Showing Accept/Decline buttons for: " + n.getType());
                     }
-                } else {
+                }
+                else if (Notification.TYPE_LOST_LOTTERY.equals(n.getType())) {
+                    if (n.isAccepted() || n.isDeclined()) {
+                        h.actionsContainer.setVisibility(View.GONE);
+                    } else {
+                        h.actionsContainer.setVisibility(View.VISIBLE);
+                        h.acceptButton.setText("Try Again");
+                        h.declineButton.setVisibility(View.GONE);
+                        h.acceptButton.setOnClickListener(v -> handleTryAgain(n, userId, h));
+                        Log.d("NOTIFICATION", "Showing Try Again button for: " + n.getType());
+                    }
+                }
+                else {
                     h.actionsContainer.setVisibility(View.GONE);
                 }
             }
@@ -168,81 +192,127 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
     private void handleDefaultAccept(Notification n, String userId, DefaultViewHolder holder) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        // 1. Mark notification as read and accepted
-        markNotificationAsHandled(n, userId, true);
+        Log.d("ACCEPT_DEBUG", "=== ACCEPT BUTTON CLICKED ===");
+        Log.d("ACCEPT_DEBUG", "Notification ID: " + n.getId());
+        Log.d("ACCEPT_DEBUG", "Event ID: " + n.getEventId());
+        Log.d("ACCEPT_DEBUG", "User ID (Firebase Auth): " + userId);
 
-        // 2. Update Participation Record for "My Events" page
-        // FIXED: Use correct status based on notification type
-        String status;
-        if (Notification.TYPE_SELECTED.equals(n.getType())) {
-            status = "Selected";  // When accepting a lottery win
-        } else if (Notification.TYPE_PRIVATE_INVITE.equals(n.getType())) {
-            status = "Waiting";   // When accepting a private invite
-        } else {
-            status = "Joined";
-        }
+        if (n.getId() != null) {
+            Map<String, Object> notificationUpdates = new HashMap<>();
+            notificationUpdates.put("accepted", true);
+            notificationUpdates.put("declined", false);
+            notificationUpdates.put("read", true);
 
-        // Get event name from notification
-        String eventName = n.getEventName();
-        if (eventName == null || eventName.isEmpty()) {
-            eventName = n.getMessage();
-        }
-
-        Map<String, Object> participation = new HashMap<>();
-        participation.put("eventId", n.getEventId());
-        participation.put("eventName", eventName);
-        participation.put("status", status);
-        participation.put("joinedAt", Timestamp.now());
-        participation.put("userId", userId);
-
-        db.collection("users").document(userId)
-                .collection("event_participations").document(n.getEventId())
-                .set(participation, SetOptions.merge())
-                .addOnSuccessListener(aVoid -> {
-                    Log.d("NotificationsAdapter", "Event participation saved with status: " + status);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("NotificationsAdapter", "Failed to save participation: " + e.getMessage());
-                });
-
-        // 3. Add user to waiting list in the event document (only for private invites)
-        if (Notification.TYPE_PRIVATE_INVITE.equals(n.getType())) {
-            db.collection("events").document(n.getEventId())
-                    .update("waitingList", FieldValue.arrayUnion(userId))
-                    .addOnSuccessListener(unused -> {
-                        Toast.makeText(holder.itemView.getContext(), "Joined waiting list!", Toast.LENGTH_SHORT).show();
+            db.collection("users").document(userId)
+                    .collection("notifications").document(n.getId())
+                    .update(notificationUpdates)
+                    .addOnSuccessListener(aVoid -> {
+                        Log.d("ACCEPT_DEBUG", "✅ Notification updated successfully");
                         n.setAccepted(true);
+                        n.setDeclined(false);
                         notifyItemChanged(holder.getAdapterPosition());
                     })
                     .addOnFailureListener(e -> {
-                        Toast.makeText(holder.itemView.getContext(), "Failed to join: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Log.e("ACCEPT_DEBUG", "❌ Failed to update notification: " + e.getMessage());
+                        Toast.makeText(holder.itemView.getContext(), "Failed to accept: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     });
-        } else {
-            // For SELECTED notifications, just show success
-            Toast.makeText(holder.itemView.getContext(), "You've accepted the invitation!", Toast.LENGTH_SHORT).show();
-            n.setAccepted(true);
-            notifyItemChanged(holder.getAdapterPosition());
         }
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", "ACCEPTED");
+        updates.put("acceptedAt", FieldValue.serverTimestamp());
+
+        db.collection("users").document(userId)
+                .collection("event_participations").document(n.getEventId())
+                .set(updates, SetOptions.merge())
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("ACCEPT_DEBUG", "✅ Event participation updated to ACCEPTED");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("ACCEPT_DEBUG", "❌ Failed to update event participation: " + e.getMessage());
+                });
+
+        Toast.makeText(holder.itemView.getContext(), "You've accepted the invitation! 🎉", Toast.LENGTH_LONG).show();
     }
 
     private void handleDefaultDecline(Notification n, String userId, DefaultViewHolder holder) {
-        markNotificationAsHandled(n, userId, false);
-
-        // Update status to "Declined" in event_participations
         FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        Log.d("DECLINE_DEBUG", "=== DECLINE BUTTON CLICKED ===");
+        Log.d("DECLINE_DEBUG", "Notification ID: " + n.getId());
+        Log.d("DECLINE_DEBUG", "User ID (Firebase Auth): " + userId);
+
+        if (n.getId() != null) {
+            Map<String, Object> notificationUpdates = new HashMap<>();
+            notificationUpdates.put("accepted", false);
+            notificationUpdates.put("declined", true);
+            notificationUpdates.put("read", true);
+
+            db.collection("users").document(userId)
+                    .collection("notifications").document(n.getId())
+                    .update(notificationUpdates)
+                    .addOnSuccessListener(aVoid -> {
+                        Log.d("DECLINE_DEBUG", "✅ Notification updated to declined");
+                        n.setDeclined(true);
+                        n.setAccepted(false);
+                        notifyItemChanged(holder.getAdapterPosition());
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("DECLINE_DEBUG", "❌ Failed to update notification: " + e.getMessage());
+                        Toast.makeText(holder.itemView.getContext(), "Failed to decline: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        }
+
         db.collection("users").document(userId)
                 .collection("event_participations").document(n.getEventId())
-                .update("status", "Declined")
+                .update("status", "DECLINED", "declinedAt", FieldValue.serverTimestamp());
+
+        db.collection("events").document(n.getEventId())
+                .update(
+                        "selectedEntrants", FieldValue.arrayRemove(userId),
+                        "rejectedEntrants", FieldValue.arrayUnion(userId)
+                )
                 .addOnSuccessListener(aVoid -> {
-                    Log.d("NotificationsAdapter", "Status updated to Declined");
+                    Log.d("DECLINE_DEBUG", "✅ User moved from selectedEntrants to rejectedEntrants");
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("NotificationsAdapter", "Failed to update status: " + e.getMessage());
+                    Log.e("DECLINE_DEBUG", "❌ Failed to update event: " + e.getMessage());
                 });
 
-        Toast.makeText(holder.itemView.getContext(), "Invitation Declined", Toast.LENGTH_SHORT).show();
-        n.setDeclined(true);
-        notifyItemChanged(holder.getAdapterPosition());
+        Toast.makeText(holder.itemView.getContext(), "You've declined the invitation.", Toast.LENGTH_SHORT).show();
+    }
+
+    // FIXED: Try Again button - moves user from rejectedEntrants to waitingList
+    private void handleTryAgain(Notification n, String userId, DefaultViewHolder holder) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        markNotificationAsHandled(n, userId, true);
+
+        // Move from rejectedEntrants to waitingList
+        db.collection("events").document(n.getEventId())
+                .update(
+                        "waitingList", FieldValue.arrayUnion(userId),
+                        "rejectedEntrants", FieldValue.arrayRemove(userId)
+                )
+                .addOnSuccessListener(aVoid -> {
+                    db.collection("users").document(userId)
+                            .collection("event_participations").document(n.getEventId())
+                            .update("status", "Waiting")
+                            .addOnSuccessListener(unused -> {
+                                Log.d("NotificationsAdapter", "User added back to waiting list");
+                                Toast.makeText(holder.itemView.getContext(),
+                                        "You've been added back to the waiting list!",
+                                        Toast.LENGTH_LONG).show();
+                            });
+
+                    n.setAccepted(true);
+                    notifyItemChanged(holder.getAdapterPosition());
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(holder.itemView.getContext(),
+                            "Failed to add back to waiting list: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void markNotificationAsHandled(Notification notification, String userId, boolean accepted) {

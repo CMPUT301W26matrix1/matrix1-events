@@ -1,4 +1,5 @@
 package com.example.eventflow.model.repositories;
+
 import com.example.eventflow.model.entities.Event;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -128,37 +129,37 @@ public class EventRepository {
     }
 
     /**
-     * Adds the given device identifier to the waiting list array of the
+     * Adds the given user identifier to the waiting list array of the
      * event document with the supplied ID.
      *
      * <p>User story: US 01.01.01 — Join waiting list.</p>
      *
-     * @param eventId  ID of the event document
-     * @param deviceId unique device identifier to add
+     * @param eventId ID of the event document
+     * @param userId  unique user identifier (Firebase Auth UID) to add
      * @param callback callback notified of success or failure
      */
-    public void joinWaitingList(String eventId, String deviceId, ActionCallback callback) {
+    public void joinWaitingList(String eventId, String userId, ActionCallback callback) {
         db.collection(EVENTS_COLLECTION)
                 .document(eventId)
-                .update("waitingList", FieldValue.arrayUnion(deviceId))
+                .update("waitingList", FieldValue.arrayUnion(userId))
                 .addOnSuccessListener(unused -> callback.onSuccess())
                 .addOnFailureListener(callback::onFailure);
     }
 
     /**
-     * Removes the given device identifier from the waiting list array of
+     * Removes the given user identifier from the waiting list array of
      * the event document with the supplied ID.
      *
      * <p>User story: US 01.01.02 — Leave waiting list.</p>
      *
-     * @param eventId  ID of the event document
-     * @param deviceId unique device identifier to remove
+     * @param eventId ID of the event document
+     * @param userId  unique user identifier (Firebase Auth UID) to remove
      * @param callback callback notified of success or failure
      */
-    public void leaveWaitingList(String eventId, String deviceId, ActionCallback callback) {
+    public void leaveWaitingList(String eventId, String userId, ActionCallback callback) {
         db.collection(EVENTS_COLLECTION)
                 .document(eventId)
-                .update("waitingList", FieldValue.arrayRemove(deviceId))
+                .update("waitingList", FieldValue.arrayRemove(userId))
                 .addOnSuccessListener(unused -> callback.onSuccess())
                 .addOnFailureListener(callback::onFailure);
     }

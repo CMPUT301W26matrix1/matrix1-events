@@ -208,6 +208,9 @@ public class InviteEntrantsFragment extends Fragment {
                 .collection("notifications")
                 .add(notification)
                 .addOnSuccessListener(doc -> {
+                    // Mirror to top-level notifications collection for Admin review (US 03.08.01)
+                    db.collection("notifications").document(doc.getId()).set(notification);
+                    
                     Toast.makeText(getContext(),
                             "Invite sent!",
                             Toast.LENGTH_SHORT).show();
@@ -254,6 +257,9 @@ public class InviteEntrantsFragment extends Fragment {
                             .collection("notifications")
                             .add(notification)
                             .addOnSuccessListener(doc -> {
+                                // Mirror to top-level notifications collection for Admin review (US 03.08.01)
+                                db.collection("notifications").document(doc.getId()).set(notification);
+
                                 Toast.makeText(getContext(),
                                         profile.getFullName() + " is now a co-organizer!",
                                         Toast.LENGTH_SHORT).show();

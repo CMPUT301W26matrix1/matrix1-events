@@ -15,10 +15,10 @@ import java.util.List;
 public class EventController {
 
     private final EventRepository eventRepository;
-    private final String deviceId;
+    private final String userId;  // Changed from deviceId to userId (Firebase Auth UID)
 
-    public EventController(String deviceId) {
-        this.deviceId = deviceId;
+    public EventController(String userId) {
+        this.userId = userId;
         this.eventRepository = new EventRepository();
     }
 
@@ -116,28 +116,28 @@ public class EventController {
             callback.onFailure(new Exception("Waiting list is full."));
             return;
         }
-        if (event.getWaitingList() != null && event.getWaitingList().contains(deviceId)) {
+        if (event.getWaitingList() != null && event.getWaitingList().contains(userId)) {
             callback.onFailure(new Exception("Already on the waiting list."));
             return;
         }
         // US 02.09.01 — block co-organizers from joining entrant pool
-        if (event.getCoOrganizerIds() != null && event.getCoOrganizerIds().contains(deviceId)) {
+        if (event.getCoOrganizerIds() != null && event.getCoOrganizerIds().contains(userId)) {
             callback.onFailure(new Exception("Co-organizers cannot join the entrant pool."));
             return;
         }
-        eventRepository.joinWaitingList(event.getEventId(), deviceId, callback);
+        eventRepository.joinWaitingList(event.getEventId(), userId, callback);
     }
 
     public void leaveWaitingList(Event event, EventRepository.ActionCallback callback) {
-        eventRepository.leaveWaitingList(event.getEventId(), deviceId, callback);
+        eventRepository.leaveWaitingList(event.getEventId(), userId, callback);
     }
 
     public boolean isOnWaitingList(Event event) {
-        return event.getWaitingList() != null && event.getWaitingList().contains(deviceId);
+        return event.getWaitingList() != null && event.getWaitingList().contains(userId);
     }
 
-    // US 02.09.01 — check if current device is a co-organizer
+    // US 02.09.01 — check if current user is a co-organizer
     public boolean isCoOrganizer(Event event) {
-        return event.getCoOrganizerIds() != null && event.getCoOrganizerIds().contains(deviceId);
+        return event.getCoOrganizerIds() != null && event.getCoOrganizerIds().contains(userId);
     }
 }

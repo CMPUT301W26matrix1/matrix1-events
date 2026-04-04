@@ -23,7 +23,9 @@ public class Event {
     private String posterUrl;
     private int capacity;
     private int waitingListLimit;  // 0 = unlimited
-    private List<String> waitingList;    // device IDs
+    private List<String> waitingList;    // device IDs waiting to be selected
+    private List<String> selectedEntrants;   // device IDs selected from lottery
+    private List<String> rejectedEntrants;   // device IDs rejected from lottery
     private List<String> coOrganizerIds; // US 02.09.01 — co-organizer device IDs
     private List<String> interests;
     private List<String> daysOfWeek;
@@ -40,6 +42,8 @@ public class Event {
      */
     public Event() {
         this.waitingList = new ArrayList<>();
+        this.selectedEntrants = new ArrayList<>();
+        this.rejectedEntrants = new ArrayList<>();
         this.coOrganizerIds = new ArrayList<>();
         this.interests = new ArrayList<>();
         this.daysOfWeek = new ArrayList<>();
@@ -65,6 +69,8 @@ public class Event {
         this.capacity = capacity;
         this.waitingListLimit = waitingListLimit;
         this.waitingList = new ArrayList<>();
+        this.selectedEntrants = new ArrayList<>();
+        this.rejectedEntrants = new ArrayList<>();
         this.coOrganizerIds = new ArrayList<>();
         this.interests = new ArrayList<>();
         this.daysOfWeek = new ArrayList<>();
@@ -76,7 +82,7 @@ public class Event {
         this.locationRadius = 500;
     }
 
-    // Existing getters/setters — unchanged
+    // Existing getters/setters
     public String getEventId() { return eventId; }
     public void setEventId(String eventId) { this.eventId = eventId; }
     public String getId() { return getEventId(); }
@@ -114,8 +120,19 @@ public class Event {
     public void setCapacity(int capacity) { this.capacity = capacity; }
     public int getWaitingListLimit() { return waitingListLimit; }
     public void setWaitingListLimit(int waitingListLimit) { this.waitingListLimit = waitingListLimit; }
+
+    // Waiting list
     public List<String> getWaitingList() { return waitingList; }
     public void setWaitingList(List<String> waitingList) { this.waitingList = waitingList; }
+
+    // NEW: Selected entrants (lottery winners)
+    public List<String> getSelectedEntrants() { return selectedEntrants; }
+    public void setSelectedEntrants(List<String> selectedEntrants) { this.selectedEntrants = selectedEntrants; }
+
+    // NEW: Rejected entrants (lottery losers)
+    public List<String> getRejectedEntrants() { return rejectedEntrants; }
+    public void setRejectedEntrants(List<String> rejectedEntrants) { this.rejectedEntrants = rejectedEntrants; }
+
     public List<String> getInterests() { return interests; }
     public void setInterests(List<String> interests) { this.interests = interests; }
     public List<String> getDaysOfWeek() { return daysOfWeek; }
@@ -149,6 +166,14 @@ public class Event {
 
     public int getWaitingListCount() {
         return waitingList != null ? waitingList.size() : 0;
+    }
+
+    public int getSelectedEntrantsCount() {
+        return selectedEntrants != null ? selectedEntrants.size() : 0;
+    }
+
+    public int getRejectedEntrantsCount() {
+        return rejectedEntrants != null ? rejectedEntrants.size() : 0;
     }
 
     public boolean isRegistrationOpen() {

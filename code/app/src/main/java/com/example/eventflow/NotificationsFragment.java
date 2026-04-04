@@ -1,7 +1,7 @@
 package com.example.eventflow;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -22,10 +23,6 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Fragment that displays a list of notifications for the entrant.
- * Handles accepting/declining event invitations.
- */
 public class NotificationsFragment extends Fragment {
 
     private RecyclerView recyclerView;
@@ -39,7 +36,6 @@ public class NotificationsFragment extends Fragment {
     private String userId;
 
     public NotificationsFragment() {
-        // Required empty public constructor
     }
 
     public static NotificationsFragment newInstance(String userId) {
@@ -58,30 +54,32 @@ public class NotificationsFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_notifications, container, false);
 
-        // Initialize UI components
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyView = view.findViewById(R.id.emptyView);
         tvUnreadCount = view.findViewById(R.id.tv_unread_count);
         markAllAsReadButton = view.findViewById(R.id.markAllAsReadButton);
 
-        // Setup RecyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        // FIXED: Only pass notificationList, no callbacks (adapter handles everything)
         adapter = new NotificationsAdapter(notificationList);
         recyclerView.setAdapter(adapter);
 
-        // Retrieve userId from arguments or settings
-        if (getArguments() != null) {
+        // Get userId from Firebase Auth
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        } else if (getArguments() != null) {
             userId = getArguments().getString("userId");
-        }
-        if (userId == null && getContext() != null) {
-            userId = Settings.Secure.getString(
-                    requireContext().getContentResolver(),
-                    Settings.Secure.ANDROID_ID
-            );
+        } else {
+            SharedPreferences prefs = requireContext().getSharedPreferences("eventflow_prefs", android.content.Context.MODE_PRIVATE);
+            userId = prefs.getString("userUid", "");
         }
 
-        // Setup click listeners
+        Log.d("NotificationsFragment", "UserId: " + userId);
+
+        if (userId == null || userId.isEmpty()) {
+            Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+            return view;
+        }
+
         markAllAsReadButton.setOnClickListener(v -> markAllNotificationsAsRead());
 
         view.findViewById(R.id.btn_notifications_back).setOnClickListener(v -> {
@@ -115,6 +113,9 @@ public class NotificationsFragment extends Fragment {
                                 n.setId(doc.getId());
                                 notificationList.add(n);
                                 if (!n.isRead()) unreadCount++;
+                                Log.d("NotificationsFragment", "Loaded notification - ID: " + n.getId() +
+                                        ", Accepted: " + n.isAccepted() +
+                                        ", Declined: " + n.isDeclined());
                             }
                         }
                     }

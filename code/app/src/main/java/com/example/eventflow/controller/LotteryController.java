@@ -1,5 +1,7 @@
 package com.example.eventflow.controller;
 
+import android.util.Log;
+
 import com.example.eventflow.Notification;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue;
@@ -12,82 +14,86 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * LotteryController
- *
- * This controller handles the logic for event lottery operations, including initial sampling
- * of attendees, drawing replacements for cancelled spots, and handling private invitations.
- * It uses a randomized selection strategy to ensure fairness across all entrants.
- *
- * Design Pattern: Controller (MVC) - Encapsulates business logic for lottery draws.
- */
 public class LotteryController {
 
+    private static final String TAG = "LotteryController";
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-    /**
-     * Helper method to save notification to both user and admin collections.
-     */
     private void saveNotificationToBoth(Notification notification, String userId) {
         if (notification.getId() == null || notification.getId().isEmpty()) {
             notification.setId(UUID.randomUUID().toString());
         }
         notification.setUserId(userId);
 
+        Log.d(TAG, "Saving notification for userId: " + userId);
+        Log.d(TAG, "Notification ID: " + notification.getId());
+        Log.d(TAG, "Notification Type: " + notification.getType());
+
+        // Save to user's notifications subcollection
         db.collection("users")
                 .document(userId)
                 .collection("notifications")
                 .document(notification.getId())
-                .set(notification);
+                .set(notification)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "✅ Notification saved to user: " + userId);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "❌ Failed to save notification to user: " + e.getMessage());
+                });
 
+        // Save to global notifications collection
         db.collection("notifications")
                 .document(notification.getId())
-                .set(notification);
+                .set(notification)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "✅ Notification saved globally");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "❌ Failed to save notification globally: " + e.getMessage());
+                });
     }
 
-    /**
-     * UPDATES the user's event status in event_participations collection
-     * This ensures Profile counts update correctly
-     */
     private void updateUserEventStatus(String userId, String eventId, String newStatus) {
+        Log.d(TAG, "Updating user " + userId + " status to: " + newStatus);
+
         db.collection("users")
                 .document(userId)
                 .collection("event_participations")
                 .document(eventId)
                 .update("status", newStatus)
                 .addOnSuccessListener(aVoid -> {
-                    System.out.println("✅ User " + userId + " status updated to: " + newStatus);
+                    Log.d(TAG, "✅ User " + userId + " status updated to: " + newStatus);
                 })
                 .addOnFailureListener(e -> {
-                    System.err.println("❌ Failed to update status for user " + userId + ": " + e.getMessage());
+                    Log.e(TAG, "❌ Failed to update status: " + e.getMessage());
                 });
     }
 
-    /**
-     * Sends a selection notification to an entrant who won the lottery.
-     * ALSO updates their status to "Selected"
-     */
     private void sendSelectionNotification(String userId, String eventId, String eventName) {
-        // UPDATE STATUS TO SELECTED FIRST
-        updateUserEventStatus(userId, eventId, "Selected");
+        Log.d(TAG, "=== SENDING SELECTION NOTIFICATION ===");
+        Log.d(TAG, "UserId: " + userId);
+        Log.d(TAG, "EventId: " + eventId);
+        Log.d(TAG, "EventName: " + eventName);
+
+        updateUserEventStatus(userId, eventId, "PENDING");
 
         Notification notification = new Notification(
-                "Congratulations! You've been selected!",
+                "You've been selected!",
                 eventName,
-                "Please respond to your invitation.",
+                "Please accept or decline within 2 days.",
                 "SELECTED",
                 eventId
         );
         saveNotificationToBoth(notification, userId);
+
+        Log.d(TAG, "Selection notification sent to: " + userId);
     }
 
-    /**
-     * Sends a notification to an entrant who was not selected in the lottery draw.
-     * ALSO updates their status to "Rejected"
-     */
     private void sendLostLotteryNotification(String userId, String eventId, String eventName) {
-        // UPDATE STATUS TO REJECTED
-        updateUserEventStatus(userId, eventId, "Rejected");
+        Log.d(TAG, "Sending LOST LOTTERY notification to: " + userId);
+
+        updateUserEventStatus(userId, eventId, "REJECTED");
 
         Notification notification = new Notification(
                 "You weren't selected this time.",
@@ -99,9 +105,6 @@ public class LotteryController {
         saveNotificationToBoth(notification, userId);
     }
 
-    /**
-     * Draws a single replacement entrant from the waiting list.
-     */
     public String drawReplacement(List<String> waitingList, List<String> selectedEntrants) {
         if (waitingList == null || waitingList.isEmpty()) return null;
 
@@ -117,54 +120,80 @@ public class LotteryController {
         return null;
     }
 
-    /**
-     * Executes the main lottery draw for an event.
-     * Shuffles the waiting list and selects up to N attendees based on event capacity.
-     * Winners are moved to selectedEntrants and both winners and losers are notified.
-     */
     public void runLotteryDraw(String eventId) {
+        Log.d(TAG, "=== RUNNING LOTTERY DRAW for event: " + eventId);
+
         db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
-            if (!doc.exists()) return;
+            if (!doc.exists()) {
+                Log.e(TAG, "Event not found: " + eventId);
+                return;
+            }
 
             List<String> waitingList = (List<String>) doc.get("waitingList");
+            List<String> existingSelected = (List<String>) doc.get("selectedEntrants");
             Long capacity = doc.getLong("capacity");
             String eventName = doc.getString("name");
 
+            Log.d(TAG, "Waiting list: " + (waitingList != null ? waitingList.toString() : "null"));
+            Log.d(TAG, "Existing selected: " + (existingSelected != null ? existingSelected.size() : 0));
+            Log.d(TAG, "Capacity: " + capacity);
+
             if (capacity == null) capacity = doc.getLong("attendanceLimit");
-            if (waitingList == null || waitingList.isEmpty() || capacity == null) return;
+            if (waitingList == null || waitingList.isEmpty()) {
+                Log.d(TAG, "No one in waiting list");
+                return;
+            }
+            if (capacity == null) {
+                Log.e(TAG, "Capacity is null");
+                return;
+            }
+
+            int currentSelectedCount = existingSelected != null ? existingSelected.size() : 0;
+            int availableSpots = capacity.intValue() - currentSelectedCount;
+
+            Log.d(TAG, "Available spots: " + availableSpots);
+
+            if (availableSpots <= 0) {
+                Log.d(TAG, "Event is full! No spots available.");
+                return;
+            }
 
             Collections.shuffle(waitingList);
-            int n = capacity.intValue();
-            int numToSelect = Math.min(waitingList.size(), n);
+            int numToSelect = Math.min(waitingList.size(), availableSpots);
             List<String> selectedBatch = new ArrayList<>(waitingList.subList(0, numToSelect));
-
             List<String> lostBatch = new ArrayList<>(waitingList);
             lostBatch.removeAll(selectedBatch);
 
+            Log.d(TAG, "Selected batch: " + selectedBatch);
+            Log.d(TAG, "Lost batch: " + lostBatch);
+
             db.collection("events").document(eventId)
                     .update("selectedEntrants", FieldValue.arrayUnion(selectedBatch.toArray()),
-                            "waitingList", FieldValue.arrayRemove(selectedBatch.toArray()))
+                            "waitingList", FieldValue.arrayRemove(selectedBatch.toArray()),
+                            "rejectedEntrants", FieldValue.arrayUnion(lostBatch.toArray()))
                     .addOnSuccessListener(unused -> {
+                        Log.d(TAG, "✅ Firestore updated successfully");
                         for (String winnerId : selectedBatch) {
                             sendSelectionNotification(winnerId, eventId, eventName);
                         }
                         for (String loserId : lostBatch) {
                             sendLostLotteryNotification(loserId, eventId, eventName);
                         }
+                        Log.d(TAG, "✅ Lottery draw completed. Selected: " + selectedBatch.size() + ", Rejected: " + lostBatch.size());
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "❌ Lottery draw failed: " + e.getMessage());
                     });
+        }).addOnFailureListener(e -> {
+            Log.e(TAG, "Failed to get event: " + e.getMessage());
         });
     }
 
-    /**
-     * Handles an entrant's acceptance of a private invite by adding them to the event's waiting list.
-     * ALSO sets initial status to "Waiting"
-     */
     public void acceptPrivateInvite(String userId, String eventId) {
         db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
             if (doc.exists()) {
                 String eventName = doc.getString("name");
 
-                // Set initial status to Waiting
                 Map<String, Object> participation = new HashMap<>();
                 participation.put("eventId", eventId);
                 participation.put("eventName", eventName);
@@ -191,5 +220,51 @@ public class LotteryController {
 
         db.collection("events").document(eventId)
                 .update("waitingList", FieldValue.arrayUnion(userId));
+    }
+
+    public void checkAndAutoRejectExpiredSelections(String eventId) {
+        db.collection("events").document(eventId).get()
+                .addOnSuccessListener(eventDoc -> {
+                    List<String> selectedEntrants = (List<String>) eventDoc.get("selectedEntrants");
+                    if (selectedEntrants == null || selectedEntrants.isEmpty()) return;
+
+                    String eventName = eventDoc.getString("name");
+
+                    for (String userId : selectedEntrants) {
+                        db.collection("users").document(userId)
+                                .collection("event_participations").document(eventId).get()
+                                .addOnSuccessListener(participation -> {
+                                    if (!participation.exists()) return;
+
+                                    String status = participation.getString("status");
+                                    Timestamp joinedAt = participation.getTimestamp("joinedAt");
+
+                                    if ("PENDING".equals(status) && joinedAt != null) {
+                                        long twoDaysInMillis = 48 * 60 * 60 * 1000;
+                                        long timeElapsed = System.currentTimeMillis() - joinedAt.toDate().getTime();
+
+                                        if (timeElapsed > twoDaysInMillis) {
+                                            participation.getReference().update("status", "EXPIRED");
+                                            db.collection("events").document(eventId)
+                                                    .update("selectedEntrants", FieldValue.arrayRemove(userId))
+                                                    .addOnSuccessListener(aVoid -> {
+                                                        sendExpiryNotification(userId, eventId, eventName);
+                                                    });
+                                        }
+                                    }
+                                });
+                    }
+                });
+    }
+
+    private void sendExpiryNotification(String userId, String eventId, String eventName) {
+        Notification notification = new Notification(
+                "Invitation Expired",
+                eventName,
+                "Your invitation has expired as you didn't respond within 2 days.",
+                "EXPIRED",
+                eventId
+        );
+        saveNotificationToBoth(notification, userId);
     }
 }

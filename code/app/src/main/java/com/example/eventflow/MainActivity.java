@@ -23,6 +23,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
@@ -87,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
         // Role selection
         if (cardEntrant != null)   cardEntrant.setOnClickListener(v -> selectRole("entrant"));
         if (cardOrganizer != null) cardOrganizer.setOnClickListener(v -> selectRole("organizer"));
-        if (cardAdmin != null)     cardAdmin.setOnClickListener(v -> selectRole("admin"));
+        if (cardAdmin != null && isAdmin) cardAdmin.setOnClickListener(v -> selectRole("admin"));
 
         if (btnContinue != null) {
             btnContinue.setOnClickListener(v -> {
@@ -186,11 +187,14 @@ public class MainActivity extends AppCompatActivity {
             Uri uri = Uri.parse(contents);
             String eventId = uri.getQueryParameter("id");
             if (eventId != null && !eventId.isEmpty()) {
-                String deviceId = Settings.Secure.getString(
-                        getContentResolver(), Settings.Secure.ANDROID_ID);
                 Intent intent = new Intent(MainActivity.this, EventDetailActivity.class);
                 intent.putExtra("eventId", eventId);
-                intent.putExtra("userId", deviceId);
+                // Use Firebase Auth UID instead of deviceId
+                String userId = "";
+                if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                    userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                }
+                intent.putExtra("userId", userId);
                 intent.putExtra("userRole", "entrant");
                 startActivity(intent);
             }

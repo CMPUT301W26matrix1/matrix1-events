@@ -1,6 +1,7 @@
 package com.example.eventflow;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -33,6 +34,7 @@ import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -66,7 +68,6 @@ public class EventDetailActivity extends AppCompatActivity {
     private RecyclerView rvComments, rvNearbyEvents;
     private TextView tvNearbyEventsLabel;
 
-
     // Bottom navigation views
     private View navHome, navDashboard, navCreate, navProfile;
 
@@ -78,10 +79,11 @@ public class EventDetailActivity extends AppCompatActivity {
 
     private String userId = "";
     private String userName = "";
-    private String deviceId;
+    private String uid = "";  // Firebase Auth UID
 
     private FusedLocationProviderClient fusedLocationClient;
     private ListenerRegistration eventListener;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,25 +92,32 @@ public class EventDetailActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        mAuth = FirebaseAuth.getInstance();
 
         eventId = getIntent().getStringExtra("eventId");
         userRole = getIntent().getStringExtra("userRole");
         isAdmin = "admin".equalsIgnoreCase(userRole);
         isOrganizer = "organizer".equalsIgnoreCase(userRole);
 
-        deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        // Get Firebase Auth UID
+        if (mAuth.getCurrentUser() != null) {
+            uid = mAuth.getCurrentUser().getUid();
+        }
+
         userId = getIntent().getStringExtra("userId");
-        if (userId == null || userId.isEmpty()) userId = deviceId;
-        userName = getIntent().getStringExtra("userName");
-        if (userName == null || userName.isEmpty()) userName = "User";
+        if (userId == null || userId.isEmpty()) userId = uid;
+
+        // Get username from SharedPreferences
+        SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
+        userName = prefs.getString("userName", "User");
 
         initUI();
         setupListeners();
-        
-        eventController = new EventController(deviceId);
+
+        eventController = new EventController(uid);
         startListeningForEventDetails();
         loadComments();
-        
+
         // Only load nearby events if NOT an organizer
         if (!isOrganizer) {
             loadNearbyEvents();
@@ -129,13 +138,13 @@ public class EventDetailActivity extends AppCompatActivity {
         tvDescription = findViewById(R.id.tv_detail_description);
         tvCommentsHeader = findViewById(R.id.tv_comments_header);
         ivPoster = findViewById(R.id.iv_detail_poster);
-        
+
         btnJoinNow = findViewById(R.id.btn_join_now);
         etCommentInput = findViewById(R.id.etCommentInput);
         btnPostComment = findViewById(R.id.btnPostComment);
         btnEditEvent = findViewById(R.id.btn_edit_event);
         btnViewQR = findViewById(R.id.btn_view_qr);
-        
+
         rvComments = findViewById(R.id.rvComments);
         rvComments.setLayoutManager(new LinearLayoutManager(this));
         commentAdapter = new CommentAdapter(commentList, new CommentAdapter.CommentActionListener() {
@@ -188,12 +197,11 @@ public class EventDetailActivity extends AppCompatActivity {
                 if (currentEvent != null) {
                     Intent intent = new Intent(this, QRDisplayActivity.class);
                     intent.putExtra("EVENT_NAME", currentEvent.getName());
-                    
-                    // Fetch qrData directly from Firestore to ensure we have the latest scannable string
+
                     db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
                         String qrData = doc.getString("qrData");
                         if (qrData == null || qrData.isEmpty()) {
-                            qrData = "eventflow://event/" + eventId; // Fallback
+                            qrData = "eventflow://event/" + eventId;
                         }
                         intent.putExtra("QR_DATA", qrData);
                         startActivity(intent);
@@ -226,7 +234,7 @@ public class EventDetailActivity extends AppCompatActivity {
 
     private void startListeningForEventDetails() {
         if (eventId == null) return;
-        
+
         eventListener = db.collection("events").document(eventId)
                 .addSnapshotListener((snapshot, e) -> {
                     if (e != null) {
@@ -262,52 +270,18 @@ public class EventDetailActivity extends AppCompatActivity {
             SimpleDateFormat tf = new SimpleDateFormat("'at' HH:mm", Locale.getDefault());
             tvDate.setText(df.format(e.getEventDate().toDate()));
             tvTime.setText(tf.format(e.getEventDate().toDate()));
-        } else if (e.getDate() != null && !e.getDate().isEmpty()) {
-            tvDate.setText(e.getDate());
-            // Since model might not have 'time', we manually get it from snapshot if needed, 
-            // but for simplicity, the snapshot listener's toObject already populated fields.
-            // If the model doesn't have a 'time' field, we can do this:
-            db.collection("events").document(eventId).get().addOnSuccessListener(documentSnapshot -> {
-                String time = documentSnapshot.getString("time");
-                if (time != null && !time.isEmpty()) {
-                    tvTime.setText("at " + time);
-                }
-            });
         }
 
-        int spotsAvailable = e.getCapacity() - (e.getWaitingList() != null ? e.getWaitingList().size() : 0);
-        tvSpots.setText(Math.max(0, spotsAvailable) + " spots available");
+        // FIXED: Spots available = capacity - selectedEntrants (confirmed attendees)
+        int selectedCount = e.getSelectedEntrants() != null ? e.getSelectedEntrants().size() : 0;
+        int spotsAvailable = Math.max(0, e.getCapacity() - selectedCount);
+        tvSpots.setText(spotsAvailable + " spots available");
         tvTotalSpots.setText("of " + e.getCapacity() + " total");
 
-        // Fixed registration period display to handle both Timestamp and String data
-        db.collection("events").document(eventId).get().addOnSuccessListener(documentSnapshot -> {
-            if (documentSnapshot.exists()) {
-                Object start = documentSnapshot.get("registrationStart");
-                Object end = documentSnapshot.get("registrationEnd");
-                
-                String startStr = "";
-                String endStr = "";
-                
-                if (start instanceof Timestamp) {
-                    startStr = new SimpleDateFormat("MMM d", Locale.getDefault()).format(((Timestamp) start).toDate());
-                } else if (start instanceof String) {
-                    startStr = (String) start;
-                }
-                
-                if (end instanceof Timestamp) {
-                    SimpleDateFormat sdf = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
-                    endStr = sdf.format(((Timestamp) end).toDate());
-                } else if (end instanceof String) {
-                    endStr = (String) end;
-                }
-                
-                if (!startStr.isEmpty() && !endStr.isEmpty()) {
-                    tvRegPeriod.setText(startStr + " - " + endStr);
-                } else {
-                    tvRegPeriod.setText("Not set");
-                }
-            }
-        });
+        if (e.getRegistrationStart() != null && e.getRegistrationEnd() != null) {
+            SimpleDateFormat rf = new SimpleDateFormat("MMM d", Locale.getDefault());
+            tvRegPeriod.setText(rf.format(e.getRegistrationStart().toDate()) + " - " + rf.format(e.getRegistrationEnd().toDate()) + ", " + new SimpleDateFormat("yyyy", Locale.getDefault()).format(e.getRegistrationEnd().toDate()));
+        }
 
         // HANDLE IMAGE DISPLAY: URL vs BASE64
         if (e.getPosterUrl() != null && !e.getPosterUrl().isEmpty()) {
@@ -335,7 +309,6 @@ public class EventDetailActivity extends AppCompatActivity {
     private void updateButtonState() {
         if (isAdmin) {
             btnJoinNow.setVisibility(View.GONE);
-            // Admins can only view and delete, not post new comments or reply/react
             etCommentInput.setVisibility(View.GONE);
             btnPostComment.setVisibility(View.GONE);
             return;
@@ -348,15 +321,22 @@ public class EventDetailActivity extends AppCompatActivity {
 
         btnJoinNow.setVisibility(View.VISIBLE);
         boolean joined = eventController.isOnWaitingList(currentEvent);
-        btnJoinNow.setText(joined ? "Joined" : "Join");
-        btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(joined ? 0xFF4285F4 : 0xFF4CAF50));
+
+        if (joined) {
+            btnJoinNow.setText("On Waiting List");
+            btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4285F4));
+        } else {
+            btnJoinNow.setText("Join");
+            btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
+        }
     }
 
-    // FIXED METHOD: Save event to user's joined events (FROM LEFT SIDE)
     private void saveToUserJoinedEvents(Event event, String status) {
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        if (uid == null || uid.isEmpty()) {
+            Log.e("EventDetail", "User UID is null, cannot save");
+            return;
+        }
 
-        // Format the date as a string for display
         String dateString = "";
         if (event.getEventDate() != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
@@ -370,10 +350,10 @@ public class EventDetailActivity extends AppCompatActivity {
         participation.put("eventLocation", event.getLocation());
         participation.put("status", status);
         participation.put("joinedAt", FieldValue.serverTimestamp());
-        participation.put("userId", deviceId);
+        participation.put("userId", uid);
 
         db.collection("users")
-                .document(deviceId)
+                .document(uid)
                 .collection("event_participations")
                 .document(this.eventId)
                 .set(participation)
@@ -385,12 +365,11 @@ public class EventDetailActivity extends AppCompatActivity {
                 });
     }
 
-    // FIXED METHOD: Remove event from user's joined events (FROM LEFT SIDE)
     private void removeFromUserJoinedEvents(Event event) {
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        if (uid == null || uid.isEmpty()) return;
 
         db.collection("users")
-                .document(deviceId)
+                .document(uid)
                 .collection("event_participations")
                 .document(this.eventId)
                 .delete()
@@ -406,11 +385,15 @@ public class EventDetailActivity extends AppCompatActivity {
         eventController.joinWaitingList(currentEvent, new EventRepository.ActionCallback() {
             @Override
             public void onSuccess() {
-                saveToUserJoinedEvents(currentEvent, "Waiting");  // FROM LEFT SIDE
-                Toast.makeText(EventDetailActivity.this, "Joined successfully", Toast.LENGTH_SHORT).show();
+                saveToUserJoinedEvents(currentEvent, "Waiting");
+                Toast.makeText(EventDetailActivity.this,
+                        "✅ Joined waiting list! You'll be notified if selected.",
+                        Toast.LENGTH_LONG).show();
             }
             @Override public void onFailure(Exception e) {
-                Toast.makeText(EventDetailActivity.this, "Join failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(EventDetailActivity.this,
+                        "❌ Join failed: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -419,11 +402,15 @@ public class EventDetailActivity extends AppCompatActivity {
         eventController.leaveWaitingList(currentEvent, new EventRepository.ActionCallback() {
             @Override
             public void onSuccess() {
-                removeFromUserJoinedEvents(currentEvent);  // FROM LEFT SIDE
-                Toast.makeText(EventDetailActivity.this, "Left successfully", Toast.LENGTH_SHORT).show();
+                removeFromUserJoinedEvents(currentEvent);
+                Toast.makeText(EventDetailActivity.this,
+                        "✅ Left waiting list. You can join again if you change your mind.",
+                        Toast.LENGTH_LONG).show();
             }
             @Override public void onFailure(Exception e) {
-                Toast.makeText(EventDetailActivity.this, "Failed to leave: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(EventDetailActivity.this,
+                        "❌ Failed to leave: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -435,7 +422,7 @@ public class EventDetailActivity extends AppCompatActivity {
         String cid = db.collection("events").document(eventId).collection("comments").document().getId();
         Map<String, Object> data = new HashMap<>();
         data.put("commentId", cid);
-        data.put("userId", userId);
+        data.put("userId", uid);
         data.put("userName", userName);
         data.put("text", text);
         data.put("timestamp", Timestamp.now());
@@ -473,7 +460,6 @@ public class EventDetailActivity extends AppCompatActivity {
             if (location != null) {
                 fetchNearbyFromFirestore(location);
             } else {
-                // Fallback: fetch some events anyway
                 db.collection("events").limit(10).get().addOnSuccessListener(v -> {
                     nearbyEvents.clear();
                     for (DocumentSnapshot doc : v.getDocuments()) {
@@ -497,19 +483,17 @@ public class EventDetailActivity extends AppCompatActivity {
                 if (ev != null) {
                     ev.setEventId(doc.getId());
                     if (ev.getEventId().equals(eventId)) continue;
-                    
+
                     float[] results = new float[1];
                     Location.distanceBetween(userLocation.getLatitude(), userLocation.getLongitude(),
                             ev.getLocationLatitude(), ev.getLocationLongitude(), results);
-                    
-                    // Within 50km
+
                     if (results[0] < 50000) {
                         nearbyEvents.add(ev);
                     }
                 }
             }
             if (nearbyEvents.isEmpty()) {
-                // Add some default ones if none are strictly "nearby" for demo
                 for (DocumentSnapshot doc : v.getDocuments()) {
                     Event ev = doc.toObject(Event.class);
                     if (ev != null && !doc.getId().equals(eventId)) {
@@ -536,8 +520,8 @@ public class EventDetailActivity extends AppCompatActivity {
             if (reactions == null) reactions = new HashMap<>();
             List<String> users = (List<String>) reactions.get(emojis[which]);
             if (users == null) users = new ArrayList<>();
-            if (!users.contains(userId)) users.add(userId);
-            else users.remove(userId);
+            if (!users.contains(uid)) users.add(uid);
+            else users.remove(uid);
             reactions.put(emojis[which], users);
             db.collection("events").document(eventId).collection("comments").document(comment.getCommentId()).update("reactions", reactions);
         }).show();
