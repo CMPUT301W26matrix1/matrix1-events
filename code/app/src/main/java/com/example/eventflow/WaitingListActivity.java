@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.eventflow.org_event.manage_entrant.Entrant;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ public class WaitingListActivity extends AppCompatActivity {
     private final List<Entrant> filteredList = new ArrayList<>();
     private WaitingListAdapter adapter;
     private String eventId;
+    private String currentUserId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +43,11 @@ public class WaitingListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_waiting_list);
 
         db = FirebaseFirestore.getInstance();
+
+        // Get current user's Firebase Auth UID
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        }
 
         lvWaitingList = findViewById(R.id.lv_waiting_list);
         etSearch      = findViewById(R.id.et_waiting_search);
@@ -112,6 +119,7 @@ public class WaitingListActivity extends AppCompatActivity {
     }
 
     private void fetchUserProfile(String userId) {
+        // First try to get user document directly
         db.collection("users")
                 .document(userId)
                 .get()
@@ -123,16 +131,19 @@ public class WaitingListActivity extends AppCompatActivity {
                         waitingList.add(new Entrant(name, email, "Waiting"));
                         filterList(etSearch.getText().toString());
                     } else {
-                        resolveUserId(userId, userId);
+                        // Try to resolve using multiple methods
+                        resolveUserByMultipleMethods(userId);
                     }
                 })
                 .addOnFailureListener(e -> {
-                    resolveUserId(userId, userId);
+                    resolveUserByMultipleMethods(userId);
                 });
     }
 
-    private void resolveUserId(String userId, String originalUserId) {
-        // Try to find by deviceId field in users collection
+    private void resolveUserByMultipleMethods(String userId) {
+        Log.d("WaitingList", "Trying to resolve user: " + userId);
+
+        // Method 1: Try to find by deviceId field in users collection
         db.collection("users")
                 .whereEqualTo("deviceId", userId)
                 .limit(1)
@@ -140,11 +151,12 @@ public class WaitingListActivity extends AppCompatActivity {
                 .addOnSuccessListener(snapshots -> {
                     if (!snapshots.isEmpty()) {
                         String uid = snapshots.getDocuments().get(0).getId();
+                        Log.d("WaitingList", "Found by deviceId field, UID: " + uid);
                         fetchUserProfile(uid);
                         return;
                     }
 
-                    // Then try credentials collection
+                    // Method 2: Try credentials collection
                     db.collection("credentials")
                             .whereEqualTo("deviceId", userId)
                             .get()
@@ -152,23 +164,42 @@ public class WaitingListActivity extends AppCompatActivity {
                                 if (!credSnapshots.isEmpty()) {
                                     String uid = credSnapshots.getDocuments().get(0).getString("uid");
                                     if (uid != null && !uid.isEmpty()) {
+                                        Log.d("WaitingList", "Found in credentials, UID: " + uid);
                                         fetchUserProfile(uid);
                                         return;
                                     }
                                 }
-                                // Still not found - show as unknown
-                                waitingList.add(new Entrant("Unknown (" + originalUserId + ")", "", "Waiting"));
-                                filterList(etSearch.getText().toString());
+
+                                // Method 3: Try by email (if it looks like an email)
+                                if (userId.contains("@")) {
+                                    db.collection("credentials")
+                                            .whereEqualTo("email", userId)
+                                            .get()
+                                            .addOnSuccessListener(emailSnapshots -> {
+                                                if (!emailSnapshots.isEmpty()) {
+                                                    String uid = emailSnapshots.getDocuments().get(0).getString("uid");
+                                                    if (uid != null && !uid.isEmpty()) {
+                                                        Log.d("WaitingList", "Found by email, UID: " + uid);
+                                                        fetchUserProfile(uid);
+                                                        return;
+                                                    }
+                                                }
+                                                showUnknownUser(userId);
+                                            })
+                                            .addOnFailureListener(e -> showUnknownUser(userId));
+                                    return;
+                                }
+
+                                showUnknownUser(userId);
                             })
-                            .addOnFailureListener(e -> {
-                                waitingList.add(new Entrant("Unknown (" + originalUserId + ")", "", "Waiting"));
-                                filterList(etSearch.getText().toString());
-                            });
+                            .addOnFailureListener(e -> showUnknownUser(userId));
                 })
-                .addOnFailureListener(e -> {
-                    waitingList.add(new Entrant("Unknown (" + originalUserId + ")", "", "Waiting"));
-                    filterList(etSearch.getText().toString());
-                });
+                .addOnFailureListener(e -> showUnknownUser(userId));
+    }
+
+    private void showUnknownUser(String userId) {
+        waitingList.add(new Entrant("Unknown (" + userId.substring(0, Math.min(8, userId.length())) + ")", "", "Waiting"));
+        filterList(etSearch.getText().toString());
     }
 
     private String buildName(String firstName, String lastName) {

@@ -21,12 +21,14 @@ import com.example.eventflow.R;
 import com.example.eventflow.SignupActivity;
 import com.example.eventflow.model.entities.Profile;
 import com.example.eventflow.model.repositories.ProfileRepository;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class ProfileContainerFragment extends Fragment {
 
     private ProfileRepository profileRepository;
     private static final String TAG = "ProfileContainer";
     private SharedPreferences prefs;
+    private String currentUserId;  // Firebase Auth UID
 
     public ProfileContainerFragment() {
         // Required empty public constructor
@@ -46,6 +48,12 @@ public class ProfileContainerFragment extends Fragment {
         profileRepository = new ProfileRepository();
         prefs = requireActivity().getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
 
+        // Get Firebase Auth UID
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            Log.d(TAG, "Current user UID: " + currentUserId);
+        }
+
         if (savedInstanceState == null) {
             checkLoginAndLoadProfile();
         }
@@ -59,21 +67,51 @@ public class ProfileContainerFragment extends Fragment {
         Log.d(TAG, "isLoggedIn: " + isLoggedIn + ", userEmail: " + userEmail);
 
         if (!isLoggedIn || userEmail.isEmpty()) {
-            // Not logged in - show SignupActivity
             Log.d(TAG, "User not logged in, showing SignupActivity");
             navigateToSignup();
             return;
         }
 
-        // User is logged in, load profile
-        loadProfileByEmail(userEmail);
+        // User is logged in, load profile by UID
+        if (currentUserId != null && !currentUserId.isEmpty()) {
+            loadProfileByUserId(currentUserId);
+        } else {
+            loadProfileByEmail(userEmail);
+        }
+    }
+
+    private void loadProfileByUserId(String userId) {
+        Log.d(TAG, "Loading profile by userId: " + userId);
+
+        profileRepository.getProfileByUserId(userId, new ProfileRepository.LoadProfileCallback() {
+            @Override
+            public void onSuccess(@NonNull Profile profile) {
+                Log.d(TAG, "Profile found by userId: " + profile.getEmail());
+                showProfileView(profile);
+            }
+
+            @Override
+            public void onNotFound() {
+                Log.d(TAG, "Profile not found by userId, trying by email");
+                String userEmail = prefs.getString("userEmail", "");
+                if (!userEmail.isEmpty()) {
+                    loadProfileByEmail(userEmail);
+                } else {
+                    navigateToSignup();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.e(TAG, "Error loading by userId: " + e.getMessage());
+                navigateToSignup();
+            }
+        });
     }
 
     private void loadProfileByEmail(String userEmail) {
-        String deviceId = getDeviceId();
-        Log.d(TAG, "Loading profile for email: " + userEmail + ", deviceId: " + deviceId);
+        Log.d(TAG, "Loading profile for email: " + userEmail);
 
-        // Try to find profile by email first
         profileRepository.getProfileByEmail(userEmail, new ProfileRepository.LoadProfileCallback() {
             @Override
             public void onSuccess(@NonNull Profile profile) {
@@ -83,51 +121,16 @@ public class ProfileContainerFragment extends Fragment {
 
             @Override
             public void onNotFound() {
-                Log.d(TAG, "Profile not found by email, trying device ID");
-                // Try by device ID as fallback
-                profileRepository.getProfileByDeviceId(deviceId, new ProfileRepository.LoadProfileCallback() {
-                    @Override
-                    public void onSuccess(@NonNull Profile profile) {
-                        Log.d(TAG, "Profile found by device ID");
-                        showProfileView(profile);
-                    }
-
-                    @Override
-                    public void onNotFound() {
-                        Log.d(TAG, "No profile found at all");
-                        // No profile exists, but user is logged in? This shouldn't happen
-                        // Show signup to create profile
-                        navigateToSignup();
-                    }
-
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.e(TAG, "Error loading by device ID", e);
-                        Toast.makeText(requireContext(),
-                                "Failed to load profile: " + e.getMessage(),
-                                Toast.LENGTH_LONG).show();
-                        navigateToSignup();
-                    }
-                });
+                Log.d(TAG, "No profile found");
+                navigateToSignup();
             }
 
             @Override
             public void onFailure(@NonNull Exception e) {
-                Log.e(TAG, "Error loading by email", e);
-                Toast.makeText(requireContext(),
-                        "Failed to load profile: " + e.getMessage(),
-                        Toast.LENGTH_LONG).show();
+                Log.e(TAG, "Error loading by email: " + e.getMessage());
                 navigateToSignup();
             }
         });
-    }
-
-    @SuppressLint("HardwareIds")
-    private String getDeviceId() {
-        return Settings.Secure.getString(
-                requireContext().getContentResolver(),
-                Settings.Secure.ANDROID_ID
-        );
     }
 
     private void navigateToSignup() {
@@ -148,6 +151,7 @@ public class ProfileContainerFragment extends Fragment {
     }
 
     public void showEditProfile(@NonNull Profile profile) {
+        Log.d(TAG, "Showing edit profile for: " + profile.getEmail());
         FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
         transaction.replace(R.id.profile_container, EditProfileFragment.newInstance(profile));
         transaction.addToBackStack(null);
@@ -155,9 +159,17 @@ public class ProfileContainerFragment extends Fragment {
     }
 
     public void showEventHistory() {
-        String deviceId = getDeviceId();
+        // Use Firebase Auth UID instead of deviceId
+        String userId = currentUserId;
+        if (userId == null || userId.isEmpty()) {
+            if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            }
+        }
+
+        Log.d(TAG, "Showing event history for userId: " + userId);
         FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
-        transaction.replace(R.id.profile_container, FullHistoryFragment.newInstance(deviceId));
+        transaction.replace(R.id.profile_container, FullHistoryFragment.newInstance(userId));
         transaction.addToBackStack(null);
         transaction.commit();
     }

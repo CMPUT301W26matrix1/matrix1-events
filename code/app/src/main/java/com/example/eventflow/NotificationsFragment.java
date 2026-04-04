@@ -113,6 +113,9 @@ public class NotificationsFragment extends Fragment {
                                 n.setId(doc.getId());
                                 notificationList.add(n);
                                 if (!n.isRead()) unreadCount++;
+                                Log.d("NotificationsFragment", "Loaded notification - ID: " + n.getId() +
+                                        ", Accepted: " + n.isAccepted() +
+                                        ", Declined: " + n.isDeclined());
                             }
                         }
                     }
@@ -151,7 +154,6 @@ public class NotificationsFragment extends Fragment {
                         doc.getReference().update("read", true);
                     }
                     Toast.makeText(getContext(), "All caught up!", Toast.LENGTH_SHORT).show();
-                    loadNotifications();
                 });
     }
 }

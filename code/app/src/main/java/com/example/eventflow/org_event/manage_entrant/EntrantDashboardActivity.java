@@ -27,6 +27,7 @@ import com.example.eventflow.model.entities.Event;
 import com.example.eventflow.org_event.OrgEventActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
@@ -84,6 +85,10 @@ public class EntrantDashboardActivity extends AppCompatActivity {
 
         loadMyEvents();
         setupClickListeners();
+
+        // Run migrations
+        migrateWaitingListToUid();
+        addDeviceIdToCredentials();
     }
 
     @Override
@@ -259,27 +264,67 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         tvCapacityCount.setText(String.valueOf(event.getCapacity()));
     }
 
+    // FIXED: Count only ACCEPTED users for confirmed attendees
     private void fetchStatsFromEvent(String id) {
         db.collection("events").document(id).get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (!documentSnapshot.exists()) return;
 
-                    List<String> waitingList      = (List<String>) documentSnapshot.get("waitingList");
+                    List<String> waitingList = (List<String>) documentSnapshot.get("waitingList");
                     List<String> selectedEntrants = (List<String>) documentSnapshot.get("selectedEntrants");
                     List<String> rejectedEntrants = (List<String>) documentSnapshot.get("rejectedEntrants");
-                    Long capacity                 = documentSnapshot.getLong("capacity");
+                    Long capacity = documentSnapshot.getLong("capacity");
 
-                    int waitingCount  = waitingList      != null ? waitingList.size()      : 0;
-                    int selectedCount = selectedEntrants != null ? selectedEntrants.size() : 0;
+                    int waitingCount = waitingList != null ? waitingList.size() : 0;
                     int rejectedCount = rejectedEntrants != null ? rejectedEntrants.size() : 0;
-                    int maxCapacity   = capacity         != null ? capacity.intValue()     : 0;
+                    int maxCapacity = capacity != null ? capacity.intValue() : 0;
 
-                    tvRegisteredCount.setText(String.valueOf(selectedCount));
-                    tvAvailableCount.setText(String.valueOf(Math.max(0, maxCapacity - selectedCount)));
-
+                    tvWaitlistSubtitle.setText(waitingCount + " people in waitlist");
                     tvCancelledSubtitle.setText(rejectedCount + " cancelled registrations");
-                    tvWaitlistSubtitle.setText(waitingCount   + " people in waitlist");
-                    tvEnrolledSubtitle.setText(selectedCount  + " confirmed attendees");
+                    tvCapacityCount.setText(String.valueOf(maxCapacity));
+
+                    if (selectedEntrants == null || selectedEntrants.isEmpty()) {
+                        tvRegisteredCount.setText("0");
+                        tvAvailableCount.setText(String.valueOf(maxCapacity));
+                        tvEnrolledSubtitle.setText("0 confirmed attendees");
+                        return;
+                    }
+
+                    final int[] acceptedCount = {0};
+                    final int[] processedCount = {0};
+                    final int total = selectedEntrants.size();
+
+                    for (String userId : selectedEntrants) {
+                        db.collection("users").document(userId)
+                                .collection("event_participations").document(id)
+                                .get()
+                                .addOnSuccessListener(doc -> {
+                                    processedCount[0]++;
+                                    if (doc.exists()) {
+                                        String status = doc.getString("status");
+                                        if ("ACCEPTED".equals(status)) {
+                                            acceptedCount[0]++;
+                                        }
+                                    }
+
+                                    if (processedCount[0] == total) {
+                                        // All users processed - update UI
+                                        tvRegisteredCount.setText(String.valueOf(acceptedCount[0]));
+                                        int available = Math.max(0, maxCapacity - acceptedCount[0]);
+                                        tvAvailableCount.setText(String.valueOf(available));
+                                        tvEnrolledSubtitle.setText(acceptedCount[0] + " confirmed attendees");
+                                    }
+                                })
+                                .addOnFailureListener(e -> {
+                                    processedCount[0]++;
+                                    if (processedCount[0] == total) {
+                                        tvRegisteredCount.setText(String.valueOf(acceptedCount[0]));
+                                        int available = Math.max(0, maxCapacity - acceptedCount[0]);
+                                        tvAvailableCount.setText(String.valueOf(available));
+                                        tvEnrolledSubtitle.setText(acceptedCount[0] + " confirmed attendees");
+                                    }
+                                });
+                    }
                 })
                 .addOnFailureListener(e -> {
                     Log.e("Dashboard", "fetchStatsFromEvent error: " + e.getMessage());
@@ -405,6 +450,120 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+    }
+
+    // ==================== MIGRATION METHOD 1: Convert waitingList from deviceId to UID ====================
+
+    private void migrateWaitingListToUid() {
+        if (userId == null || userId.isEmpty()) return;
+
+        Log.d("Migration", "Starting migration of waitingList from deviceId to UID...");
+
+        db.collection("events").get()
+                .addOnSuccessListener(events -> {
+                    for (QueryDocumentSnapshot eventDoc : events) {
+                        List<String> waitingList = (List<String>) eventDoc.get("waitingList");
+                        if (waitingList == null || waitingList.isEmpty()) continue;
+
+                        boolean needsUpdate = false;
+                        List<String> newWaitingList = new ArrayList<>();
+
+                        for (String id : waitingList) {
+                            if (id.length() == 16 && id.matches("[0-9a-f]+")) {
+                                findUidByDeviceId(id, newWaitingList);
+                                needsUpdate = true;
+                                Log.d("Migration", "Found deviceId to migrate: " + id);
+                            } else {
+                                newWaitingList.add(id);
+                            }
+                        }
+
+                        if (needsUpdate && !newWaitingList.isEmpty()) {
+                            eventDoc.getReference().update("waitingList", newWaitingList)
+                                    .addOnSuccessListener(aVoid -> {
+                                        Log.d("Migration", "✅ Updated waitingList for event: " + eventDoc.getId());
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Log.e("Migration", "❌ Failed to update event: " + e.getMessage());
+                                    });
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Migration", "❌ Failed to fetch events: " + e.getMessage());
+                });
+    }
+
+    private void findUidByDeviceId(String deviceId, List<String> newWaitingList) {
+        db.collection("credentials")
+                .whereEqualTo("deviceId", deviceId)
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    if (!snapshots.isEmpty()) {
+                        String uid = snapshots.getDocuments().get(0).getString("uid");
+                        if (uid != null && !uid.isEmpty()) {
+                            newWaitingList.add(uid);
+                            Log.d("Migration", "✅ Migrated: " + deviceId + " → " + uid);
+                        } else {
+                            newWaitingList.add(deviceId);
+                            Log.d("Migration", "No UID found for: " + deviceId);
+                        }
+                    } else {
+                        newWaitingList.add(deviceId);
+                        Log.d("Migration", "No credentials found for: " + deviceId);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    newWaitingList.add(deviceId);
+                    Log.e("Migration", "Error finding UID for: " + deviceId);
+                });
+    }
+
+    // ==================== MIGRATION METHOD 2: Add deviceId field to credentials ====================
+
+    private void addDeviceIdToCredentials() {
+        Log.d("Migration", "Starting migration to add deviceId to credentials...");
+
+        db.collection("credentials").get()
+                .addOnSuccessListener(snapshots -> {
+                    for (QueryDocumentSnapshot credDoc : snapshots) {
+                        if (credDoc.contains("deviceId")) {
+                            Log.d("Migration", "deviceId already exists for: " + credDoc.getString("email"));
+                            continue;
+                        }
+
+                        String uid = credDoc.getString("uid");
+                        String email = credDoc.getString("email");
+
+                        if (uid != null && !uid.isEmpty()) {
+                            db.collection("users").document(uid).get()
+                                    .addOnSuccessListener(userDoc -> {
+                                        if (userDoc.exists()) {
+                                            String deviceId = userDoc.getString("deviceId");
+                                            if (deviceId != null && !deviceId.isEmpty()) {
+                                                credDoc.getReference().update("deviceId", deviceId)
+                                                        .addOnSuccessListener(aVoid -> {
+                                                            Log.d("Migration", "✅ Added deviceId to credentials for: " + email);
+                                                        })
+                                                        .addOnFailureListener(e -> {
+                                                            Log.e("Migration", "❌ Failed to add deviceId for: " + email);
+                                                        });
+                                            } else {
+                                                Log.d("Migration", "No deviceId found in user document for: " + email);
+                                            }
+                                        } else {
+                                            Log.d("Migration", "User document not found for UID: " + uid);
+                                        }
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Log.e("Migration", "Failed to fetch user document for: " + uid);
+                                    });
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Migration", "❌ Failed to fetch credentials: " + e.getMessage());
+                });
     }
 
     private class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAdapter.ViewHolder> {

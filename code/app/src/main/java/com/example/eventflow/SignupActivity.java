@@ -67,11 +67,26 @@ public class SignupActivity extends AppCompatActivity {
         String password = etPassword.getText().toString().trim();
         String confirm  = etConfirmPassword.getText().toString().trim();
 
-        if (TextUtils.isEmpty(username)) { etUsername.setError("Username required"); return; }
-        if (TextUtils.isEmpty(email))    { etEmailPhone.setError("Email required"); return; }
-        if (TextUtils.isEmpty(password)) { etPassword.setError("Password required"); return; }
-        if (password.length() < 6)       { etPassword.setError("Min 6 characters"); return; }
-        if (!password.equals(confirm))   { etConfirmPassword.setError("Passwords do not match"); return; }
+        if (TextUtils.isEmpty(username)) {
+            etUsername.setError("Username required");
+            return;
+        }
+        if (TextUtils.isEmpty(email)) {
+            etEmailPhone.setError("Email required");
+            return;
+        }
+        if (TextUtils.isEmpty(password)) {
+            etPassword.setError("Password required");
+            return;
+        }
+        if (password.length() < 6) {
+            etPassword.setError("Min 6 characters");
+            return;
+        }
+        if (!password.equals(confirm)) {
+            etConfirmPassword.setError("Passwords do not match");
+            return;
+        }
 
         btnSignup.setEnabled(false);
         btnSignup.setText("Creating account...");
@@ -101,7 +116,13 @@ public class SignupActivity extends AppCompatActivity {
     }
 
     private void saveUserToFirestore(String uid, String username, String email, String password) {
-        // Check if email already exists in credentials (optional, for backward compatibility)
+        // Get deviceId
+        String deviceId = Settings.Secure.getString(
+                getContentResolver(),
+                Settings.Secure.ANDROID_ID
+        );
+
+        // Check if email already exists in credentials
         db.collection("credentials")
                 .document(email)
                 .get()
@@ -118,7 +139,8 @@ public class SignupActivity extends AppCompatActivity {
                     credentials.put("username", username);
                     credentials.put("email", email);
                     credentials.put("password", password);
-                    credentials.put("uid", uid);  // Store UID for reference
+                    credentials.put("uid", uid);
+                    credentials.put("deviceId", deviceId);  // Add deviceId for migration
 
                     db.collection("credentials")
                             .document(email)
@@ -127,7 +149,7 @@ public class SignupActivity extends AppCompatActivity {
                                 // Save profile using UID instead of deviceId
                                 String[] parts = username.split(" ", 2);
                                 String firstName = parts[0];
-                                String lastName  = parts.length > 1 ? parts[1] : "";
+                                String lastName = parts.length > 1 ? parts[1] : "";
 
                                 Profile profile = new Profile(uid, firstName, lastName, email, "");
                                 profileRepository.saveProfile(profile, new ProfileRepository.SaveProfileCallback() {
@@ -139,9 +161,12 @@ public class SignupActivity extends AppCompatActivity {
                                         startActivity(new Intent(SignupActivity.this, MainActivity.class));
                                         finish();
                                     }
+
                                     @Override
                                     public void onFailure(Exception e) {
                                         saveLoginState(email, username, uid);
+                                        Toast.makeText(SignupActivity.this,
+                                                "Account created but profile save failed!", Toast.LENGTH_LONG).show();
                                         startActivity(new Intent(SignupActivity.this, MainActivity.class));
                                         finish();
                                     }
@@ -150,14 +175,17 @@ public class SignupActivity extends AppCompatActivity {
                             .addOnFailureListener(e -> {
                                 btnSignup.setEnabled(true);
                                 btnSignup.setText("Signup");
-                                Toast.makeText(this, "Signup failed: " + e.getMessage(),
+                                Toast.makeText(SignupActivity.this,
+                                        "Signup failed: " + e.getMessage(),
                                         Toast.LENGTH_LONG).show();
                             });
                 })
                 .addOnFailureListener(e -> {
                     btnSignup.setEnabled(true);
                     btnSignup.setText("Signup");
-                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(SignupActivity.this,
+                            "Error: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
                 });
     }
 
@@ -167,7 +195,7 @@ public class SignupActivity extends AppCompatActivity {
                 .putBoolean("isLoggedIn", true)
                 .putString("userEmail", email)
                 .putString("userName", username)
-                .putString("userUid", uid)  // Save UID for later use
+                .putString("userUid", uid)
                 .apply();
     }
 }

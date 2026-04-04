@@ -118,6 +118,9 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
                 .addOnSuccessListener(eventDoc -> {
                     List<String> selectedIds = (List<String>) eventDoc.get("selectedEntrants");
 
+                    Log.d("FINAL_ENTRANTS", "Selected IDs from event: " + selectedIds);
+                    Log.d("FINAL_ENTRANTS", "Count: " + (selectedIds != null ? selectedIds.size() : 0));
+
                     if (selectedIds == null || selectedIds.isEmpty()) {
                         updateEmptyState(true);
                         if (tvConfirmedCount != null) tvConfirmedCount.setText("0");
@@ -143,10 +146,16 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
                         String status = doc.getString("status");
+                        Log.d("FINAL_ENTRANTS", "User " + userId + " status: " + status);
                         if ("ACCEPTED".equals(status)) {
                             fetchUserProfile(userId);
                         }
+                    } else {
+                        Log.d("FINAL_ENTRANTS", "No participation record for: " + userId);
                     }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("FINAL_ENTRANTS", "Error checking status for: " + userId);
                 });
     }
 
@@ -165,14 +174,56 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
                             if (lastName != null && !lastName.isEmpty()) {
                                 name = firstName + " " + lastName;
                             }
+                        } else {
+                            // If no name, try to get from credentials
+                            findNameFromCredentials(userId);
+                            return;
                         }
                         email = doc.getString("email");
                         if (email == null) email = "";
                         phone = doc.getString("phone");
                         if (phone == null) phone = "";
-                    }
 
-                    enrolledList.add(new Entrant(name, email, phone, "", "Confirmed"));
+                        enrolledList.add(new Entrant(name, email, phone, "", "Confirmed"));
+                        filterEntrants(etSearch != null ? etSearch.getText().toString() : "");
+                        updateUI();
+                    } else {
+                        // User document doesn't exist, try to find from credentials
+                        findNameFromCredentials(userId);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // Add with userId as name
+                    enrolledList.add(new Entrant(userId, "", "", "", "Confirmed"));
+                    filterEntrants(etSearch != null ? etSearch.getText().toString() : "");
+                    updateUI();
+                });
+    }
+
+    private void findNameFromCredentials(String userId) {
+        db.collection("credentials")
+                .whereEqualTo("uid", userId)
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    if (!snapshots.isEmpty()) {
+                        String username = snapshots.getDocuments().get(0).getString("username");
+                        String email = snapshots.getDocuments().get(0).getString("email");
+                        if (username != null && !username.isEmpty()) {
+                            enrolledList.add(new Entrant(username, email != null ? email : "", "", "", "Confirmed"));
+                        } else if (email != null && !email.isEmpty()) {
+                            String nameFromEmail = email.split("@")[0];
+                            enrolledList.add(new Entrant(nameFromEmail, email, "", "", "Confirmed"));
+                        } else {
+                            enrolledList.add(new Entrant(userId, "", "", "", "Confirmed"));
+                        }
+                    } else {
+                        enrolledList.add(new Entrant(userId, "", "", "", "Confirmed"));
+                    }
+                    filterEntrants(etSearch != null ? etSearch.getText().toString() : "");
+                    updateUI();
+                })
+                .addOnFailureListener(e -> {
+                    enrolledList.add(new Entrant(userId, "", "", "", "Confirmed"));
                     filterEntrants(etSearch != null ? etSearch.getText().toString() : "");
                     updateUI();
                 });

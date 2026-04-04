@@ -269,8 +269,10 @@ public class EventDetailActivity extends AppCompatActivity {
             tvTime.setText(tf.format(e.getEventDate().toDate()));
         }
 
-        int spotsAvailable = e.getCapacity() - (e.getWaitingList() != null ? e.getWaitingList().size() : 0);
-        tvSpots.setText(Math.max(0, spotsAvailable) + " spots available");
+        // FIXED: Spots available = capacity - selectedEntrants (confirmed attendees)
+        int selectedCount = e.getSelectedEntrants() != null ? e.getSelectedEntrants().size() : 0;
+        int spotsAvailable = Math.max(0, e.getCapacity() - selectedCount);
+        tvSpots.setText(spotsAvailable + " spots available");
         tvTotalSpots.setText("of " + e.getCapacity() + " total");
 
         if (e.getRegistrationStart() != null && e.getRegistrationEnd() != null) {

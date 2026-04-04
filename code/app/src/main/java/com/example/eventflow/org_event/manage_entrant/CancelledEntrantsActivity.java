@@ -3,6 +3,7 @@ package com.example.eventflow.org_event.manage_entrant;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -16,13 +17,16 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.eventflow.R;
 import com.example.eventflow.model.entities.Entrant;
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 public class CancelledEntrantsActivity extends AppCompatActivity {
 
@@ -41,7 +45,6 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cancelled_entrants);
 
-        // Get event ID from intent
         if (getIntent().hasExtra("eventId")) {
             eventId = getIntent().getStringExtra("eventId");
         } else {
@@ -49,50 +52,38 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
             Toast.makeText(this, "No event selected - showing empty data", Toast.LENGTH_SHORT).show();
         }
 
-        // Initialize Firestore
         db = FirebaseFirestore.getInstance();
 
-        // Setup Back Button
         ImageView btnBack = findViewById(R.id.btnBack);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
         }
 
-        // Initialize Views
         rvCancelled = findViewById(R.id.rvCancelled);
         tvCancelledCount = findViewById(R.id.tvCancelledCount);
         tvSpotsAvailable = findViewById(R.id.tvSpotsAvailable);
         btnDrawNewEntrant = findViewById(R.id.btnDrawNewEntrant);
 
-        // Initialize RecyclerView
         rvCancelled.setLayoutManager(new LinearLayoutManager(this));
         cancelledList = new ArrayList<>();
         adapter = new CancelledEntrantsAdapter(cancelledList);
         rvCancelled.setAdapter(adapter);
 
-        // Setup Search Logic
         EditText etSearch = findViewById(R.id.etSearch);
         if (etSearch != null) {
             etSearch.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                     filter(s.toString());
                 }
-
-                @Override
-                public void afterTextChanged(Editable s) {}
+                @Override public void afterTextChanged(Editable s) {}
             });
         }
 
-        // Setup Draw New Entrant Button
         if (btnDrawNewEntrant != null && eventId != null) {
-            btnDrawNewEntrant.setOnClickListener(v -> drawNewEntrant());
+            btnDrawNewEntrant.setOnClickListener(v -> drawNewEntrants());
         }
 
-        // Load data from Firestore
         if (eventId != null) {
             loadEventData();
         }
@@ -107,18 +98,15 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
                         return;
                     }
 
-                    // Get capacity and selected entrants count
                     Long capacity = snapshot.getLong("capacity");
                     currentCapacity = capacity != null ? capacity.intValue() : 0;
 
                     List<String> selectedEntrants = (List<String>) snapshot.get("selectedEntrants");
                     currentSelectedCount = selectedEntrants != null ? selectedEntrants.size() : 0;
 
-                    // Calculate available spots
                     int availableSpots = currentCapacity - currentSelectedCount;
                     tvSpotsAvailable.setText(String.valueOf(availableSpots));
 
-                    // Disable draw button if no spots available
                     if (availableSpots <= 0) {
                         btnDrawNewEntrant.setEnabled(false);
                         btnDrawNewEntrant.setAlpha(0.5f);
@@ -127,7 +115,6 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
                         btnDrawNewEntrant.setAlpha(1.0f);
                     }
 
-                    // Load cancelled/rejected entrants
                     cancelledList.clear();
                     List<String> rejectedEntrants = (List<String>) snapshot.get("rejectedEntrants");
 
@@ -200,10 +187,9 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
         adapter.updateList(filteredList);
     }
 
-    private void drawNewEntrant() {
+    private void drawNewEntrants() {
         if (eventId == null) return;
 
-        // Get current event data
         db.collection("events").document(eventId).get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (!documentSnapshot.exists()) {
@@ -214,8 +200,8 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
                     List<String> waitingList = (List<String>) documentSnapshot.get("waitingList");
                     List<String> selectedEntrants = (List<String>) documentSnapshot.get("selectedEntrants");
                     Long capacity = documentSnapshot.getLong("capacity");
+                    String eventName = documentSnapshot.getString("name");
 
-                    // Calculate available spots
                     int currentSelected = selectedEntrants != null ? selectedEntrants.size() : 0;
                     int maxCapacity = capacity != null ? capacity.intValue() : 0;
                     int availableSpots = maxCapacity - currentSelected;
@@ -230,29 +216,35 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
                         return;
                     }
 
-                    // Randomly select one entrant from waiting list
-                    int randomIndex = new Random().nextInt(waitingList.size());
-                    String selectedUserId = waitingList.get(randomIndex);
+                    int numToDraw = Math.min(waitingList.size(), availableSpots);
 
-                    // Remove from waitingList and add to selectedEntrants
-                    waitingList.remove(randomIndex);
-                    if (selectedEntrants == null) selectedEntrants = new ArrayList<>();
-                    selectedEntrants.add(selectedUserId);
+                    List<String> waitingListCopy = new ArrayList<>(waitingList);
+                    Collections.shuffle(waitingListCopy);
 
-                    // Update Firestore
+                    List<String> winners = new ArrayList<>(waitingListCopy.subList(0, numToDraw));
+                    List<String> losers = new ArrayList<>(waitingListCopy);
+                    losers.removeAll(winners);
+
                     Map<String, Object> updates = new HashMap<>();
-                    updates.put("waitingList", waitingList);
-                    updates.put("selectedEntrants", selectedEntrants);
+                    updates.put("waitingList", new ArrayList<String>());
+                    updates.put("selectedEntrants", FieldValue.arrayUnion(winners.toArray()));
+                    updates.put("rejectedEntrants", FieldValue.arrayUnion(losers.toArray()));
 
                     db.collection("events").document(eventId).update(updates)
                             .addOnSuccessListener(aVoid -> {
-                                int remainingSlots = availableSpots - 1;
-                                Toast.makeText(this, "Entrant selected! " + remainingSlots + " slots remaining.", Toast.LENGTH_SHORT).show();
+                                int remainingSlots = availableSpots - numToDraw;
+                                Toast.makeText(this, "Drew " + numToDraw + " entrants! " + remainingSlots + " slots remaining.", Toast.LENGTH_LONG).show();
 
-                                // Send notification to the selected entrant
-                                sendSelectionNotification(selectedUserId);
+                                for (String winnerId : winners) {
+                                    sendSelectionNotification(winnerId, eventName);
+                                    updateUserEventStatus(winnerId, eventId, "PENDING");
+                                }
 
-                                // Refresh the data
+                                for (String loserId : losers) {
+                                    sendLostLotteryNotification(loserId, eventId, eventName);
+                                    updateUserEventStatus(loserId, eventId, "REJECTED");
+                                }
+
                                 loadEventData();
                             })
                             .addOnFailureListener(e -> {
@@ -264,29 +256,61 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
                 });
     }
 
-    private void sendSelectionNotification(String userId) {
-        db.collection("events").document(eventId).get()
-                .addOnSuccessListener(doc -> {
-                    String eventName = doc.getString("name");
+    private void updateUserEventStatus(String userId, String eventId, String status) {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", status);
 
-                    Map<String, Object> notification = new HashMap<>();
-                    notification.put("title", "You've been selected!");
-                    notification.put("message", "Congratulations! You have been selected for " + eventName);
-                    notification.put("eventId", eventId);
-                    notification.put("eventName", eventName);
-                    notification.put("type", "SELECTED");
-                    notification.put("timestamp", com.google.firebase.Timestamp.now());
-                    notification.put("read", false);
-                    notification.put("accepted", false);
-                    notification.put("declined", false);
+        db.collection("users").document(userId)
+                .collection("event_participations")
+                .document(eventId)
+                .set(updates, SetOptions.merge())
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("CancelledEntrants", "User " + userId + " status updated to: " + status);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("CancelledEntrants", "Failed to update status: " + e.getMessage());
+                });
+    }
 
-                    db.collection("users")
-                            .document(userId)
-                            .collection("notifications")
-                            .add(notification)
-                            .addOnSuccessListener(aVoid -> {
-                                Toast.makeText(this, "Notification sent to selected entrant", Toast.LENGTH_SHORT).show();
-                            });
+    private void sendSelectionNotification(String userId, String eventName) {
+        Map<String, Object> notification = new HashMap<>();
+        notification.put("title", "You've been selected!");
+        notification.put("message", "Congratulations! You have been selected for " + eventName);
+        notification.put("eventId", eventId);
+        notification.put("eventName", eventName);
+        notification.put("type", "SELECTED");
+        notification.put("timestamp", Timestamp.now());
+        notification.put("read", false);
+        notification.put("accepted", false);
+        notification.put("declined", false);
+
+        db.collection("users")
+                .document(userId)
+                .collection("notifications")
+                .add(notification)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Notification sent to selected entrant", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void sendLostLotteryNotification(String userId, String eventId, String eventName) {
+        Map<String, Object> notification = new HashMap<>();
+        notification.put("title", "Not Selected");
+        notification.put("message", "You weren't selected for " + eventName + ". Click TRY AGAIN to stay on the waiting list.");
+        notification.put("eventId", eventId);
+        notification.put("eventName", eventName);
+        notification.put("type", "LOST_LOTTERY");
+        notification.put("timestamp", Timestamp.now());
+        notification.put("read", false);
+        notification.put("accepted", false);
+        notification.put("declined", false);
+
+        db.collection("users")
+                .document(userId)
+                .collection("notifications")
+                .add(notification)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Notification sent to non-selected entrant", Toast.LENGTH_SHORT).show();
                 });
     }
 }

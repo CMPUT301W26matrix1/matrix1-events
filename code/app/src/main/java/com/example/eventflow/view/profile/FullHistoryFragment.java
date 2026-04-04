@@ -2,7 +2,7 @@ package com.example.eventflow.view.profile;
 
 import android.graphics.Color;
 import android.os.Bundle;
-import android.provider.Settings;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.eventflow.R;
 import com.example.eventflow.model.entities.EventHistoryItem;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -26,19 +27,19 @@ import java.util.List;
 
 public class FullHistoryFragment extends Fragment {
 
-    private static final String ARG_DEVICE_ID = "deviceId";
+    private static final String ARG_USER_ID = "userId";
     private RecyclerView rvMyEvents;
     private MyEventsAdapter adapter;
     private List<EventHistoryItem> allEvents = new ArrayList<>();
-    private String deviceId;
+    private String userId;
 
     private TextView tabJoined, tabSelected, tabNotSelected;
     private String currentTab = "Joined";
 
-    public static FullHistoryFragment newInstance(String deviceId) {
+    public static FullHistoryFragment newInstance(String userId) {
         FullHistoryFragment fragment = new FullHistoryFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_DEVICE_ID, deviceId);
+        args.putString(ARG_USER_ID, userId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -60,7 +61,18 @@ public class FullHistoryFragment extends Fragment {
         tabSelected = view.findViewById(R.id.tab_selected);
         tabNotSelected = view.findViewById(R.id.tab_not_selected);
 
-        deviceId = Settings.Secure.getString(requireContext().getContentResolver(), Settings.Secure.ANDROID_ID);
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        } else if (getArguments() != null) {
+            userId = getArguments().getString(ARG_USER_ID);
+        }
+
+        Log.d("FullHistory", "Using userId (Firebase Auth): " + userId);
+
+        if (userId == null || userId.isEmpty()) {
+            Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> {
@@ -111,25 +123,81 @@ public class FullHistoryFragment extends Fragment {
     }
 
     private void loadAllEvents() {
+        if (userId == null) return;
+
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("users").document(deviceId)
+
+        // FIRST: Load from event_participations subcollection
+        db.collection("users").document(userId)
                 .collection("event_participations")
-                .addSnapshotListener((snapshot, error) -> {
-                    if (error != null) {
-                        Toast.makeText(getContext(), "Failed to load events", Toast.LENGTH_SHORT).show();
-                        return;
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    allEvents.clear();
+
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        EventHistoryItem item = new EventHistoryItem();
+                        item.setEventId(doc.getId());
+                        item.setEventName(doc.getString("eventName"));
+                        item.setEventDate(doc.getString("eventDate"));
+                        item.setEventLocation(doc.getString("eventLocation"));
+
+                        String status = doc.getString("status");
+                        if (status == null) status = "Waiting";
+                        item.setStatus(status);
+
+                        Log.d("FullHistory", "Event from participations: " + item.getEventName() + ", Status: " + status);
+                        allEvents.add(item);
                     }
-                    if (snapshot != null) {
-                        allEvents.clear();
-                        for (QueryDocumentSnapshot doc : snapshot) {
-                            EventHistoryItem item = doc.toObject(EventHistoryItem.class);
-                            if (item != null) {
-                                item.setEventId(doc.getId());
-                                allEvents.add(item);
+
+                    // SECOND: Load rejected events from main events collection
+                    loadRejectedEvents();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("FullHistory", "Error loading participations: " + e.getMessage());
+                    loadRejectedEvents();
+                });
+    }
+
+    // Load events where user is in rejectedEntrants array
+    private void loadRejectedEvents() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("events")
+                .whereArrayContains("rejectedEntrants", userId)
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    int addedCount = 0;
+
+                    for (QueryDocumentSnapshot doc : snapshots) {
+                        // Check if this event is already in allEvents
+                        boolean exists = false;
+                        for (EventHistoryItem item : allEvents) {
+                            if (item.getEventId().equals(doc.getId())) {
+                                exists = true;
+                                break;
                             }
                         }
-                        filterEvents();
+
+                        if (!exists) {
+                            EventHistoryItem item = new EventHistoryItem();
+                            item.setEventId(doc.getId());
+                            item.setEventName(doc.getString("eventName"));
+                            item.setEventDate(doc.getString("eventDate"));
+                            item.setEventLocation(doc.getString("eventLocation"));
+                            item.setStatus("Rejected");  // This will show RED
+
+                            allEvents.add(item);
+                            addedCount++;
+                            Log.d("FullHistory", "Added rejected event: " + item.getEventName());
+                        }
                     }
+
+                    Log.d("FullHistory", "Added " + addedCount + " rejected events from rejectedEntrants");
+                    filterEvents();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("FullHistory", "Error loading rejected events: " + e.getMessage());
+                    filterEvents();
                 });
     }
 
@@ -139,20 +207,17 @@ public class FullHistoryFragment extends Fragment {
             String status = item.getStatus();
 
             if (currentTab.equals("Joined")) {
-                // Show: Waiting, Pending, ACCEPTED (Enrolled)
                 if (status.equalsIgnoreCase("Waiting") ||
                         status.equalsIgnoreCase("Pending") ||
                         status.equalsIgnoreCase("ACCEPTED")) {
                     filtered.add(item);
                 }
             } else if (currentTab.equals("Selected")) {
-                // Show: Selected, ACCEPTED
                 if (status.equalsIgnoreCase("Selected") ||
                         status.equalsIgnoreCase("ACCEPTED")) {
                     filtered.add(item);
                 }
             } else if (currentTab.equals("Not Selected")) {
-                // Show: Rejected, Declined, EXPIRED
                 if (status.equalsIgnoreCase("Rejected") ||
                         status.equalsIgnoreCase("Declined") ||
                         status.equalsIgnoreCase("EXPIRED")) {
@@ -198,27 +263,35 @@ public class FullHistoryFragment extends Fragment {
             // Set status text and color based on actual status
             if ("ACCEPTED".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Enrolled");
-                holder.tvStatus.setTextColor(Color.parseColor("#4CAF50"));
+                holder.tvStatus.setTextColor(Color.parseColor("#4CAF50"));      // Green
+                holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#334CAF50")));
+            } else if ("Selected".equalsIgnoreCase(status)) {
+                holder.tvStatus.setText("Selected");
+                holder.tvStatus.setTextColor(Color.parseColor("#4CAF50"));      // Green
                 holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#334CAF50")));
             } else if ("PENDING".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Pending");
-                holder.tvStatus.setTextColor(Color.parseColor("#FF9800"));
+                holder.tvStatus.setTextColor(Color.parseColor("#FF9800"));      // Orange
                 holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33FF9800")));
-            } else if ("Selected".equalsIgnoreCase(status)) {
-                holder.tvStatus.setText("Selected");
-                holder.tvStatus.setTextColor(Color.parseColor("#4CAF50"));
-                holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#334CAF50")));
             } else if ("Waiting".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Waiting");
-                holder.tvStatus.setTextColor(Color.parseColor("#FFA726"));
+                holder.tvStatus.setTextColor(Color.parseColor("#FFA726"));      // Yellow/Orange
                 holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33FFA726")));
-            } else if ("Rejected".equalsIgnoreCase(status) || "Declined".equalsIgnoreCase(status)) {
+            } else if ("Declined".equalsIgnoreCase(status)) {
+                holder.tvStatus.setText("Declined");
+                holder.tvStatus.setTextColor(Color.parseColor("#F44336"));      // Bright Red
+                holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33F44336")));
+            } else if ("Rejected".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Rejected");
-                holder.tvStatus.setTextColor(Color.parseColor("#EF5350"));
-                holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33EF5350")));
+                holder.tvStatus.setTextColor(Color.parseColor("#F44336"));      // Bright Red (changed to match Declined)
+                holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33F44336")));
+            } else if ("EXPIRED".equalsIgnoreCase(status)) {
+                holder.tvStatus.setText("Expired");
+                holder.tvStatus.setTextColor(Color.parseColor("#666666"));      // Gray
+                holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33666666")));
             } else {
                 holder.tvStatus.setText(status);
-                holder.tvStatus.setTextColor(Color.parseColor("#888888"));
+                holder.tvStatus.setTextColor(Color.parseColor("#888888"));      // Light Gray
             }
 
             // Reset visibilities

@@ -2,7 +2,6 @@ package com.example.eventflow;
 
 import android.content.Intent;
 import android.graphics.Color;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
@@ -64,11 +64,15 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         Notification n = notifications.get(position);
-        String userId = Settings.Secure.getString(
-                holder.itemView.getContext().getContentResolver(),
-                Settings.Secure.ANDROID_ID
-        );
 
+        final String userId;
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        } else {
+            userId = "";
+        }
+
+        Log.d("NOTIFICATION", "UserId from FirebaseAuth: " + userId);
         Log.d("NOTIFICATION", "Type: " + n.getType() + ", Accepted: " + n.isAccepted() + ", Declined: " + n.isDeclined());
 
         if (holder instanceof CoOrganizerViewHolder) {
@@ -99,7 +103,6 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
 
             h.unreadDot.setVisibility(n.isRead() ? View.GONE : View.VISIBLE);
 
-            // Set Icon and Color based on Type
             if (Notification.TYPE_SELECTED.equals(n.getType()) || Notification.TYPE_PRIVATE_INVITE.equals(n.getType())) {
                 h.ivIcon.setImageResource(R.drawable.ic_check);
                 h.ivIcon.setColorFilter(Color.parseColor("#4CAF50"));
@@ -121,21 +124,21 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
             }
 
             String eventId = n.getEventId();
+            final String finalUserId = userId;
+
             h.itemView.setOnClickListener(v -> {
                 if (!n.isRead()) {
-                    markNotificationAsRead(n, userId);
+                    markNotificationAsRead(n, finalUserId);
                 }
                 if (eventId != null && !eventId.isEmpty()) {
                     Intent intent = new Intent(v.getContext(), EventDetailActivity.class);
                     intent.putExtra("eventId", eventId);
-                    intent.putExtra("userId", userId);
+                    intent.putExtra("userId", finalUserId);
                     v.getContext().startActivity(intent);
                 }
             });
 
-            // Handle Action Buttons for different notification types
             if (h.actionsContainer != null) {
-                // SELECTED or PRIVATE_INVITE - Show Accept/Decline buttons
                 if (Notification.TYPE_SELECTED.equals(n.getType()) || Notification.TYPE_PRIVATE_INVITE.equals(n.getType())) {
                     if (n.isAccepted() || n.isDeclined()) {
                         h.actionsContainer.setVisibility(View.GONE);
@@ -149,7 +152,6 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
                         Log.d("NOTIFICATION", "Showing Accept/Decline buttons for: " + n.getType());
                     }
                 }
-                // LOST_LOTTERY - Show "Try Again" button
                 else if (Notification.TYPE_LOST_LOTTERY.equals(n.getType())) {
                     if (n.isAccepted() || n.isDeclined()) {
                         h.actionsContainer.setVisibility(View.GONE);
@@ -190,103 +192,108 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
     private void handleDefaultAccept(Notification n, String userId, DefaultViewHolder holder) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        markNotificationAsHandled(n, userId, true);
+        Log.d("ACCEPT_DEBUG", "=== ACCEPT BUTTON CLICKED ===");
+        Log.d("ACCEPT_DEBUG", "Notification ID: " + n.getId());
+        Log.d("ACCEPT_DEBUG", "Event ID: " + n.getEventId());
+        Log.d("ACCEPT_DEBUG", "User ID (Firebase Auth): " + userId);
 
-        // First check if document exists, create if not
+        if (n.getId() != null) {
+            Map<String, Object> notificationUpdates = new HashMap<>();
+            notificationUpdates.put("accepted", true);
+            notificationUpdates.put("declined", false);
+            notificationUpdates.put("read", true);
+
+            db.collection("users").document(userId)
+                    .collection("notifications").document(n.getId())
+                    .update(notificationUpdates)
+                    .addOnSuccessListener(aVoid -> {
+                        Log.d("ACCEPT_DEBUG", "✅ Notification updated successfully");
+                        n.setAccepted(true);
+                        n.setDeclined(false);
+                        notifyItemChanged(holder.getAdapterPosition());
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("ACCEPT_DEBUG", "❌ Failed to update notification: " + e.getMessage());
+                        Toast.makeText(holder.itemView.getContext(), "Failed to accept: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        }
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", "ACCEPTED");
+        updates.put("acceptedAt", FieldValue.serverTimestamp());
+
         db.collection("users").document(userId)
                 .collection("event_participations").document(n.getEventId())
-                .get()
-                .addOnSuccessListener(document -> {
-                    Map<String, Object> updates = new HashMap<>();
-                    updates.put("status", "ACCEPTED");
-                    updates.put("acceptedAt", FieldValue.serverTimestamp());
-
-                    if (document.exists()) {
-                        // Update existing document
-                        db.collection("users").document(userId)
-                                .collection("event_participations").document(n.getEventId())
-                                .update(updates)
-                                .addOnSuccessListener(aVoid -> {
-                                    Log.d("NotificationsAdapter", "User ACCEPTED the invitation");
-                                    Toast.makeText(holder.itemView.getContext(), "You've accepted the invitation! 🎉", Toast.LENGTH_LONG).show();
-                                    n.setAccepted(true);
-                                    n.setDeclined(false);
-                                    notifyItemChanged(holder.getAdapterPosition());
-                                })
-                                .addOnFailureListener(e -> {
-                                    Log.e("NotificationsAdapter", "Failed to update: " + e.getMessage());
-                                    Toast.makeText(holder.itemView.getContext(), "Failed to accept: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                });
-                    } else {
-                        // Create new document
-                        updates.put("eventId", n.getEventId());
-                        updates.put("eventName", n.getEventName());
-                        updates.put("joinedAt", FieldValue.serverTimestamp());
-                        updates.put("userId", userId);
-
-                        db.collection("users").document(userId)
-                                .collection("event_participations").document(n.getEventId())
-                                .set(updates)
-                                .addOnSuccessListener(aVoid -> {
-                                    Log.d("NotificationsAdapter", "User ACCEPTED the invitation (new document created)");
-                                    Toast.makeText(holder.itemView.getContext(), "You've accepted the invitation! 🎉", Toast.LENGTH_LONG).show();
-                                    n.setAccepted(true);
-                                    n.setDeclined(false);
-                                    notifyItemChanged(holder.getAdapterPosition());
-                                })
-                                .addOnFailureListener(e -> {
-                                    Log.e("NotificationsAdapter", "Failed to create: " + e.getMessage());
-                                    Toast.makeText(holder.itemView.getContext(), "Failed to accept: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                });
-                    }
+                .set(updates, SetOptions.merge())
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("ACCEPT_DEBUG", "✅ Event participation updated to ACCEPTED");
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("NotificationsAdapter", "Failed to check document: " + e.getMessage());
-                    Toast.makeText(holder.itemView.getContext(), "Failed to accept: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Log.e("ACCEPT_DEBUG", "❌ Failed to update event participation: " + e.getMessage());
                 });
+
+        Toast.makeText(holder.itemView.getContext(), "You've accepted the invitation! 🎉", Toast.LENGTH_LONG).show();
     }
 
     private void handleDefaultDecline(Notification n, String userId, DefaultViewHolder holder) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        markNotificationAsHandled(n, userId, false);
+        Log.d("DECLINE_DEBUG", "=== DECLINE BUTTON CLICKED ===");
+        Log.d("DECLINE_DEBUG", "Notification ID: " + n.getId());
+        Log.d("DECLINE_DEBUG", "User ID (Firebase Auth): " + userId);
+
+        if (n.getId() != null) {
+            Map<String, Object> notificationUpdates = new HashMap<>();
+            notificationUpdates.put("accepted", false);
+            notificationUpdates.put("declined", true);
+            notificationUpdates.put("read", true);
+
+            db.collection("users").document(userId)
+                    .collection("notifications").document(n.getId())
+                    .update(notificationUpdates)
+                    .addOnSuccessListener(aVoid -> {
+                        Log.d("DECLINE_DEBUG", "✅ Notification updated to declined");
+                        n.setDeclined(true);
+                        n.setAccepted(false);
+                        notifyItemChanged(holder.getAdapterPosition());
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("DECLINE_DEBUG", "❌ Failed to update notification: " + e.getMessage());
+                        Toast.makeText(holder.itemView.getContext(), "Failed to decline: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        }
 
         db.collection("users").document(userId)
                 .collection("event_participations").document(n.getEventId())
-                .get()
-                .addOnSuccessListener(document -> {
-                    if (document.exists()) {
-                        db.collection("users").document(userId)
-                                .collection("event_participations").document(n.getEventId())
-                                .update("status", "DECLINED", "declinedAt", FieldValue.serverTimestamp())
-                                .addOnSuccessListener(aVoid -> {
-                                    Log.d("NotificationsAdapter", "User DECLINED the invitation");
-                                    db.collection("events").document(n.getEventId())
-                                            .update("selectedEntrants", FieldValue.arrayRemove(userId))
-                                            .addOnSuccessListener(unused -> {
-                                                Log.d("NotificationsAdapter", "Removed " + userId + " from selectedEntrants");
-                                            });
-                                    Toast.makeText(holder.itemView.getContext(), "You've declined the invitation.", Toast.LENGTH_SHORT).show();
-                                    n.setDeclined(true);
-                                    n.setAccepted(false);
-                                    notifyItemChanged(holder.getAdapterPosition());
-                                });
-                    } else {
-                        // Document doesn't exist, just mark as declined
-                        Toast.makeText(holder.itemView.getContext(), "Invitation declined.", Toast.LENGTH_SHORT).show();
-                        n.setDeclined(true);
-                        notifyItemChanged(holder.getAdapterPosition());
-                    }
+                .update("status", "DECLINED", "declinedAt", FieldValue.serverTimestamp());
+
+        db.collection("events").document(n.getEventId())
+                .update(
+                        "selectedEntrants", FieldValue.arrayRemove(userId),
+                        "rejectedEntrants", FieldValue.arrayUnion(userId)
+                )
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("DECLINE_DEBUG", "✅ User moved from selectedEntrants to rejectedEntrants");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("DECLINE_DEBUG", "❌ Failed to update event: " + e.getMessage());
                 });
+
+        Toast.makeText(holder.itemView.getContext(), "You've declined the invitation.", Toast.LENGTH_SHORT).show();
     }
 
+    // FIXED: Try Again button - moves user from rejectedEntrants to waitingList
     private void handleTryAgain(Notification n, String userId, DefaultViewHolder holder) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         markNotificationAsHandled(n, userId, true);
 
+        // Move from rejectedEntrants to waitingList
         db.collection("events").document(n.getEventId())
-                .update("waitingList", FieldValue.arrayUnion(userId))
+                .update(
+                        "waitingList", FieldValue.arrayUnion(userId),
+                        "rejectedEntrants", FieldValue.arrayRemove(userId)
+                )
                 .addOnSuccessListener(aVoid -> {
                     db.collection("users").document(userId)
                             .collection("event_participations").document(n.getEventId())
