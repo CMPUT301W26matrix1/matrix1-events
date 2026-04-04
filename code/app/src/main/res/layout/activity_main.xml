@@ -14,10 +14,10 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
+            android:gravity="center"
             android:orientation="vertical"
             android:paddingHorizontal="32dp"
-            android:paddingTop="60dp">
+            android:paddingVertical="40dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -41,9 +41,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="84dp"
                 android:layout_marginTop="40dp"
-                app:cardBackgroundColor="#121212"
+                app:cardBackgroundColor="@color/card_selector_color"
                 app:cardCornerRadius="16dp"
-                app:cardElevation="0dp">
+                app:cardElevation="0dp"
+                android:clickable="true"
+                android:focusable="true">
 
                 <RelativeLayout
                     android:layout_width="match_parent"
@@ -92,9 +94,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="84dp"
                 android:layout_marginTop="16dp"
-                app:cardBackgroundColor="#121212"
+                app:cardBackgroundColor="@color/card_selector_color"
                 app:cardCornerRadius="16dp"
-                app:cardElevation="0dp">
+                app:cardElevation="0dp"
+                android:clickable="true"
+                android:focusable="true">
 
                 <RelativeLayout
                     android:layout_width="match_parent"
@@ -143,9 +147,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="84dp"
                 android:layout_marginTop="16dp"
-                app:cardBackgroundColor="#121212"
+                app:cardBackgroundColor="@color/card_selector_color"
                 app:cardCornerRadius="16dp"
-                app:cardElevation="0dp">
+                app:cardElevation="0dp"
+                android:clickable="true"
+                android:focusable="true">
 
                 <RelativeLayout
                     android:layout_width="match_parent"
@@ -193,7 +199,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="48dp"
-                android:backgroundTint="#4CAF50"
+                android:backgroundTint="@color/neon_green_soft"
                 android:text="Continue"
                 android:textAllCaps="false"
                 android:textColor="#FFFFFF"

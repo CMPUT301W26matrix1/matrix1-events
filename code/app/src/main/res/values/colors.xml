@@ -13,5 +13,6 @@
     <color name="chip_selected">#3D5AFE</color>
     <color name="chip_unselected">#1E1E1E</color>
     <color name="neon_green">#39FF14</color>
+    <color name="neon_green_soft">#4CAF50</color>
     <color name="neon_red">#FF3131</color>
 </resources>
