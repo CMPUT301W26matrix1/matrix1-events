@@ -29,16 +29,17 @@ import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
 /**
- * MainActivity
- * Acts as the Role Selection hub (Entrant, Organizer, Admin).
+ * MainActivity — Role Selection screen.
+ * Normal users see Entrant + Organizer only.
+ * Admin card is hidden for non-admin users.
  */
 public class MainActivity extends AppCompatActivity {
 
     private ImageView ivEntrant, ivOrganizer, ivAdmin;
     private String selectedRole = "";
 
-    private final ActivityResultLauncher<ScanOptions> barcodeLauncher = registerForActivityResult(new ScanContract(),
-            result -> {
+    private final ActivityResultLauncher<ScanOptions> barcodeLauncher =
+            registerForActivityResult(new ScanContract(), result -> {
                 if (result.getContents() == null) {
                     Toast.makeText(MainActivity.this, "Cancelled", Toast.LENGTH_LONG).show();
                 } else {
@@ -46,16 +47,10 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
-    // Permission launcher for notifications (Android 13+)
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(),
-                    isGranted -> {
-                        if (isGranted) {
-                            Log.d("MainActivity", "Notification permission granted");
-                        } else {
-                            Log.d("MainActivity", "Notification permission denied");
-                        }
-                    });
+                    isGranted -> Log.d("MainActivity",
+                            isGranted ? "Notification permission granted" : "denied"));
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,35 +58,37 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // Request notification permission for Android 13+
         askNotificationPermission();
 
-        // Get FCM token (silently, no toast)
         FirebaseMessaging.getInstance().getToken()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        String token = task.getResult();
-                        Log.d("FCMService", "Manual token: " + token);
-                    } else {
-                        Log.e("FCMService", "Failed to get token", task.getException());
+                        Log.d("FCMService", "Token: " + task.getResult());
                     }
                 });
 
-        // --- UI INITIALIZATION ---
-        CardView cardEntrant = findViewById(R.id.card_entrant);
+        // UI
+        CardView cardEntrant   = findViewById(R.id.card_entrant);
         CardView cardOrganizer = findViewById(R.id.card_organizer);
-        CardView cardAdmin = findViewById(R.id.card_admin);
+        CardView cardAdmin     = findViewById(R.id.card_admin);
 
-        ivEntrant = findViewById(R.id.iv_entrant_icon);
+        ivEntrant   = findViewById(R.id.iv_entrant_icon);
         ivOrganizer = findViewById(R.id.iv_organizer_icon);
-        ivAdmin = findViewById(R.id.iv_admin_icon);
+        ivAdmin     = findViewById(R.id.iv_admin_icon);
 
         Button btnContinue = findViewById(R.id.btn_continue);
 
-        // --- ROLE SELECTION LISTENERS ---
-        if (cardEntrant != null) cardEntrant.setOnClickListener(v -> selectRole("entrant"));
+        // Hide Admin card for normal users
+        SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
+        boolean isAdmin = prefs.getBoolean("isAdmin", false);
+        if (cardAdmin != null) {
+            cardAdmin.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
+        }
+
+        // Role selection
+        if (cardEntrant != null)   cardEntrant.setOnClickListener(v -> selectRole("entrant"));
         if (cardOrganizer != null) cardOrganizer.setOnClickListener(v -> selectRole("organizer"));
-        if (cardAdmin != null) cardAdmin.setOnClickListener(v -> selectRole("admin"));
+        if (cardAdmin != null && isAdmin) cardAdmin.setOnClickListener(v -> selectRole("admin"));
 
         if (btnContinue != null) {
             btnContinue.setOnClickListener(v -> {
@@ -103,7 +100,6 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // Handle window insets for Edge-to-Edge
         View mainView = findViewById(R.id.main);
         if (mainView != null) {
             ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
@@ -114,21 +110,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Request notification permission
     private void askNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (android.content.pm.PackageManager.PERMISSION_GRANTED !=
-                    android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS);
-            }
+            requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS);
         }
     }
 
     private void selectRole(String role) {
         selectedRole = role;
         resetIcons();
-
-        // Highlight logic
         switch (role) {
             case "entrant":
                 if (ivEntrant != null) {
@@ -165,11 +155,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveRoleAndNavigate() {
-        // Save role to SharedPreferences
         SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         prefs.edit().putString("selectedRole", selectedRole).apply();
 
-        // Also save to eventflow_prefs for profile to use
         SharedPreferences eventflowPrefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
         eventflowPrefs.edit().putString("userRole", selectedRole).apply();
 

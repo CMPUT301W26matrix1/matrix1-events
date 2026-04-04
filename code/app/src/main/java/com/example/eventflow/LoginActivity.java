@@ -10,6 +10,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -18,8 +19,10 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 public class LoginActivity extends AppCompatActivity {
 
+    private static final String ADMIN_PASSWORD = "admin123";
+
     private EditText etUsername, etPassword;
-    private Button btnLogin;
+    private Button btnLogin, btnAdminLogin;
     private TextView tvForgotPassword, tvSignup;
     private CheckBox cbRememberMe;
 
@@ -37,11 +40,16 @@ public class LoginActivity extends AppCompatActivity {
         etUsername       = findViewById(R.id.et_username);
         etPassword       = findViewById(R.id.et_password);
         btnLogin         = findViewById(R.id.btn_login);
+        btnAdminLogin    = findViewById(R.id.btn_admin_login);
         tvForgotPassword = findViewById(R.id.tv_forgot_password);
         tvSignup         = findViewById(R.id.tv_signup);
         cbRememberMe     = findViewById(R.id.cb_remember_me);
 
         btnLogin.setOnClickListener(v -> handleLogin());
+
+        if (btnAdminLogin != null) {
+            btnAdminLogin.setOnClickListener(v -> showAdminPasswordDialog());
+        }
 
         tvForgotPassword.setOnClickListener(v ->
                 Toast.makeText(this, "Contact support to reset your password.",
@@ -57,11 +65,11 @@ public class LoginActivity extends AppCompatActivity {
         String email    = etUsername.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
-        if (email.isEmpty()) {
+        if (TextUtils.isEmpty(email)) {
             etUsername.setError("Email required");
             return;
         }
-        if (password.isEmpty()) {
+        if (TextUtils.isEmpty(password)) {
             etPassword.setError("Password required");
             return;
         }
@@ -69,21 +77,19 @@ public class LoginActivity extends AppCompatActivity {
         btnLogin.setEnabled(false);
         btnLogin.setText("Logging in...");
 
+        // Use Firebase Authentication
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
                         String uid = user != null ? user.getUid() : "";
 
-                        // FIX: Use a final fallback — derived before entering the lambda
                         final String fallbackUsername = email.split("@")[0];
 
                         db.collection("credentials")
                                 .document(email)
                                 .get()
                                 .addOnSuccessListener(doc -> {
-                                    // FIX: Declare a new final variable inside this lambda
-                                    // instead of reassigning the outer one
                                     String resolvedUsername = fallbackUsername;
                                     if (doc.exists()) {
                                         Object usernameObj = doc.get("username");
@@ -91,15 +97,14 @@ public class LoginActivity extends AppCompatActivity {
                                             resolvedUsername = usernameObj.toString();
                                         }
                                     }
-                                    saveLoginState(email, resolvedUsername, uid);
+                                    saveLoginState(email, resolvedUsername, uid, false);
                                     Toast.makeText(LoginActivity.this, "Welcome back!",
                                             Toast.LENGTH_SHORT).show();
                                     startActivity(new Intent(LoginActivity.this, MainActivity.class));
                                     finish();
                                 })
                                 .addOnFailureListener(e -> {
-                                    // Use fallback username if Firestore fetch fails
-                                    saveLoginState(email, fallbackUsername, uid);
+                                    saveLoginState(email, fallbackUsername, uid, false);
                                     Toast.makeText(LoginActivity.this, "Welcome back!",
                                             Toast.LENGTH_SHORT).show();
                                     startActivity(new Intent(LoginActivity.this, MainActivity.class));
@@ -115,14 +120,41 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-    private void saveLoginState(String email, String username, String uid) {
+    private void showAdminPasswordDialog() {
+        EditText etAdminPass = new EditText(this);
+        etAdminPass.setHint("Enter admin password");
+        etAdminPass.setInputType(android.text.InputType.TYPE_CLASS_TEXT |
+                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        etAdminPass.setPadding(40, 20, 40, 20);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Admin Login")
+                .setMessage("Enter the admin password to continue:")
+                .setView(etAdminPass)
+                .setPositiveButton("Login", (dialog, which) -> {
+                    String entered = etAdminPass.getText().toString().trim();
+                    if (ADMIN_PASSWORD.equals(entered)) {
+                        saveLoginState("admin@eventflow.com", "Admin", "", true);
+                        Toast.makeText(this, "Welcome, Admin!", Toast.LENGTH_SHORT).show();
+                        startActivity(new Intent(this, AdminDashboardActivity.class));
+                        finish();
+                    } else {
+                        Toast.makeText(this, "Incorrect admin password!", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void saveLoginState(String email, String username, String uid, boolean isAdmin) {
         SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
-        prefs.edit()
-                .putBoolean("isLoggedIn", true)
-                .putString("userEmail", email)
-                .putString("userName", username)
-                .putString("userUid", uid)
-                .putBoolean("rememberMe", cbRememberMe.isChecked())
-                .apply();
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean("isLoggedIn", true);
+        editor.putBoolean("isAdmin", isAdmin);
+        editor.putString("userEmail", email);
+        editor.putString("userName", username);
+        editor.putString("userUid", uid);
+        editor.putBoolean("rememberMe", cbRememberMe.isChecked());
+        editor.apply();
     }
 }

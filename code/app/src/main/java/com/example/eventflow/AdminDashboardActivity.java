@@ -7,6 +7,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -65,17 +66,15 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
         if (entrantView != null) {
             entrantView.setOnClickListener(v -> {
-                Intent intent = new Intent(this, AdminProfileListActivity.class);
-                intent.putExtra("filter", "Entrant");
-                startActivity(intent);
+                // Link to Entrant view (BrowseEventsActivity)
+                startActivity(new Intent(this, BrowseEventsActivity.class));
             });
         }
 
         if (organizerView != null) {
             organizerView.setOnClickListener(v -> {
-                Intent intent = new Intent(this, AdminProfileListActivity.class);
-                intent.putExtra("filter", "Organizer");
-                startActivity(intent);
+                // Link to Organizer view (EntrantDashboardActivity as per RoleSelectionActivity)
+                startActivity(new Intent(this, EntrantDashboardActivity.class));
             });
         }
     }

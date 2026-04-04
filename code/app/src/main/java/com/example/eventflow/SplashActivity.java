@@ -25,60 +25,51 @@ public class SplashActivity extends AppCompatActivity {
         setContentView(R.layout.activity_splash);
 
         profileRepository = new ProfileRepository();
-
         new Handler().postDelayed(this::checkAndNavigate, 2000);
     }
 
     @SuppressLint("HardwareIds")
     private void checkAndNavigate() {
-        // Check SharedPreferences for login state
         SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
         boolean isLoggedIn = prefs.getBoolean("isLoggedIn", false);
+        boolean isAdmin    = prefs.getBoolean("isAdmin", false);
 
         if (isLoggedIn) {
-            // Already logged in — go to MainActivity
-            Log.d(TAG, "User already logged in");
-            navigateToMain();
-        } else {
-            // Check if device has a profile
-            String deviceId = Settings.Secure.getString(
-                    getContentResolver(), Settings.Secure.ANDROID_ID);
-
-            profileRepository.getProfileByDeviceId(deviceId,
-                    new ProfileRepository.LoadProfileCallback() {
-                        @Override
-                        public void onSuccess(@NonNull Profile profile) {
-                            // Has profile but not logged in — go to login
-                            navigateToLogin();
-                        }
-
-                        @Override
-                        public void onNotFound() {
-                            // First time — go to signup
-                            navigateToSignup();
-                        }
-
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Log.e(TAG, "Error loading profile", e);
-                            navigateToLogin();
-                        }
-                    });
+            if (isAdmin) {
+                // Admin goes straight to admin dashboard
+                startActivity(new Intent(this, AdminDashboardActivity.class));
+            } else {
+                // Normal user goes to role selection
+                startActivity(new Intent(this, MainActivity.class));
+            }
+            finish();
+            return;
         }
-    }
 
-    private void navigateToMain() {
-        startActivity(new Intent(this, MainActivity.class));
-        finish();
-    }
+        // Not logged in — check if device has a profile
+        String deviceId = Settings.Secure.getString(
+                getContentResolver(), Settings.Secure.ANDROID_ID);
 
-    private void navigateToLogin() {
-        startActivity(new Intent(this, LoginActivity.class));
-        finish();
-    }
+        profileRepository.getProfileByDeviceId(deviceId,
+                new ProfileRepository.LoadProfileCallback() {
+                    @Override
+                    public void onSuccess(@NonNull Profile profile) {
+                        startActivity(new Intent(SplashActivity.this, LoginActivity.class));
+                        finish();
+                    }
 
-    private void navigateToSignup() {
-        startActivity(new Intent(this, SignupActivity.class));
-        finish();
+                    @Override
+                    public void onNotFound() {
+                        startActivity(new Intent(SplashActivity.this, SignupActivity.class));
+                        finish();
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e(TAG, "Error loading profile", e);
+                        startActivity(new Intent(SplashActivity.this, LoginActivity.class));
+                        finish();
+                    }
+                });
     }
 }

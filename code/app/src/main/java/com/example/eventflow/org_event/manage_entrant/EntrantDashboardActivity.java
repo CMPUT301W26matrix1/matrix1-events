@@ -68,10 +68,6 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             Log.d("Dashboard", "Got userId from SharedPreferences: " + userId);
         }
 
-        // One-time migrations — safe to keep, skips already migrated data
-        migrateOldEvents();
-        migrateAllOldUsers();
-
         lotteryController = new LotteryController();
 
         initViews();
@@ -97,113 +93,6 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             lotteryController.checkAndAutoRejectExpiredSelections(eventId);
         }
     }
-
-    // ─── MIGRATION METHODS ────────────────────────────────────────────────────
-
-    private void migrateOldEvents() {
-        if (userId == null || userId.isEmpty()) return;
-
-        // Find all events where organizerId is an old short deviceId (not a Firebase UID)
-        db.collection("events").get()
-                .addOnSuccessListener(snapshot -> {
-                    for (var doc : snapshot) {
-                        String organizerId = doc.getString("organizerId");
-                        if (organizerId == null) continue;
-
-                        // Old deviceIds are short hex (16 chars), Firebase UIDs are 28 chars
-                        if (organizerId.length() < 20) {
-                            // Check if this old deviceId belongs to current user
-                            db.collection("users")
-                                    .document(organizerId)
-                                    .get()
-                                    .addOnSuccessListener(userDoc -> {
-                                        if (!userDoc.exists()) return;
-                                        String email = userDoc.getString("email");
-                                        if (email == null) return;
-
-                                        // Check credentials to find matching UID
-                                        db.collection("credentials")
-                                                .document(email)
-                                                .get()
-                                                .addOnSuccessListener(credDoc -> {
-                                                    if (!credDoc.exists()) return;
-                                                    String uid = credDoc.getString("uid");
-                                                    if (uid == null || uid.isEmpty()) return;
-
-                                                    // Update organizerId to real UID
-                                                    db.collection("events")
-                                                            .document(doc.getId())
-                                                            .update("organizerId", uid)
-                                                            .addOnSuccessListener(a ->
-                                                                    Log.d("Migration", "✅ Event migrated: " + doc.getId()))
-                                                            .addOnFailureListener(e ->
-                                                                    Log.e("Migration", "❌ Event migration failed: " + e.getMessage()));
-                                                });
-                                    });
-                        }
-                    }
-                    // Reload events after migration
-                    loadMyEvents();
-                    fetchLatestEvent();
-                })
-                .addOnFailureListener(e ->
-                        Log.e("Migration", "❌ Failed to fetch events: " + e.getMessage()));
-    }
-
-    private void migrateAllOldUsers() {
-        db.collection("users").get()
-                .addOnSuccessListener(querySnapshot -> {
-                    for (var doc : querySnapshot) {
-                        String docId = doc.getId();
-
-                        // Old deviceIds are short hex (16 chars)
-                        // Firebase UIDs are long alphanumeric (28 chars)
-                        if (docId.length() > 20) {
-                            Log.d("Migration", "Skipping already migrated: " + docId);
-                            continue;
-                        }
-
-                        String email = doc.getString("email");
-                        if (email == null || email.isEmpty()) {
-                            Log.w("Migration", "No email for doc: " + docId);
-                            continue;
-                        }
-
-                        // Look up real UID from credentials collection
-                        db.collection("credentials")
-                                .document(email)
-                                .get()
-                                .addOnSuccessListener(credDoc -> {
-                                    if (!credDoc.exists()) return;
-
-                                    String uid = credDoc.getString("uid");
-                                    if (uid == null || uid.isEmpty()) return;
-
-                                    // Skip if already under correct UID
-                                    if (docId.equals(uid)) return;
-
-                                    // Copy profile data to UID document
-                                    db.collection("users").document(uid)
-                                            .set(doc.getData())
-                                            .addOnSuccessListener(a -> {
-                                                Log.d("Migration", "✅ User migrated: " + email + " → " + uid);
-                                                // Delete old deviceId document
-                                                db.collection("users").document(docId).delete()
-                                                        .addOnSuccessListener(d ->
-                                                                Log.d("Migration", "🗑 Deleted old doc: " + docId));
-                                            })
-                                            .addOnFailureListener(e ->
-                                                    Log.e("Migration", "❌ Failed to migrate user: " + email + " - " + e.getMessage()));
-                                })
-                                .addOnFailureListener(e ->
-                                        Log.e("Migration", "❌ Credentials not found for: " + email));
-                    }
-                })
-                .addOnFailureListener(e ->
-                        Log.e("Migration", "❌ Failed to fetch users: " + e.getMessage()));
-    }
-
-    // ─── UI METHODS ───────────────────────────────────────────────────────────
 
     private void initViews() {
         tvEventName = findViewById(R.id.tvEventName);
@@ -517,8 +406,6 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             });
         }
     }
-
-    // ─── ADAPTER ─────────────────────────────────────────────────────────────
 
     private class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAdapter.ViewHolder> {
         private final List<Event> eventList;

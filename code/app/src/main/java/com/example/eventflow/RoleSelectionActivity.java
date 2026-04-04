@@ -57,13 +57,17 @@ public class RoleSelectionActivity extends AppCompatActivity {
         resetCard(cardOrganizer);
         resetCard(cardAdmin);
 
-        // Highlight selected card
-        selectedCard.setStrokeColor(getResources().getColor(R.color.accent_green));
-        selectedCard.setStrokeWidth(6);
+        // Highlight selected card - Set background to neon green
+        selectedCard.setCardBackgroundColor(getResources().getColor(R.color.neon_green));
+        // Optional: Keep the stroke neon green or make it invisible
+        selectedCard.setStrokeColor(getResources().getColor(R.color.neon_green));
+        selectedCard.setStrokeWidth(0); // Remove stroke when highlighted if background is full neon
+        
         selectedRole = role;
     }
 
     private void resetCard(MaterialCardView card) {
+        card.setCardBackgroundColor(getResources().getColor(R.color.surface_dark));
         card.setStrokeColor(Color.parseColor("#1A1A1A"));
         card.setStrokeWidth(2);
     }

@@ -25,6 +25,8 @@ import com.example.eventflow.controller.EventController;
 import com.example.eventflow.model.entities.Comment;
 import com.example.eventflow.model.entities.Event;
 import com.example.eventflow.model.repositories.EventRepository;
+import com.example.eventflow.org_QR.QRDisplayActivity;
+import com.example.eventflow.org_event.OrgEventActivity;
 import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -33,6 +35,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.squareup.picasso.Picasso;
 
@@ -58,7 +61,7 @@ public class EventDetailActivity extends AppCompatActivity {
     private TextView tvName, tvLocation, tvDate, tvTime, tvSpots, tvTotalSpots, tvRegPeriod, tvDescription, tvCommentsHeader;
     private ImageView ivPoster;
     private EditText etCommentInput;
-    private ImageButton btnPostComment;
+    private ImageButton btnPostComment, btnEditEvent, btnViewQR;
     private RecyclerView rvComments, rvNearbyEvents;
     private TextView tvNearbyEventsLabel;
 
@@ -76,6 +79,7 @@ public class EventDetailActivity extends AppCompatActivity {
     private String uid = "";  // Firebase Auth UID
 
     private FusedLocationProviderClient fusedLocationClient;
+    private ListenerRegistration eventListener;
     private FirebaseAuth mAuth;
 
     @Override
@@ -108,7 +112,7 @@ public class EventDetailActivity extends AppCompatActivity {
         setupListeners();
 
         eventController = new EventController(uid);
-        loadEventDetails();
+        startListeningForEventDetails();
         loadComments();
 
         // Only load nearby events if NOT an organizer
@@ -135,6 +139,8 @@ public class EventDetailActivity extends AppCompatActivity {
         btnJoinNow = findViewById(R.id.btn_join_now);
         etCommentInput = findViewById(R.id.etCommentInput);
         btnPostComment = findViewById(R.id.btnPostComment);
+        btnEditEvent = findViewById(R.id.btn_edit_event);
+        btnViewQR = findViewById(R.id.btn_view_qr);
 
         rvComments = findViewById(R.id.rvComments);
         rvComments.setLayoutManager(new LinearLayoutManager(this));
@@ -155,6 +161,16 @@ public class EventDetailActivity extends AppCompatActivity {
             rvNearbyEvents.setAdapter(nearbyEventAdapter);
         }
 
+        // Only show edit button for organizers
+        if (btnEditEvent != null) {
+            btnEditEvent.setVisibility(isOrganizer ? View.VISIBLE : View.GONE);
+        }
+
+        // Only show QR button for organizers
+        if (btnViewQR != null) {
+            btnViewQR.setVisibility(isOrganizer ? View.VISIBLE : View.GONE);
+        }
+
         // Find bottom navigation bar items if they exist in the layout
         navHome = findViewById(R.id.nav_home);
         navDashboard = findViewById(R.id.nav_dashboard);
@@ -162,48 +178,34 @@ public class EventDetailActivity extends AppCompatActivity {
         navProfile = findViewById(R.id.nav_profile);
     }
 
-    private void setupNavigation() {
-        if (navHome != null) {
-            navHome.setOnClickListener(v -> {
-                Intent intent = new Intent(this, RoleSelectionActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(intent);
-            });
-        }
-
-        if (navDashboard != null) {
-            navDashboard.setOnClickListener(v -> {
-                if (isOrganizer) {
-                    Intent intent = new Intent(this, EntrantDashboardActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                    startActivity(intent);
-                } else {
-                    Intent intent = new Intent(this, RoleSelectionActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                    startActivity(intent);
-                }
-            });
-        }
-
-        if (navCreate != null) {
-            navCreate.setOnClickListener(v -> {
-                if (isOrganizer) {
-                    Intent intent = new Intent(this, com.example.eventflow.org_event.OrgEventActivity.class);
-                    startActivity(intent);
-                }
-            });
-        }
-
-        if (navProfile != null) {
-            navProfile.setOnClickListener(v -> {
-                Intent intent = new Intent(this, ProfileActivity.class);
-                startActivity(intent);
-            });
-        }
-    }
-
     private void setupListeners() {
         findViewById(R.id.btn_detail_back).setOnClickListener(v -> finish());
+
+        if (btnEditEvent != null) {
+            btnEditEvent.setOnClickListener(v -> {
+                Intent intent = new Intent(this, OrgEventActivity.class);
+                intent.putExtra("EVENT_ID", eventId);
+                startActivity(intent);
+            });
+        }
+
+        if (btnViewQR != null) {
+            btnViewQR.setOnClickListener(v -> {
+                if (currentEvent != null) {
+                    Intent intent = new Intent(this, QRDisplayActivity.class);
+                    intent.putExtra("EVENT_NAME", currentEvent.getName());
+
+                    db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
+                        String qrData = doc.getString("qrData");
+                        if (qrData == null || qrData.isEmpty()) {
+                            qrData = "eventflow://event/" + eventId;
+                        }
+                        intent.putExtra("QR_DATA", qrData);
+                        startActivity(intent);
+                    });
+                }
+            });
+        }
 
         findViewById(R.id.btn_view_map_text).setOnClickListener(v -> {
             Intent intent = new Intent(this, EntrantLocationMapActivity.class);
@@ -227,15 +229,32 @@ public class EventDetailActivity extends AppCompatActivity {
         });
     }
 
-    private void loadEventDetails() {
-        eventController.loadEventById(eventId, new EventRepository.EventCallback() {
-            @Override
-            public void onSuccess(Event e) {
-                currentEvent = e;
-                displayEventDetails(e);
-            }
-            @Override public void onFailure(Exception e) {}
-        });
+    private void startListeningForEventDetails() {
+        if (eventId == null) return;
+
+        eventListener = db.collection("events").document(eventId)
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null) {
+                        Log.e("EventDetail", "Listen failed.", e);
+                        return;
+                    }
+
+                    if (snapshot != null && snapshot.exists()) {
+                        currentEvent = snapshot.toObject(Event.class);
+                        if (currentEvent != null) {
+                            currentEvent.setEventId(snapshot.getId());
+                            displayEventDetails(currentEvent);
+                        }
+                    }
+                });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (eventListener != null) {
+            eventListener.remove();
+        }
     }
 
     private void displayEventDetails(Event e) {
@@ -291,14 +310,12 @@ public class EventDetailActivity extends AppCompatActivity {
         }
     }
 
-    // FIXED: Save event to user's joined events using UID
     private void saveToUserJoinedEvents(Event event, String status) {
         if (uid == null || uid.isEmpty()) {
             Log.e("EventDetail", "User UID is null, cannot save");
             return;
         }
 
-        // Format the date as a string for display
         String dateString = "";
         if (event.getEventDate() != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
@@ -315,7 +332,7 @@ public class EventDetailActivity extends AppCompatActivity {
         participation.put("userId", uid);
 
         db.collection("users")
-                .document(uid)  // Use UID instead of deviceId
+                .document(uid)
                 .collection("event_participations")
                 .document(this.eventId)
                 .set(participation)
@@ -327,12 +344,11 @@ public class EventDetailActivity extends AppCompatActivity {
                 });
     }
 
-    // FIXED: Remove event from user's joined events using UID
     private void removeFromUserJoinedEvents(Event event) {
         if (uid == null || uid.isEmpty()) return;
 
         db.collection("users")
-                .document(uid)  // Use UID instead of deviceId
+                .document(uid)
                 .collection("event_participations")
                 .document(this.eventId)
                 .delete()
@@ -352,7 +368,6 @@ public class EventDetailActivity extends AppCompatActivity {
                 Toast.makeText(EventDetailActivity.this,
                         "✅ Joined waiting list! You'll be notified if selected.",
                         Toast.LENGTH_LONG).show();
-                loadEventDetails();
             }
             @Override public void onFailure(Exception e) {
                 Toast.makeText(EventDetailActivity.this,
@@ -370,7 +385,6 @@ public class EventDetailActivity extends AppCompatActivity {
                 Toast.makeText(EventDetailActivity.this,
                         "✅ Left waiting list. You can join again if you change your mind.",
                         Toast.LENGTH_LONG).show();
-                loadEventDetails();
             }
             @Override public void onFailure(Exception e) {
                 Toast.makeText(EventDetailActivity.this,

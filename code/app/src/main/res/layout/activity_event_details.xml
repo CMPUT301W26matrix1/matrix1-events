@@ -39,6 +39,16 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_arrow_back"
                     app:tint="#FFFFFF" />
+
+                <ImageButton
+                    android:id="@+id/btn_edit_event"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_margin="16dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_edit"
+                    app:tint="#FFFFFF" />
             </RelativeLayout>
 
             <LinearLayout
@@ -47,14 +57,33 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
-                <TextView
-                    android:id="@+id/tv_detail_name"
+                <RelativeLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Event Name"
-                    android:textColor="#FFFFFF"
-                    android:textSize="26sp"
-                    android:textStyle="bold" />
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:id="@+id/tv_detail_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_toStartOf="@+id/btn_view_qr"
+                        android:text="Event Name"
+                        android:textColor="#FFFFFF"
+                        android:textSize="26sp"
+                        android:textStyle="bold" />
+
+                    <ImageButton
+                        android:id="@+id/btn_view_qr"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:padding="8dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_qr_code"
+                        app:tint="#4CAF50" />
+                </RelativeLayout>
 
                 <!-- Event Details List -->
                 <LinearLayout
@@ -363,6 +392,6 @@
 
     <!-- Hidden views for compatibility -->
     <Button android:id="@+id/btn_view_entrant_map" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-    <ImageButton android:id="@+id/btn_delete_image" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+    <ImageButton android:id="@+id/btn_delete_event" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
 
 </RelativeLayout>

@@ -5,7 +5,6 @@ import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,7 +38,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
     public static class EventViewHolder extends RecyclerView.ViewHolder {
         TextView name, location, joinLeaveButton;
-        Button deleteButton;
+        View deleteButton; // Changed from Button to View to support ImageButton
         ImageView eventImage;
 
         public EventViewHolder(@NonNull View itemView) {

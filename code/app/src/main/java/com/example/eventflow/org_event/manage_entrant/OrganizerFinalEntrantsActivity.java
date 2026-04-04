@@ -16,6 +16,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
@@ -30,6 +32,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +50,15 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private String eventId;
     private String eventName;
+
+    private final ActivityResultLauncher<String> createDocumentLauncher = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument("text/csv"),
+            uri -> {
+                if (uri != null) {
+                    writeCsvToUri(uri);
+                }
+            }
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -131,7 +143,6 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
                         String status = doc.getString("status");
-                        // ONLY show if status is ACCEPTED
                         if ("ACCEPTED".equals(status)) {
                             fetchUserProfile(userId);
                         }
@@ -209,6 +220,11 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
             return;
         }
 
+        String fileName = "confirmed_entrants_" + (eventName != null ? eventName.replaceAll("\\s+", "_") : "event") + "_" + System.currentTimeMillis() + ".csv";
+        createDocumentLauncher.launch(fileName);
+    }
+
+    private void writeCsvToUri(Uri uri) {
         try {
             StringBuilder csv = new StringBuilder();
             csv.append("Name,Email,Phone,Status\n");
@@ -219,21 +235,15 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
                 csv.append("\"Confirmed\"\n");
             }
 
-            String fileName = "confirmed_entrants_" + System.currentTimeMillis() + ".csv";
-            FileOutputStream fos = openFileOutput(fileName, MODE_PRIVATE);
-            fos.write(csv.toString().getBytes());
-            fos.close();
-
-            File file = new File(getFilesDir(), fileName);
-            Uri fileUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", file);
-
-            Intent shareIntent = new Intent(Intent.ACTION_SEND);
-            shareIntent.setType("text/csv");
-            shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
-            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(Intent.createChooser(shareIntent, "Export CSV"));
+            OutputStream outputStream = getContentResolver().openOutputStream(uri);
+            if (outputStream != null) {
+                outputStream.write(csv.toString().getBytes());
+                outputStream.close();
+                Toast.makeText(this, "CSV exported successfully", Toast.LENGTH_SHORT).show();
+            }
         } catch (IOException e) {
-            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+            Toast.makeText(this, "Error creating CSV: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 

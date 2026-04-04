@@ -15,6 +15,7 @@ public class Event {
     private String name;
     private String description;
     private String location;
+    private String date; // Added to support String date format from Firestore
     private Timestamp eventDate;
     private Timestamp registrationStart;
     private Timestamp registrationEnd;
@@ -92,6 +93,9 @@ public class Event {
     public void setDescription(String description) { this.description = description; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
+
+    public String getDate() { return date; }
+    public void setDate(String date) { this.date = date; }
 
     @PropertyName("eventDate")
     public Timestamp getEventDate() { return eventDate; }
