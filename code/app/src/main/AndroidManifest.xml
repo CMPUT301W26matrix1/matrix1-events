@@ -22,7 +22,7 @@
         <!-- Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="${mapsApiKey}" />
+            android:value="AIzaSyBm028vGV2Wpc2LEACGkZvLXYAW8sx7Z8Q" />
 
         <!-- ADD THIS: Default notification icon -->
         <meta-data
