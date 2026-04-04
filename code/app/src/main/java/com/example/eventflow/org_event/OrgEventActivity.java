@@ -20,6 +20,7 @@ import com.example.eventflow.LocationPickerActivity;
 import com.example.eventflow.ProfileActivity;
 import com.example.eventflow.R;
 import com.example.eventflow.RoleSelectionActivity;
+import com.example.eventflow.org_QR.QRDisplayActivity;
 import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -189,7 +190,8 @@ public class OrgEventActivity extends AppCompatActivity {
     }
 
     private void handleAddEvent() {
-        if (etName.getText().toString().isEmpty()) {
+        String eventNameStr = etName.getText().toString().trim();
+        if (eventNameStr.isEmpty()) {
             Toast.makeText(this, "Please enter an event name", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -204,7 +206,7 @@ public class OrgEventActivity extends AppCompatActivity {
         Map<String, Object> eventMap = new HashMap<>();
         eventMap.put("eventId", eventId);
         eventMap.put("organizerId", deviceId);
-        eventMap.put("name", etName.getText().toString());
+        eventMap.put("name", eventNameStr);
         eventMap.put("location", etLocation.getText().toString());
         eventMap.put("date", etDate.getText().toString());
         eventMap.put("time", etTime.getText().toString());
@@ -225,6 +227,10 @@ public class OrgEventActivity extends AppCompatActivity {
         eventMap.put("private", switchPrivate.isChecked());
         eventMap.put("posterUrl", imageUri != null ? imageUri.toString() : null);
 
+        // Generate QR Data (using eventId as the data to scan)
+        String qrData = "eventflow://event/" + eventId;
+        eventMap.put("qrData", qrData);
+
         // US 02.02.02 — save coordinates for map display
         if (pickedLat != 0 || pickedLng != 0) {
             eventMap.put("locationLatitude", pickedLat);
@@ -242,11 +248,13 @@ public class OrgEventActivity extends AppCompatActivity {
         db.collection("events").document(eventId).set(eventMap, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, "Event saved successfully!", Toast.LENGTH_SHORT).show();
-                    if (switchPrivate.isChecked()) {
-                        Intent inviteIntent = new Intent(this, InviteEntrantsActivity.class);
-                        inviteIntent.putExtra("EVENT_ID", eventId);
-                        startActivity(inviteIntent);
-                    }
+                    
+                    // Navigate to QR Display screen
+                    Intent qrIntent = new Intent(this, QRDisplayActivity.class);
+                    qrIntent.putExtra("EVENT_NAME", eventNameStr);
+                    qrIntent.putExtra("QR_DATA", qrData);
+                    startActivity(qrIntent);
+
                     finish();
                 })
                 .addOnFailureListener(e ->

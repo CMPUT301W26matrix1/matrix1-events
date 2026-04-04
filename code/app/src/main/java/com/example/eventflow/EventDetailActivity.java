@@ -24,6 +24,7 @@ import com.example.eventflow.controller.EventController;
 import com.example.eventflow.model.entities.Comment;
 import com.example.eventflow.model.entities.Event;
 import com.example.eventflow.model.repositories.EventRepository;
+import com.example.eventflow.org_QR.QRDisplayActivity;
 import com.example.eventflow.org_event.OrgEventActivity;
 import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -58,7 +59,7 @@ public class EventDetailActivity extends AppCompatActivity {
     private TextView tvName, tvLocation, tvDate, tvTime, tvSpots, tvTotalSpots, tvRegPeriod, tvDescription, tvCommentsHeader;
     private ImageView ivPoster;
     private EditText etCommentInput;
-    private ImageButton btnPostComment, btnEditEvent;
+    private ImageButton btnPostComment, btnEditEvent, btnViewQR;
     private RecyclerView rvComments, rvNearbyEvents;
     private TextView tvNearbyEventsLabel;
 
@@ -130,6 +131,7 @@ public class EventDetailActivity extends AppCompatActivity {
         etCommentInput = findViewById(R.id.etCommentInput);
         btnPostComment = findViewById(R.id.btnPostComment);
         btnEditEvent = findViewById(R.id.btn_edit_event);
+        btnViewQR = findViewById(R.id.btn_view_qr);
         
         rvComments = findViewById(R.id.rvComments);
         rvComments.setLayoutManager(new LinearLayoutManager(this));
@@ -155,6 +157,11 @@ public class EventDetailActivity extends AppCompatActivity {
             btnEditEvent.setVisibility(isOrganizer ? View.VISIBLE : View.GONE);
         }
 
+        // Only show QR button for organizers
+        if (btnViewQR != null) {
+            btnViewQR.setVisibility(isOrganizer ? View.VISIBLE : View.GONE);
+        }
+
         // Find bottom navigation bar items if they exist in the layout
         navHome = findViewById(R.id.nav_home);
         navDashboard = findViewById(R.id.nav_dashboard);
@@ -170,6 +177,25 @@ public class EventDetailActivity extends AppCompatActivity {
                 Intent intent = new Intent(this, OrgEventActivity.class);
                 intent.putExtra("EVENT_ID", eventId);
                 startActivity(intent);
+            });
+        }
+
+        if (btnViewQR != null) {
+            btnViewQR.setOnClickListener(v -> {
+                if (currentEvent != null) {
+                    Intent intent = new Intent(this, QRDisplayActivity.class);
+                    intent.putExtra("EVENT_NAME", currentEvent.getName());
+                    
+                    // Fetch qrData directly from Firestore to ensure we have the latest scannable string
+                    db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
+                        String qrData = doc.getString("qrData");
+                        if (qrData == null || qrData.isEmpty()) {
+                            qrData = "eventflow://event/" + eventId; // Fallback
+                        }
+                        intent.putExtra("QR_DATA", qrData);
+                        startActivity(intent);
+                    });
+                }
             });
         }
 

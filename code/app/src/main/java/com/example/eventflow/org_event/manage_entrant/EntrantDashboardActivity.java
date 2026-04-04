@@ -12,6 +12,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -311,7 +312,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         View cardNotifications = findViewById(R.id.cardNotifications);
         
         View cardDrawLottery = findViewById(R.id.cardDrawLottery);
-        View cardCancelledActions = findViewById(R.id.cardCancelledActions);
+        View cardDeleteEvent = findViewById(R.id.cardCancelledActions);
 
         if (cardCancelled != null) {
             cardCancelled.setOnClickListener(v -> {
@@ -357,11 +358,13 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             });
         }
 
-        if (cardCancelledActions != null) {
-            cardCancelledActions.setOnClickListener(v -> {
-                Intent intent = new Intent(this, CancelledEntrantsActivity.class);
-                intent.putExtra("eventId", eventId);
-                startActivity(intent);
+        if (cardDeleteEvent != null) {
+            cardDeleteEvent.setOnClickListener(v -> {
+                if (eventId != null) {
+                    showDeleteConfirmationDialog();
+                } else {
+                    Toast.makeText(this, "No event selected to delete", Toast.LENGTH_SHORT).show();
+                }
             });
         }
         
@@ -373,6 +376,37 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+    }
+
+    private void showDeleteConfirmationDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Event")
+                .setMessage("Are you sure you want to delete '" + eventName + "'? This action cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> deleteCurrentEvent())
+                .setNegativeButton("Cancel", null)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
+    }
+
+    private void deleteCurrentEvent() {
+        if (eventId == null) return;
+
+        db.collection("events").document(eventId).delete()
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Event deleted successfully", Toast.LENGTH_SHORT).show();
+                    // Reset UI
+                    eventId = null;
+                    eventName = null;
+                    tvEventName.setText("No Event Selected");
+                    tvEventDate.setText("Date");
+                    tvEventLocation.setText("Location");
+                    resetStats();
+                    // Load the next available event if any
+                    fetchLatestEvent();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to delete event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     private class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAdapter.ViewHolder> {
