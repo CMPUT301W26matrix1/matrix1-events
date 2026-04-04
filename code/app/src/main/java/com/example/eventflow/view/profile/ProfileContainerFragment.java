@@ -63,12 +63,27 @@ public class ProfileContainerFragment extends Fragment {
         // Check if user is logged in from SharedPreferences
         boolean isLoggedIn = prefs.getBoolean("isLoggedIn", false);
         String userEmail = prefs.getString("userEmail", "");
+        boolean isAdmin = prefs.getBoolean("isAdmin", false);
 
-        Log.d(TAG, "isLoggedIn: " + isLoggedIn + ", userEmail: " + userEmail);
+        Log.d(TAG, "isLoggedIn: " + isLoggedIn + ", userEmail: " + userEmail + ", isAdmin: " + isAdmin);
 
         if (!isLoggedIn || userEmail.isEmpty()) {
             Log.d(TAG, "User not logged in, showing SignupActivity");
             navigateToSignup();
+            return;
+        }
+
+        // Admin logged in without Firebase Auth — build a local profile
+        if (isAdmin && (currentUserId == null || currentUserId.isEmpty())) {
+            Log.d(TAG, "Admin user, showing admin profile");
+            String userName = prefs.getString("userName", "Admin");
+            Profile adminProfile = new Profile();
+            adminProfile.setUserId("admin");
+            adminProfile.setFirstName(userName);
+            adminProfile.setLastName("");
+            adminProfile.setEmail(userEmail);
+            adminProfile.setRole("admin");
+            showProfileView(adminProfile);
             return;
         }
 
@@ -122,13 +137,37 @@ public class ProfileContainerFragment extends Fragment {
             @Override
             public void onNotFound() {
                 Log.d(TAG, "No profile found");
-                navigateToSignup();
+                boolean isAdmin = prefs.getBoolean("isAdmin", false);
+                if (isAdmin) {
+                    String userName = prefs.getString("userName", "Admin");
+                    Profile adminProfile = new Profile();
+                    adminProfile.setUserId("admin");
+                    adminProfile.setFirstName(userName);
+                    adminProfile.setLastName("");
+                    adminProfile.setEmail(userEmail);
+                    adminProfile.setRole("admin");
+                    showProfileView(adminProfile);
+                } else {
+                    navigateToSignup();
+                }
             }
 
             @Override
             public void onFailure(@NonNull Exception e) {
                 Log.e(TAG, "Error loading by email: " + e.getMessage());
-                navigateToSignup();
+                boolean isAdmin = prefs.getBoolean("isAdmin", false);
+                if (isAdmin) {
+                    String userName = prefs.getString("userName", "Admin");
+                    Profile adminProfile = new Profile();
+                    adminProfile.setUserId("admin");
+                    adminProfile.setFirstName(userName);
+                    adminProfile.setLastName("");
+                    adminProfile.setEmail(userEmail);
+                    adminProfile.setRole("admin");
+                    showProfileView(adminProfile);
+                } else {
+                    navigateToSignup();
+                }
             }
         });
     }
