@@ -25,6 +25,14 @@ public class Comment {
         // needed for Firestore
     }
 
+    public Comment(String commentId, String userId, String userName, String text, Timestamp timestamp) {
+        this.commentId = commentId;
+        this.userId = userId;
+        this.userName = userName;
+        this.text = text;
+        this.timestamp = timestamp;
+    }
+
     public String getCommentId() { return commentId; }
     public void setCommentId(String commentId) { this.commentId = commentId; }
 
