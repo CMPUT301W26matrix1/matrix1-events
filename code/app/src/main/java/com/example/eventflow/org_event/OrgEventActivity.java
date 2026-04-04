@@ -5,7 +5,6 @@ import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -259,7 +258,7 @@ public class OrgEventActivity extends AppCompatActivity {
 
         Map<String, Object> eventMap = new HashMap<>();
         eventMap.put("eventId", eventId);
-        eventMap.put("organizerId", userId);  // Use Firebase Auth UID
+        eventMap.put("organizerId", userId);
         eventMap.put("name", eventNameStr);
         eventMap.put("location", etLocation.getText().toString());
         eventMap.put("description", etDescription.getText().toString());
@@ -292,9 +291,14 @@ public class OrgEventActivity extends AppCompatActivity {
         eventMap.put("private", switchPrivate.isChecked());
         eventMap.put("posterUrl", imageUri != null ? imageUri.toString() : null);
 
-        // Generate QR Data
-        String qrData = "eventflow://event/" + eventId;
-        eventMap.put("qrData", qrData);
+        // Generate QR Data (only if NOT private)
+        String qrData = null;
+        if (!switchPrivate.isChecked()) {
+            qrData = "eventflow://event/" + eventId;
+            eventMap.put("qrData", qrData);
+        } else {
+            eventMap.put("qrData", null);
+        }
 
         // Save coordinates for map display
         if (pickedLat != 0 || pickedLng != 0) {
@@ -312,14 +316,21 @@ public class OrgEventActivity extends AppCompatActivity {
             eventMap.put("coOrganizerIds", new ArrayList<String>());
         }
 
+        final String finalQrData = qrData;
         db.collection("events").document(eventId).set(eventMap, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, "Event saved successfully!", Toast.LENGTH_SHORT).show();
 
-                    Intent qrIntent = new Intent(this, QRDisplayActivity.class);
-                    qrIntent.putExtra("EVENT_NAME", eventNameStr);
-                    qrIntent.putExtra("QR_DATA", qrData);
-                    startActivity(qrIntent);
+                    if (switchPrivate.isChecked()) {
+                        Intent inviteIntent = new Intent(this, InviteEntrantsActivity.class);
+                        inviteIntent.putExtra("EVENT_ID", eventId);
+                        startActivity(inviteIntent);
+                    } else {
+                        Intent qrIntent = new Intent(this, QRDisplayActivity.class);
+                        qrIntent.putExtra("EVENT_NAME", eventNameStr);
+                        qrIntent.putExtra("QR_DATA", finalQrData);
+                        startActivity(qrIntent);
+                    }
 
                     finish();
                 })
