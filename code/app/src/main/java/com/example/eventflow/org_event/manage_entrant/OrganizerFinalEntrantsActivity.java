@@ -11,16 +11,16 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.eventflow.R;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +36,16 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private String eventId;
     private String eventName;
+
+    // ActivityResultLauncher for creating a document (CSV export)
+    private final ActivityResultLauncher<String> createDocumentLauncher = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument("text/csv"),
+            uri -> {
+                if (uri != null) {
+                    writeCsvToUri(uri);
+                }
+            }
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -208,6 +218,11 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
             return;
         }
 
+        String fileName = "enrolled_entrants_" + (eventName != null ? eventName.replaceAll("\\s+", "_") : "event") + "_" + System.currentTimeMillis() + ".csv";
+        createDocumentLauncher.launch(fileName);
+    }
+
+    private void writeCsvToUri(Uri uri) {
         try {
             StringBuilder csv = new StringBuilder();
             csv.append("Name,Email,Phone,Join Date,Accept Date\n");
@@ -220,22 +235,12 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
                 csv.append("\"").append(entrant.getAcceptDate() != null ? entrant.getAcceptDate() : "").append("\"\n");
             }
 
-            String fileName = "enrolled_entrants_" + System.currentTimeMillis() + ".csv";
-            FileOutputStream fos = openFileOutput(fileName, MODE_PRIVATE);
-            fos.write(csv.toString().getBytes());
-            fos.close();
-
-            File file = new File(getFilesDir(), fileName);
-            Uri fileUri = FileProvider.getUriForFile(this,
-                    getPackageName() + ".fileprovider", file);
-
-            Intent shareIntent = new Intent(Intent.ACTION_SEND);
-            shareIntent.setType("text/csv");
-            shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
-            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-            startActivity(Intent.createChooser(shareIntent, "Export CSV"));
-
+            OutputStream outputStream = getContentResolver().openOutputStream(uri);
+            if (outputStream != null) {
+                outputStream.write(csv.toString().getBytes());
+                outputStream.close();
+                Toast.makeText(this, "CSV exported successfully", Toast.LENGTH_SHORT).show();
+            }
         } catch (IOException e) {
             e.printStackTrace();
             Toast.makeText(this, "Error creating CSV: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -255,13 +260,26 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
             return;
         }
 
-        String emailList = TextUtils.join(",", emails);
-
         Intent emailIntent = new Intent(Intent.ACTION_SENDTO);
         emailIntent.setData(Uri.parse("mailto:"));
-        emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{emailList});
-        emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Event Update - " + (eventName != null ? eventName : "Event"));
-        emailIntent.putExtra(Intent.EXTRA_TEXT, "Hello,\n\nHere is an update about the event.\n\nThank you.");
+        
+        // Use an array of emails for better compatibility
+        emailIntent.putExtra(Intent.EXTRA_EMAIL, emails.toArray(new String[0]));
+        
+        // Professional Subject
+        emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Important Update: " + (eventName != null ? eventName : "Event"));
+
+        // Formal Auto-Email Letter Script
+        String emailBody = "Dear Attendee,\n\n" +
+                "We are writing to provide you with an important update regarding our upcoming event: " + (eventName != null ? eventName : "the event") + ".\n\n" +
+                "We are excited to have you join us! Please keep this email for your records. " +
+                "We will be sharing more details and instructions as we get closer to the event date.\n\n" +
+                "If you have any immediate questions or require further assistance, please feel free to reply to this message.\n\n" +
+                "Best regards,\n" +
+                "The Organizing Team\n" +
+                "EventFlow Management";
+
+        emailIntent.putExtra(Intent.EXTRA_TEXT, emailBody);
 
         try {
             startActivity(Intent.createChooser(emailIntent, "Send email..."));

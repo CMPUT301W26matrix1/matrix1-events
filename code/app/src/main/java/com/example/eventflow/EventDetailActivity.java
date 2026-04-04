@@ -32,6 +32,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.squareup.picasso.Picasso;
 
@@ -76,6 +77,7 @@ public class EventDetailActivity extends AppCompatActivity {
     private String deviceId;
 
     private FusedLocationProviderClient fusedLocationClient;
+    private ListenerRegistration eventListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,7 +102,7 @@ public class EventDetailActivity extends AppCompatActivity {
         setupListeners();
         
         eventController = new EventController(deviceId);
-        loadEventDetails();
+        startListeningForEventDetails();
         loadComments();
         
         // Only load nearby events if NOT an organizer
@@ -193,15 +195,32 @@ public class EventDetailActivity extends AppCompatActivity {
         });
     }
 
-    private void loadEventDetails() {
-        eventController.loadEventById(eventId, new EventRepository.EventCallback() {
-            @Override
-            public void onSuccess(Event e) {
-                currentEvent = e;
-                displayEventDetails(e);
-            }
-            @Override public void onFailure(Exception e) {}
-        });
+    private void startListeningForEventDetails() {
+        if (eventId == null) return;
+        
+        eventListener = db.collection("events").document(eventId)
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null) {
+                        Log.e("EventDetail", "Listen failed.", e);
+                        return;
+                    }
+
+                    if (snapshot != null && snapshot.exists()) {
+                        currentEvent = snapshot.toObject(Event.class);
+                        if (currentEvent != null) {
+                            currentEvent.setEventId(snapshot.getId());
+                            displayEventDetails(currentEvent);
+                        }
+                    }
+                });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (eventListener != null) {
+            eventListener.remove();
+        }
     }
 
     private void displayEventDetails(Event e) {
@@ -214,6 +233,17 @@ public class EventDetailActivity extends AppCompatActivity {
             SimpleDateFormat tf = new SimpleDateFormat("'at' HH:mm", Locale.getDefault());
             tvDate.setText(df.format(e.getEventDate().toDate()));
             tvTime.setText(tf.format(e.getEventDate().toDate()));
+        } else if (e.getDate() != null && !e.getDate().isEmpty()) {
+            tvDate.setText(e.getDate());
+            // Since model might not have 'time', we manually get it from snapshot if needed, 
+            // but for simplicity, the snapshot listener's toObject already populated fields.
+            // If the model doesn't have a 'time' field, we can do this:
+            db.collection("events").document(eventId).get().addOnSuccessListener(documentSnapshot -> {
+                String time = documentSnapshot.getString("time");
+                if (time != null && !time.isEmpty()) {
+                    tvTime.setText("at " + time);
+                }
+            });
         }
 
         int spotsAvailable = e.getCapacity() - (e.getWaitingList() != null ? e.getWaitingList().size() : 0);
@@ -333,7 +363,6 @@ public class EventDetailActivity extends AppCompatActivity {
             public void onSuccess() {
                 saveToUserJoinedEvents(currentEvent, "Waiting");  // FROM LEFT SIDE
                 Toast.makeText(EventDetailActivity.this, "Joined successfully", Toast.LENGTH_SHORT).show();
-                loadEventDetails();
             }
             @Override public void onFailure(Exception e) {
                 Toast.makeText(EventDetailActivity.this, "Join failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -347,7 +376,6 @@ public class EventDetailActivity extends AppCompatActivity {
             public void onSuccess() {
                 removeFromUserJoinedEvents(currentEvent);  // FROM LEFT SIDE
                 Toast.makeText(EventDetailActivity.this, "Left successfully", Toast.LENGTH_SHORT).show();
-                loadEventDetails();
             }
             @Override public void onFailure(Exception e) {
                 Toast.makeText(EventDetailActivity.this, "Failed to leave: " + e.getMessage(), Toast.LENGTH_SHORT).show();
