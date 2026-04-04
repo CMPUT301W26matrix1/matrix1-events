@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,16 +29,23 @@ public class RoleSelectionActivity extends AppCompatActivity {
         cardAdmin = findViewById(R.id.card_role_admin);
         btnContinue = findViewById(R.id.btn_continue);
 
+        // Hide Admin card for non-admin users
+        SharedPreferences prefs = getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
+        boolean isAdmin = prefs.getBoolean("isAdmin", false);
+        if (cardAdmin != null) {
+            cardAdmin.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
+        }
+
         // Set initial state
         selectCard(cardEntrant, "Entrant");
 
         cardEntrant.setOnClickListener(v -> selectCard(cardEntrant, "Entrant"));
         cardOrganizer.setOnClickListener(v -> selectCard(cardOrganizer, "Organizer"));
-        cardAdmin.setOnClickListener(v -> selectCard(cardAdmin, "Admin"));
+        if (isAdmin) {
+            cardAdmin.setOnClickListener(v -> selectCard(cardAdmin, "Admin"));
+        }
 
         btnContinue.setOnClickListener(v -> {
-            // Save selected role to SharedPreferences for other activities/fragments to use
-            SharedPreferences prefs = getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
             prefs.edit().putString("userRole", selectedRole.toLowerCase()).apply();
 
             if ("Entrant".equals(selectedRole)) {
