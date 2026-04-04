@@ -320,14 +320,23 @@ public class EventDetailActivity extends AppCompatActivity {
         }
 
         btnJoinNow.setVisibility(View.VISIBLE);
-        boolean joined = eventController.isOnWaitingList(currentEvent);
 
-        if (joined) {
+        if (eventController.isSelected(currentEvent)) {
+            btnJoinNow.setText("Selected");
+            btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
+            btnJoinNow.setEnabled(false);
+        } else if (eventController.isRejected(currentEvent)) {
+            btnJoinNow.setText("Not Selected");
+            btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF9E9E9E));
+            btnJoinNow.setEnabled(false);
+        } else if (eventController.isOnWaitingList(currentEvent)) {
             btnJoinNow.setText("On Waiting List");
             btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4285F4));
+            btnJoinNow.setEnabled(true);
         } else {
             btnJoinNow.setText("Join");
             btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
+            btnJoinNow.setEnabled(true);
         }
     }
 

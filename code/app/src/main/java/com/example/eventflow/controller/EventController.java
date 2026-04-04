@@ -4,6 +4,7 @@ import com.example.eventflow.model.entities.Event;
 import com.example.eventflow.model.entities.Profile;
 import com.example.eventflow.model.repositories.EventRepository;
 import com.example.eventflow.event.EventFilterOptions;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -134,6 +135,31 @@ public class EventController {
 
     public boolean isOnWaitingList(Event event) {
         return event.getWaitingList() != null && event.getWaitingList().contains(userId);
+    }
+
+    public boolean isSelected(Event event) {
+        return event.getSelectedEntrants() != null && event.getSelectedEntrants().contains(userId);
+    }
+
+    public boolean isRejected(Event event) {
+        return event.getRejectedEntrants() != null && event.getRejectedEntrants().contains(userId);
+    }
+
+    /**
+     * Returns the user's participation status string for display on event cards.
+     * Checks selectedEntrants, waitingList, and rejectedEntrants in priority order.
+     *
+     * @return one of "Selected", "Waiting List", "Rejected", or null if not participating
+     */
+    public String getParticipationStatus(Event event) {
+        if (isSelected(event)) return "Selected";
+        if (isOnWaitingList(event)) return "Waiting List";
+        if (isRejected(event)) return "Rejected";
+        return null;
+    }
+
+    public ListenerRegistration listenAllEvents(EventRepository.EventListCallback callback) {
+        return eventRepository.listenAllEvents(callback);
     }
 
     // US 02.09.01 — check if current user is a co-organizer

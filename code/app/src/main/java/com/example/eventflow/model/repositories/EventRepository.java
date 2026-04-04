@@ -3,6 +3,7 @@ package com.example.eventflow.model.repositories;
 import com.example.eventflow.model.entities.Event;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
@@ -162,5 +163,29 @@ public class EventRepository {
                 .update("waitingList", FieldValue.arrayRemove(userId))
                 .addOnSuccessListener(unused -> callback.onSuccess())
                 .addOnFailureListener(callback::onFailure);
+    }
+
+    /**
+     * Attaches a real-time snapshot listener to the entire events collection.
+     * The callback fires immediately with current data and again on every change.
+     *
+     * @return a {@link ListenerRegistration} the caller must remove when done
+     */
+    public ListenerRegistration listenAllEvents(EventListCallback callback) {
+        return db.collection(EVENTS_COLLECTION)
+                .addSnapshotListener((querySnapshot, e) -> {
+                    if (e != null) {
+                        callback.onFailure(e);
+                        return;
+                    }
+                    if (querySnapshot == null) return;
+                    List<Event> events = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        Event event = doc.toObject(Event.class);
+                        event.setEventId(doc.getId());
+                        events.add(event);
+                    }
+                    callback.onSuccess(events);
+                });
     }
 }
