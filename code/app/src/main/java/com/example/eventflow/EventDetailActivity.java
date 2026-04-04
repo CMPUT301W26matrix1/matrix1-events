@@ -24,6 +24,7 @@ import com.example.eventflow.controller.EventController;
 import com.example.eventflow.model.entities.Comment;
 import com.example.eventflow.model.entities.Event;
 import com.example.eventflow.model.repositories.EventRepository;
+import com.example.eventflow.org_event.OrgEventActivity;
 import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -56,7 +57,7 @@ public class EventDetailActivity extends AppCompatActivity {
     private TextView tvName, tvLocation, tvDate, tvTime, tvSpots, tvTotalSpots, tvRegPeriod, tvDescription, tvCommentsHeader;
     private ImageView ivPoster;
     private EditText etCommentInput;
-    private ImageButton btnPostComment;
+    private ImageButton btnPostComment, btnEditEvent;
     private RecyclerView rvComments, rvNearbyEvents;
     private TextView tvNearbyEventsLabel;
 
@@ -126,6 +127,7 @@ public class EventDetailActivity extends AppCompatActivity {
         btnJoinNow = findViewById(R.id.btn_join_now);
         etCommentInput = findViewById(R.id.etCommentInput);
         btnPostComment = findViewById(R.id.btnPostComment);
+        btnEditEvent = findViewById(R.id.btn_edit_event);
         
         rvComments = findViewById(R.id.rvComments);
         rvComments.setLayoutManager(new LinearLayoutManager(this));
@@ -146,6 +148,11 @@ public class EventDetailActivity extends AppCompatActivity {
             rvNearbyEvents.setAdapter(nearbyEventAdapter);
         }
 
+        // Only show edit button for organizers
+        if (btnEditEvent != null) {
+            btnEditEvent.setVisibility(isOrganizer ? View.VISIBLE : View.GONE);
+        }
+
         // Find bottom navigation bar items if they exist in the layout
         navHome = findViewById(R.id.nav_home);
         navDashboard = findViewById(R.id.nav_dashboard);
@@ -153,48 +160,16 @@ public class EventDetailActivity extends AppCompatActivity {
         navProfile = findViewById(R.id.nav_profile);
     }
 
-    private void setupNavigation() {
-        if (navHome != null) {
-            navHome.setOnClickListener(v -> {
-                Intent intent = new Intent(this, RoleSelectionActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(intent);
-            });
-        }
-
-        if (navDashboard != null) {
-            navDashboard.setOnClickListener(v -> {
-                if (isOrganizer) {
-                    Intent intent = new Intent(this, EntrantDashboardActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                    startActivity(intent);
-                } else {
-                    Intent intent = new Intent(this, RoleSelectionActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                    startActivity(intent);
-                }
-            });
-        }
-
-        if (navCreate != null) {
-            navCreate.setOnClickListener(v -> {
-                if (isOrganizer) {
-                    Intent intent = new Intent(this, com.example.eventflow.org_event.OrgEventActivity.class);
-                    startActivity(intent);
-                }
-            });
-        }
-
-        if (navProfile != null) {
-            navProfile.setOnClickListener(v -> {
-                Intent intent = new Intent(this, ProfileActivity.class);
-                startActivity(intent);
-            });
-        }
-    }
-
     private void setupListeners() {
         findViewById(R.id.btn_detail_back).setOnClickListener(v -> finish());
+
+        if (btnEditEvent != null) {
+            btnEditEvent.setOnClickListener(v -> {
+                Intent intent = new Intent(this, OrgEventActivity.class);
+                intent.putExtra("EVENT_ID", eventId);
+                startActivity(intent);
+            });
+        }
 
         findViewById(R.id.btn_view_map_text).setOnClickListener(v -> {
             Intent intent = new Intent(this, EntrantLocationMapActivity.class);
@@ -245,10 +220,35 @@ public class EventDetailActivity extends AppCompatActivity {
         tvSpots.setText(Math.max(0, spotsAvailable) + " spots available");
         tvTotalSpots.setText("of " + e.getCapacity() + " total");
 
-        if (e.getRegistrationStart() != null && e.getRegistrationEnd() != null) {
-            SimpleDateFormat rf = new SimpleDateFormat("MMM d", Locale.getDefault());
-            tvRegPeriod.setText(rf.format(e.getRegistrationStart().toDate()) + " - " + rf.format(e.getRegistrationEnd().toDate()) + ", " + new SimpleDateFormat("yyyy", Locale.getDefault()).format(e.getRegistrationEnd().toDate()));
-        }
+        // Fixed registration period display to handle both Timestamp and String data
+        db.collection("events").document(eventId).get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                Object start = documentSnapshot.get("registrationStart");
+                Object end = documentSnapshot.get("registrationEnd");
+                
+                String startStr = "";
+                String endStr = "";
+                
+                if (start instanceof Timestamp) {
+                    startStr = new SimpleDateFormat("MMM d", Locale.getDefault()).format(((Timestamp) start).toDate());
+                } else if (start instanceof String) {
+                    startStr = (String) start;
+                }
+                
+                if (end instanceof Timestamp) {
+                    SimpleDateFormat sdf = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
+                    endStr = sdf.format(((Timestamp) end).toDate());
+                } else if (end instanceof String) {
+                    endStr = (String) end;
+                }
+                
+                if (!startStr.isEmpty() && !endStr.isEmpty()) {
+                    tvRegPeriod.setText(startStr + " - " + endStr);
+                } else {
+                    tvRegPeriod.setText("Not set");
+                }
+            }
+        });
 
         if (e.getPosterUrl() != null && !e.getPosterUrl().isEmpty()) {
             Picasso.get().load(e.getPosterUrl()).placeholder(R.drawable.ic_placeholder).into(ivPoster);

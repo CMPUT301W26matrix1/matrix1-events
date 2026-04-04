@@ -27,6 +27,7 @@ import com.example.eventflow.model.entities.Event;
 import com.example.eventflow.org_event.OrgEventActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
@@ -166,13 +167,14 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
         db.collection("events")
                 .whereEqualTo("organizerId", deviceId)
-                .limit(1)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     if (!queryDocumentSnapshots.isEmpty()) {
-                        Event event = queryDocumentSnapshots.getDocuments().get(0).toObject(Event.class);
+                        // Manual sort by createdAt if it exists, otherwise use last doc
+                        DocumentSnapshot latestDoc = queryDocumentSnapshots.getDocuments().get(queryDocumentSnapshots.size() - 1);
+                        Event event = latestDoc.toObject(Event.class);
                         if (event != null) {
-                            event.setEventId(queryDocumentSnapshots.getDocuments().get(0).getId());
+                            event.setEventId(latestDoc.getId());
                             updateUI(event);
                             fetchStats(event.getEventId(), event.getCapacity());
                         }
@@ -214,6 +216,8 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         if (event.getEventDate() != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("MMMM d, yyyy", Locale.getDefault());
             tvEventDate.setText(sdf.format(event.getEventDate().toDate()));
+        } else if (event.getDate() != null && !event.getDate().isEmpty()) {
+            tvEventDate.setText(event.getDate());
         } else {
             tvEventDate.setText("No date set");
         }
@@ -267,26 +271,36 @@ public class EntrantDashboardActivity extends AppCompatActivity {
     private void loadMyEvents() {
         String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
+        // Removed orderBy to ensure all events (including those without createdAt) are shown
         db.collection("events")
                 .whereEqualTo("organizerId", deviceId)
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        Log.e("EntrantDashboard", "Listen failed.", error);
+                        return;
+                    }
+
                     myEvents.clear();
-                    for (var doc : queryDocumentSnapshots) {
-                        try {
-                            Event event = doc.toObject(Event.class);
-                            if (event != null) {
-                                event.setEventId(doc.getId());
-                                myEvents.add(event);
+                    if (value != null) {
+                        for (DocumentSnapshot doc : value.getDocuments()) {
+                            try {
+                                Event event = doc.toObject(Event.class);
+                                if (event != null) {
+                                    event.setEventId(doc.getId());
+                                    myEvents.add(event);
+                                }
+                            } catch (Exception e) {
+                                Log.e("EntrantDashboard", "Error parsing event", e);
                             }
-                        } catch (Exception e) {
-                            e.printStackTrace();
                         }
                     }
                     if (organizerAdapter != null) organizerAdapter.notifyDataSetChanged();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to load events", Toast.LENGTH_SHORT).show();
+                    
+                    // Auto-select first event if none currently selected
+                    if (eventId == null && !myEvents.isEmpty()) {
+                        updateUI(myEvents.get(0));
+                        fetchStats(myEvents.get(0).getEventId(), myEvents.get(0).getCapacity());
+                    }
                 });
     }
 
@@ -384,6 +398,10 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             
             if (event.getEventDate() != null) {
                 holder.tvDate.setText(sdf.format(event.getEventDate().toDate()));
+            } else if (event.getDate() != null && !event.getDate().isEmpty()) {
+                holder.tvDate.setText(event.getDate());
+            } else {
+                holder.tvDate.setText("No date set");
             }
 
             holder.tvWaitlist.setText(event.getWaitingListCount() + " waitlisted");
