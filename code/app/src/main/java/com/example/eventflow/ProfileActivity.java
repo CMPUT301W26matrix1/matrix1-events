@@ -41,20 +41,16 @@ public class ProfileActivity extends AppCompatActivity {
         if (bottomNav != null) {
             SharedPreferences prefs = getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
             String userRole = prefs.getString("userRole", "");
+            boolean isAdmin = prefs.getBoolean("isAdmin", false);
 
             bottomNav.getMenu().clear();
 
-            if ("admin".equalsIgnoreCase(userRole)) {
+            if (isAdmin || "admin".equalsIgnoreCase(userRole)) {
                 bottomNav.inflateMenu(R.menu.admin_bottom_nav);
                 bottomNav.setSelectedItemId(R.id.nav_profile);
                 bottomNav.setOnItemSelectedListener(item -> {
                     int id = item.getItemId();
-                    if (id == R.id.nav_dashboard) {
-                        // Go back to role selection
-                        startActivity(new Intent(this, RoleSelectionActivity.class));
-                        finish();
-                        return true;
-                    } else if (id == R.id.nav_admin) {
+                    if (id == R.id.nav_admin) {
                         startActivity(new Intent(this, AdminDashboardActivity.class));
                         finish();
                         return true;
