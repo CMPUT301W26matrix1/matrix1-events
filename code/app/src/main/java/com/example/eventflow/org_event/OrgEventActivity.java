@@ -232,7 +232,14 @@ public class OrgEventActivity extends AppCompatActivity {
             pickedLat = data.getDoubleExtra("latitude", 0);
             pickedLng = data.getDoubleExtra("longitude", 0);
             pickedRadius = data.getIntExtra("radius", 500);
-            etLocation.setText(String.format(Locale.getDefault(), "%.4f, %.4f", pickedLat, pickedLng));
+            
+            String address = data.getStringExtra("address");
+            if (address != null && !address.isEmpty()) {
+                etLocation.setText(address);
+            } else {
+                etLocation.setText(String.format(Locale.getDefault(), "%.4f, %.4f", pickedLat, pickedLng));
+            }
+
             Toast.makeText(this, "Location selected!", Toast.LENGTH_SHORT).show();
         }
     }
