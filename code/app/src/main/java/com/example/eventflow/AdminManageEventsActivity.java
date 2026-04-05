@@ -25,7 +25,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Activity for Administrators to browse and moderate all events in the system.
+ * Purpose: This screen lets Admins see every single event in the system. 
+ * They can search for events by name, scan QR codes to jump to details, 
+ * and most importantly, delete events that shouldn't be there.
+ * 
+ * Design Pattern: Uses a List-Detail pattern. It also acts as a "Moderator" 
+ * view for the Event collection in Firestore.
+ * 
+ * Issues: The QR scanner currently only handles specific URL formats; 
+ * if the QR code format changes, the scanner might not recognize the event ID.
  */
 public class AdminManageEventsActivity extends AppCompatActivity {
 
