@@ -55,7 +55,7 @@ import java.util.UUID;
  */
 public class OrgEventFragment extends Fragment {
 
-    private EditText etName, etLocation, etDate, etTime, etDescription, etLimit, etRegStart, etRegEnd;
+    private EditText etName, etLocation, etDate, etTime, etDescription, etLimit, etRegStart, etRegEnd, etCategory;
     private SwitchCompat switchGeo, switchPrivate;
     private ImageView ivEventPoster;
     private View btnBack, cvUploadImage;
@@ -125,6 +125,7 @@ public class OrgEventFragment extends Fragment {
      */
     private void initViews(View view) {
         etName            = view.findViewById(R.id.et_event_name);
+        etCategory        = view.findViewById(R.id.et_event_category);
         etLocation        = view.findViewById(R.id.et_event_location);
         etDate            = view.findViewById(R.id.et_event_date);
         etTime            = view.findViewById(R.id.et_event_time);
@@ -251,6 +252,7 @@ public class OrgEventFragment extends Fragment {
         eventData.put("eventId", eventId);
         eventData.put("organizerId", deviceId);
         eventData.put("name", etName.getText().toString().trim());
+        eventData.put("category", etCategory.getText().toString().trim());
         eventData.put("location", etLocation.getText().toString().trim());
         eventData.put("date", etDate.getText().toString().trim());
         eventData.put("time", etTime.getText().toString().trim());
@@ -293,6 +295,7 @@ public class OrgEventFragment extends Fragment {
         db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
             if (doc.exists()) {
                 etName.setText(doc.getString("name"));
+                etCategory.setText(doc.getString("category"));
                 etLocation.setText(doc.getString("location"));
                 etDate.setText(doc.getString("date"));
                 etTime.setText(doc.getString("time"));

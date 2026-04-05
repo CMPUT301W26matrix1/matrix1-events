@@ -68,12 +68,18 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
         // Set category tag
         if (holder.tvEventCategory != null) {
-            List<String> interests = event.getInterests();
-            if (interests != null && !interests.isEmpty()) {
-                holder.tvEventCategory.setText(interests.get(0));
+            String category = event.getCategory();
+            if (category != null && !category.isEmpty()) {
+                holder.tvEventCategory.setText(category);
                 holder.tvEventCategory.setVisibility(View.VISIBLE);
             } else {
-                holder.tvEventCategory.setVisibility(View.GONE);
+                List<String> interests = event.getInterests();
+                if (interests != null && !interests.isEmpty()) {
+                    holder.tvEventCategory.setText(interests.get(0));
+                    holder.tvEventCategory.setVisibility(View.VISIBLE);
+                } else {
+                    holder.tvEventCategory.setVisibility(View.GONE);
+                }
             }
         }
 

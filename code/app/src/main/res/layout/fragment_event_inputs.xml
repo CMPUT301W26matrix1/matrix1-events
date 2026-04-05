@@ -47,6 +47,47 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
+    <!-- Category -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Category"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp" />
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        app:cardBackgroundColor="#121212"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        android:layout_marginBottom="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_directions"
+                app:tint="#666666" />
+            <EditText
+                android:id="@+id/et_event_category"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@null"
+                android:hint="e.g. Food, Music, Tech..."
+                android:layout_marginStart="12dp"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#666666"
+                android:textSize="15sp"
+                android:singleLine="true" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
     <!-- Description -->
     <TextView
         android:layout_width="wrap_content"

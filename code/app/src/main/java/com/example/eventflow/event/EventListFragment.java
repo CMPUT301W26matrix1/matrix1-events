@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,7 +41,9 @@ import android.net.Uri;
 import com.example.eventflow.EventDetailActivity;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -186,16 +189,62 @@ public class EventListFragment extends Fragment {
         cgAvailability.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (!checkedIds.isEmpty()) {
                 Chip chip = group.findViewById(checkedIds.get(0));
-                selectedAvailability = chip.getText().toString();
-                applyFiltersAndSearch();
+                if (chip != null) {
+                    selectedAvailability = chip.getText().toString();
+                    applyFiltersAndSearch();
+                }
             }
         });
+        
+        // Category listener is handled dynamically in updateCategoryChips
+    }
 
-        // Category ChipGroup
+    private void updateCategoryChips() {
+        if (!isAdded() || getContext() == null) return;
+
+        Set<String> categories = new LinkedHashSet<>();
+        categories.add("All");
+        categories.add("Tech");
+        categories.add("Sport");
+        categories.add("Music");
+        categories.add("Food");
+        categories.add("Education");
+        categories.add("Entertainment");
+
+        for (Event event : allEvents) {
+            String cat = event.getCategory();
+            if (cat != null && !cat.trim().isEmpty()) {
+                String standardizedCat = cat.trim().substring(0, 1).toUpperCase() + cat.trim().substring(1).toLowerCase();
+                categories.add(standardizedCat);
+            }
+        }
+
+        cgCategories.setOnCheckedStateChangeListener(null);
+        cgCategories.removeAllViews();
+
+        for (String category : categories) {
+            Chip chip = (Chip) getLayoutInflater().inflate(R.layout.item_filter_chip, cgCategories, false);
+            chip.setText(category);
+            chip.setCheckable(true);
+            chip.setId(View.generateViewId());
+            
+            cgCategories.addView(chip);
+            
+            if (category.trim().equalsIgnoreCase(selectedCategory.trim())) {
+                chip.setChecked(true);
+            }
+        }
+
         cgCategories.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (!checkedIds.isEmpty()) {
                 Chip chip = group.findViewById(checkedIds.get(0));
-                selectedCategory = chip.getText().toString();
+                if (chip != null) {
+                    selectedCategory = chip.getText().toString().trim();
+                    Log.d("Filter", "Selected Category: " + selectedCategory);
+                    applyFiltersAndSearch();
+                }
+            } else {
+                selectedCategory = "All";
                 applyFiltersAndSearch();
             }
         });
@@ -236,6 +285,7 @@ public class EventListFragment extends Fragment {
                 if (progressBar != null) progressBar.setVisibility(View.GONE);
                 allEvents.clear();
                 allEvents.addAll(events);
+                updateCategoryChips();
                 applyFiltersAndSearch();
             }
             @Override
@@ -249,38 +299,47 @@ public class EventListFragment extends Fragment {
     }
 
     private void applyFiltersAndSearch() {
-        String query = etSearchEvents.getText().toString().toLowerCase();
+        if (!isAdded()) return;
 
-        List<Event> filtered = new ArrayList<>(allEvents);
+        String query = etSearchEvents.getText().toString().trim().toLowerCase();
+        final String catFilter = selectedCategory.trim();
+        final String availFilter = selectedAvailability.trim();
 
-        // Filter by Category
-        if (!selectedCategory.equals("All")) {
-            filtered = filtered.stream()
-                    .filter(e -> e.getInterests() != null && e.getInterests().contains(selectedCategory))
-                    .collect(Collectors.toList());
-        }
-
-        // Filter by Availability
-        if (selectedAvailability.equals("Available")) {
-            filtered = filtered.stream()
-                    .filter(e -> !e.isWaitingListFull())
-                    .collect(Collectors.toList());
-        } else if (selectedAvailability.equals("Waitlist Only")) {
-            filtered = filtered.stream()
-                    .filter(e -> e.isWaitingListFull())
-                    .collect(Collectors.toList());
-        }
-
-        // Search by Name
-        if (!query.isEmpty()) {
-            filtered = filtered.stream()
-                    .filter(e -> e.getName().toLowerCase().contains(query))
-                    .collect(Collectors.toList());
-        }
+        List<Event> filtered = allEvents.stream()
+                .filter(e -> {
+                    if (catFilter.equalsIgnoreCase("All")) return true;
+                    
+                    String eventCat = e.getCategory() != null ? e.getCategory().trim() : "";
+                    
+                    if (eventCat.equalsIgnoreCase(catFilter)) return true;
+                    
+                    if (e.getInterests() != null) {
+                        return e.getInterests().stream()
+                                .anyMatch(i -> i != null && i.trim().equalsIgnoreCase(catFilter));
+                    }
+                    return false;
+                })
+                .filter(e -> {
+                    if (availFilter.equalsIgnoreCase("All")) return true;
+                    if (availFilter.equalsIgnoreCase("Available")) return !e.isWaitingListFull();
+                    if (availFilter.equalsIgnoreCase("Waitlist Only")) return e.isWaitingListFull();
+                    return true;
+                })
+                .filter(e -> {
+                    if (query.isEmpty()) return true;
+                    String name = e.getName() != null ? e.getName().toLowerCase() : "";
+                    String desc = e.getDescription() != null ? e.getDescription().toLowerCase() : "";
+                    return name.contains(query) || desc.contains(query);
+                })
+                .collect(Collectors.toList());
 
         displayedEvents.clear();
         displayedEvents.addAll(filtered);
-        tvEventCount.setText(displayedEvents.size() + " events");
+        
+        if (tvEventCount != null) {
+            tvEventCount.setText(displayedEvents.size() + " events");
+        }
+
         if (eventAdapter != null) {
             eventAdapter.notifyDataSetChanged();
         }
