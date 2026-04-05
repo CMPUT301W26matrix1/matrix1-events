@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -125,45 +127,51 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void showAdminPasswordDialog() {
-        EditText etAdminPass = new EditText(this);
-        etAdminPass.setHint("Enter admin password");
-        etAdminPass.setInputType(android.text.InputType.TYPE_CLASS_TEXT |
-                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        etAdminPass.setPadding(40, 20, 40, 20);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_admin_login, null);
+        EditText etAdminPass = dialogView.findViewById(R.id.et_admin_password);
+        Button btnCancel = dialogView.findViewById(R.id.btn_admin_cancel);
+        Button btnConfirm = dialogView.findViewById(R.id.btn_admin_confirm);
 
-        new AlertDialog.Builder(this)
-                .setTitle("Admin Login")
-                .setMessage("Enter the admin password to continue:")
-                .setView(etAdminPass)
-                .setPositiveButton("Login", (dialog, which) -> {
-                    String entered = etAdminPass.getText().toString().trim();
-                    if (ADMIN_PASSWORD.equals(entered)) {
-                        // 1. Save local login state
-                        saveLoginState("admin@eventflow.com", "Admin", "admin_global_id", true);
-                        
-                        // 2. Persist Admin Profile to Firestore so it shows up in Manage Users
-                        Map<String, Object> adminProfile = new HashMap<>();
-                        adminProfile.put("firstName", "Admin");
-                        adminProfile.put("lastName", "User");
-                        adminProfile.put("email", "admin@eventflow.com");
-                        adminProfile.put("role", "admin");
-                        adminProfile.put("userId", "admin_global_id");
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
 
-                        db.collection("profiles").document("admin_global_id")
-                                .set(adminProfile, SetOptions.merge());
-                        
-                        db.collection("users").document("admin_global_id")
-                                .set(adminProfile, SetOptions.merge());
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
 
-                        Toast.makeText(this, "Welcome, Admin!", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(this, AdminDashboardActivity.class));
-                        finish();
-                    } else {
-                        Toast.makeText(this, "Incorrect admin password!", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnConfirm.setOnClickListener(v -> {
+            String entered = etAdminPass.getText().toString().trim();
+            if (ADMIN_PASSWORD.equals(entered)) {
+                dialog.dismiss();
+                // 1. Save local login state
+                saveLoginState("admin@eventflow.com", "Admin", "admin_global_id", true);
+                
+                // 2. Persist Admin Profile to Firestore so it shows up in Manage Users
+                Map<String, Object> adminProfile = new HashMap<>();
+                adminProfile.put("firstName", "Admin");
+                adminProfile.put("lastName", "User");
+                adminProfile.put("email", "admin@eventflow.com");
+                adminProfile.put("role", "admin");
+                adminProfile.put("userId", "admin_global_id");
+
+                db.collection("profiles").document("admin_global_id")
+                        .set(adminProfile, SetOptions.merge());
+                
+                db.collection("users").document("admin_global_id")
+                        .set(adminProfile, SetOptions.merge());
+
+                Toast.makeText(this, "Welcome, Admin!", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(this, AdminDashboardActivity.class));
+                finish();
+            } else {
+                Toast.makeText(this, "Incorrect admin password!", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        dialog.show();
     }
 
     private void saveLoginState(String email, String username, String uid, boolean isAdmin) {

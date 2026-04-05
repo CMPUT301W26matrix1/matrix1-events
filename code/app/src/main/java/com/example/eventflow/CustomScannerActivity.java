@@ -1,6 +1,7 @@
 package com.example.eventflow;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.KeyEvent;
@@ -16,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.eventflow.model.entities.Event;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.journeyapps.barcodescanner.BarcodeCallback;
 import com.journeyapps.barcodescanner.BarcodeResult;
@@ -107,10 +109,25 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
         // Pause scanning to avoid multiple triggers
         barcodeScannerView.pause();
         
-        String eventId = rawResult;
-        // Check if it's a URL format
-        if (rawResult.startsWith("eventflow://details?id=")) {
-            eventId = rawResult.substring("eventflow://details?id=".length());
+        String eventId = null;
+
+        // Support new format: eventflow://event/[eventId]
+        if (rawResult.startsWith("eventflow://event/")) {
+            eventId = rawResult.substring("eventflow://event/".length());
+        } 
+        // Support legacy format: eventflow://details?id=[eventId]
+        else if (rawResult.startsWith("eventflow://details?id=")) {
+            Uri uri = Uri.parse(rawResult);
+            eventId = uri.getQueryParameter("id");
+        } else {
+            // Assume the raw result is the eventId if no prefix is found
+            eventId = rawResult;
+        }
+
+        if (eventId == null || eventId.isEmpty()) {
+            Toast.makeText(this, "Invalid QR Code format", Toast.LENGTH_SHORT).show();
+            barcodeScannerView.resume();
+            return;
         }
         
         final String finalEventId = eventId;
@@ -165,10 +182,20 @@ public class CustomScannerActivity extends AppCompatActivity implements Decorate
     private void navigateToEventDetails(String eventId) {
         Intent intent = new Intent(this, EventDetailActivity.class);
         intent.putExtra("eventId", eventId);
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
-        intent.putExtra("userId", deviceId);
+        
+        String uid = "";
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        if (mAuth.getCurrentUser() != null) {
+            uid = mAuth.getCurrentUser().getUid();
+        } else {
+            uid = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        }
+        
+        intent.putExtra("userId", uid);
         intent.putExtra("userRole", "entrant");
         startActivity(intent);
+        // Optional: finish() if you want to close the scanner
+        // finish();
     }
 
     @Override

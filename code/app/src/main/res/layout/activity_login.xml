@@ -85,19 +85,23 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:backgroundTint="@color/accent_green"
+            app:cornerRadius="12dp"
             android:textAllCaps="false"
             android:layout_marginBottom="12dp"/>
 
-        <!-- Admin Login Button -->
+        <!-- Admin Login Button (Updated to Outlined Green with 12dp corners) -->
         <Button
             android:id="@+id/btn_admin_login"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:text="Admin Login"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/accent_green"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:backgroundTint="@color/accent_red"
+            app:strokeColor="@color/accent_green"
+            app:strokeWidth="2dp"
+            app:cornerRadius="12dp"
             android:textAllCaps="false"
             android:layout_marginBottom="16dp"/>
 

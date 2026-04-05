@@ -109,6 +109,7 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:backgroundTint="@color/accent_green"
+            app:cornerRadius="12dp"
             android:textAllCaps="false"
             android:layout_marginBottom="24dp"/>
 
