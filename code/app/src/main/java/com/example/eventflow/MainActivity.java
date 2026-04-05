@@ -211,21 +211,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleScanResult(String contents) {
-        if (contents.startsWith("eventflow://details?id=")) {
+        String eventId = null;
+
+        if (contents.startsWith("eventflow://event/")) {
+            eventId = contents.replace("eventflow://event/", "");
+        } else if (contents.startsWith("eventflow://details?id=")) {
             Uri uri = Uri.parse(contents);
-            String eventId = uri.getQueryParameter("id");
-            if (eventId != null && !eventId.isEmpty()) {
-                Intent intent = new Intent(MainActivity.this, EventDetailActivity.class);
-                intent.putExtra("eventId", eventId);
-                // Use Firebase Auth UID instead of deviceId
-                String userId = "";
-                if (FirebaseAuth.getInstance().getCurrentUser() != null) {
-                    userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                }
-                intent.putExtra("userId", userId);
-                intent.putExtra("userRole", "entrant");
-                startActivity(intent);
+            eventId = uri.getQueryParameter("id");
+        }
+
+        if (eventId != null && !eventId.isEmpty()) {
+            Intent intent = new Intent(MainActivity.this, EventDetailActivity.class);
+            intent.putExtra("eventId", eventId);
+            
+            String userId = "";
+            if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
             }
+            intent.putExtra("userId", userId);
+            intent.putExtra("userRole", "entrant");
+            startActivity(intent);
+        } else {
+            Toast.makeText(this, "Invalid QR Code format", Toast.LENGTH_SHORT).show();
         }
     }
 }
