@@ -142,16 +142,19 @@ public class ProfileViewFragment extends Fragment {
         currentProfile.setDateOfBirth(dob);
         currentProfile.setRole(role);
 
+        // MODIFIED: Improved role detection to distinguish between Admin/Entrant views correctly
         String activeRole = getActiveUserRole();
-        boolean isAdmin = "Admin".equalsIgnoreCase(activeRole);
+        
+        // If the profile data itself says "admin", or the current app mode is "admin", use the admin layout
+        boolean isAdminView = "Admin".equalsIgnoreCase(activeRole) || "admin".equalsIgnoreCase(role);
 
-        layoutStandard.setVisibility(isAdmin ? View.GONE : View.VISIBLE);
-        layoutAdmin.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
+        layoutStandard.setVisibility(isAdminView ? View.GONE : View.VISIBLE);
+        layoutAdmin.setVisibility(isAdminView ? View.VISIBLE : View.GONE);
 
         String fullName = (firstName + " " + lastName).trim();
         if (fullName.isEmpty()) fullName = "User";
 
-        if (isAdmin) {
+        if (isAdminView) {
             tvFullNameAdmin.setText(fullName);
             tvAvatarLetterAdmin.setText(String.valueOf(fullName.charAt(0)).toUpperCase());
             String handle = "@" + (firstName + lastName).toLowerCase().replace(" ", "_");
@@ -186,6 +189,7 @@ public class ProfileViewFragment extends Fragment {
     }
 
     private String getActiveUserRole() {
+        if (getContext() == null) return "Entrant";
         SharedPreferences prefs = requireActivity().getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
         String role = prefs.getString("userRole", "entrant");
         if (role == null || role.isEmpty()) return "Entrant";
