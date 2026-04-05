@@ -6,6 +6,7 @@ import com.example.eventflow.model.entities.Profile;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.firestore.WriteBatch;
 
 public class ProfileRepository {
 
@@ -37,7 +38,7 @@ public class ProfileRepository {
 
     // SAVE PROFILE
     public void saveProfile(@NonNull Profile profile, @NonNull SaveProfileCallback callback) {
-        String userId = profile.getUserId();  // Changed from getDeviceId()
+        String userId = profile.getUserId();
 
         if (userId == null || userId.isEmpty()) {
             callback.onFailure(new Exception("User ID is null or empty"));
@@ -59,7 +60,7 @@ public class ProfileRepository {
 
     // UPDATE PROFILE
     public void updateProfile(@NonNull Profile profile, @NonNull SaveProfileCallback callback) {
-        String userId = profile.getUserId();  // Changed from getDeviceId()
+        String userId = profile.getUserId();
 
         if (userId == null || userId.isEmpty()) {
             callback.onFailure(new Exception("User ID is null or empty"));
@@ -79,29 +80,34 @@ public class ProfileRepository {
                 .addOnFailureListener(callback::onFailure);
     }
 
-    // DELETE PROFILE
-    public void deleteProfile(@NonNull String userId, @NonNull DeleteProfileCallback callback) {
-        // Changed parameter name from deviceId to userId
+    /**
+     * Deletes entire user account data from Firestore (profiles, users, and credentials collections).
+     */
+    public void deleteAccount(@NonNull String userId, String email, @NonNull DeleteProfileCallback callback) {
         if (userId.isEmpty()) {
             callback.onFailure(new Exception("User ID is empty"));
             return;
         }
 
-        profilesCollection
-                .document(userId)
-                .delete()
-                .addOnSuccessListener(unused -> {
-                    usersCollection
-                            .document(userId)
-                            .delete()
-                            .addOnSuccessListener(aVoid -> callback.onSuccess())
-                            .addOnFailureListener(callback::onFailure);
-                })
+        WriteBatch batch = db.batch();
+        batch.delete(profilesCollection.document(userId));
+        batch.delete(usersCollection.document(userId));
+        
+        if (email != null && !email.isEmpty()) {
+            batch.delete(db.collection("credentials").document(email));
+        }
+
+        batch.commit()
+                .addOnSuccessListener(unused -> callback.onSuccess())
                 .addOnFailureListener(callback::onFailure);
     }
 
+    // DELETE PROFILE (Deprecated - use deleteAccount for full cleanup)
+    public void deleteProfile(@NonNull String userId, @NonNull DeleteProfileCallback callback) {
+        deleteAccount(userId, null, callback);
+    }
+
     // LOAD PROFILE BY USER ID (Firebase Auth UID)
-    // Renamed from getProfileByDeviceId() — use this going forward
     public void getProfileByUserId(@NonNull String userId, @NonNull LoadProfileCallback callback) {
         if (userId.isEmpty()) {
             callback.onNotFound();
@@ -126,7 +132,7 @@ public class ProfileRepository {
                 .addOnFailureListener(callback::onFailure);
     }
 
-    // Backward-compatibility alias — prevents crashes in code still calling getProfileByDeviceId()
+    // Backward-compatibility alias
     /** @deprecated Use {@link #getProfileByUserId(String, LoadProfileCallback)} instead */
     @Deprecated
     public void getProfileByDeviceId(@NonNull String deviceId, @NonNull LoadProfileCallback callback) {
