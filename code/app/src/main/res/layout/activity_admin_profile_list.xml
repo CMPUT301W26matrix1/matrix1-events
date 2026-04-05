@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Purpose: Layout for the User Management screen. Shows a list of all registered
-  users with options to search by name and filter by role (Entrant, Organizer, Admin).
-
-  Design Pattern: Filterable List-View pattern.
-
-  Issues: The filter tabs are simple TextViews; using a TabLayout or ChipGroup
-  might provide a more standard Material Design experience.
+  Purpose: Improved Layout for the User Management screen.
+  Features: Modern dark theme, rounded search container, and pill-style filter tabs.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -15,109 +10,146 @@
     android:orientation="vertical"
     android:background="#000000">
 
-    <!-- Header -->
+    <!-- Modern Header -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:padding="20dp"
+        android:background="#000000">
 
         <ImageButton
             android:id="@+id/btn_back"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:src="@drawable/ic_arrow_back"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="@drawable/circle_bg_dark"
             app:tint="#FFFFFF"
+            android:padding="8dp"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Admin Management"
-            android:textSize="20sp"
+            android:text="User Management"
+            android:textSize="22sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
             android:layout_centerInParent="true"/>
     </RelativeLayout>
 
-    <!-- Search Bar -->
-    <EditText
-        android:id="@+id/searchBar"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:hint="Search users..."
-        android:textColor="#FFFFFF"
-        android:textColorHint="#444444"
-        android:paddingHorizontal="16dp"
-        android:layout_marginHorizontal="16dp"
-        android:background="@drawable/edittext_bg_dark"
-        android:drawableStart="@drawable/ic_search"
-        android:drawablePadding="12dp"
-        app:drawableTint="#444444"/>
-
-    <!-- Filter Tabs -->
-    <LinearLayout
+    <!-- Enhanced Search Container -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
-        android:layout_marginTop="24dp"
-        android:gravity="center_vertical">
+        android:paddingHorizontal="20dp">
 
-        <TextView
-            android:id="@+id/tv_filter_all"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="All"
+        <EditText
+            android:id="@+id/searchBar"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="Search by name or email..."
             android:textColor="#FFFFFF"
-            android:textSize="13sp"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="6dp"
-            android:layout_marginEnd="8dp"/>
+            android:textColorHint="#555555"
+            android:paddingHorizontal="16dp"
+            android:background="@drawable/edittext_bg_dark"
+            android:drawableStart="@drawable/ic_search"
+            android:drawablePadding="12dp"
+            app:drawableTint="#555555"
+            android:textSize="14sp"
+            android:imeOptions="actionSearch"
+            android:inputType="textPersonName"
+            android:maxLines="1"/>
+    </FrameLayout>
 
-        <TextView
-            android:id="@+id/tv_filter_entrant"
+    <!-- Modern Pill Filter Tabs -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:paddingHorizontal="20dp"
+        android:layout_marginTop="20dp"
+        android:clipToPadding="false">
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Entrant"
-            android:textColor="#888888"
-            android:textSize="13sp"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="6dp"
-            android:layout_marginEnd="8dp"/>
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-        <TextView
-            android:id="@+id/tv_filter_organizer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Organizer"
-            android:textColor="#888888"
-            android:textSize="13sp"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="6dp"
-            android:layout_marginEnd="8dp"/>
+            <TextView
+                android:id="@+id/tv_filter_all"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="All Users"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/badge_blue_rounded"/>
 
-        <TextView
-            android:id="@+id/tv_filter_admin"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Admin"
-            android:textColor="#888888"
-            android:textSize="13sp"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="6dp"/>
-    </LinearLayout>
+            <TextView
+                android:id="@+id/tv_filter_entrant"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Entrants"
+                android:textColor="#888888"
+                android:textSize="13sp"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/rounded_dark_bg"/>
+
+            <TextView
+                android:id="@+id/tv_filter_organizer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Organizers"
+                android:textColor="#888888"
+                android:textSize="13sp"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/rounded_dark_bg"/>
+
+            <TextView
+                android:id="@+id/tv_filter_admin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Admins"
+                android:textColor="#888888"
+                android:textSize="13sp"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp"
+                android:background="@drawable/rounded_dark_bg"/>
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Subtitle / Count Info -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Showing results based on your selection"
+        android:textColor="#444444"
+        android:textSize="11sp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="16dp"
+        android:textAllCaps="true"
+        android:letterSpacing="0.05"/>
 
     <!-- Profile List -->
     <ListView
         android:id="@+id/profileListView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:divider="@android:color/transparent"
-        android:dividerHeight="8dp"
-        android:paddingHorizontal="16dp"
-        android:clipToPadding="false"/>
+        android:dividerHeight="10dp"
+        android:paddingHorizontal="20dp"
+        android:paddingBottom="20dp"
+        android:clipToPadding="false"
+        android:scrollbarStyle="outsideOverlay"/>
 
 </LinearLayout>

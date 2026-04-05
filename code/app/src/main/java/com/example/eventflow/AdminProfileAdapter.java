@@ -14,13 +14,17 @@ import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
+/**
+ * Adapter for displaying user profiles in the Admin management list.
+ * Purpose: Connects the list of users from Firestore to the UI, providing role-based color coding.
+ */
 public class AdminProfileAdapter extends BaseAdapter {
 
     private List<String> profileNames;
     private List<String> profileIds;
     private List<String> profileEmails;
     private List<String> profileImages;
-    private List<String> profileRoles; // Added to support dynamic badges
+    private List<String> profileRoles;
     private OnProfileDeleteListener deleteListener;
 
     public interface OnProfileDeleteListener {
@@ -65,7 +69,6 @@ public class AdminProfileAdapter extends BaseAdapter {
         TextView profileEmail = convertView.findViewById(R.id.profileEmail);
         ImageView profilePic = convertView.findViewById(R.id.iv_profile_pic);
         TextView tvAvatarInitial = convertView.findViewById(R.id.tv_avatar_initial);
-        View cvAvatar = convertView.findViewById(R.id.cv_avatar);
         
         // Role Badge UI
         LinearLayout roleBadge = convertView.findViewById(R.id.ll_role_badge);
@@ -81,24 +84,30 @@ public class AdminProfileAdapter extends BaseAdapter {
         profileName.setText(name);
         profileEmail.setText(email != null && !email.isEmpty() ? email : "No email");
         
-        // Set Avatar Initial
         if (name != null && !name.isEmpty()) {
             tvAvatarInitial.setText(name.substring(0, 1).toUpperCase());
         }
 
-        // Set Role Badge (Dynamic)
-        if ("Organizer".equalsIgnoreCase(role)) {
-            roleBadge.setBackgroundResource(R.drawable.badge_red_rounded); // Use red for organizer
+        // Dynamic Role Badge Styling
+        if ("Admin".equalsIgnoreCase(role)) {
+            roleBadge.setBackgroundResource(R.drawable.badge_yellow_rounded);
+            tvRoleName.setText("Admin");
+            tvRoleName.setTextColor(Color.parseColor("#FFC107")); // Gold/Yellow
+            ivRoleIcon.setImageResource(R.drawable.ic_admin_shield);
+            ivRoleIcon.setColorFilter(Color.parseColor("#FFC107"));
+        } else if ("Organizer".equalsIgnoreCase(role)) {
+            roleBadge.setBackgroundResource(R.drawable.badge_red_rounded);
             tvRoleName.setText("Organizer");
-            tvRoleName.setTextColor(Color.parseColor("#F44336"));
+            tvRoleName.setTextColor(Color.parseColor("#F44336")); // Red
             ivRoleIcon.setImageResource(R.drawable.ic_edit);
             ivRoleIcon.setColorFilter(Color.parseColor("#F44336"));
         } else {
-            roleBadge.setBackgroundResource(R.drawable.badge_blue_rounded);
+            // Default to Entrant
+            roleBadge.setBackgroundResource(R.drawable.badge_green_rounded);
             tvRoleName.setText("Entrant");
-            tvRoleName.setTextColor(Color.parseColor("#4D5DFA"));
+            tvRoleName.setTextColor(Color.parseColor("#4CAF50")); // Green
             ivRoleIcon.setImageResource(R.drawable.ic_person);
-            ivRoleIcon.setColorFilter(Color.parseColor("#4D5DFA"));
+            ivRoleIcon.setColorFilter(Color.parseColor("#4CAF50"));
         }
 
         if (imageUrl != null && !imageUrl.isEmpty()) {
