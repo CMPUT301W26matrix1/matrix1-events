@@ -3,8 +3,10 @@ package com.example.eventflow;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Location;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -24,6 +26,10 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
 
 public class LocationPickerActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -52,9 +58,12 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
 
         btnConfirm.setOnClickListener(v -> {
             if (selectedLocation != null) {
+                String addressName = getAddressFromLatLng(selectedLocation);
+                
                 Intent resultIntent = new Intent();
                 resultIntent.putExtra("latitude", selectedLocation.latitude);
                 resultIntent.putExtra("longitude", selectedLocation.longitude);
+                resultIntent.putExtra("address", addressName);
                 resultIntent.putExtra("radius", radiusMeters);
                 setResult(RESULT_OK, resultIntent);
                 finish();
@@ -62,6 +71,32 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
                 Toast.makeText(this, "Please select a location on the map", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private String getAddressFromLatLng(LatLng latLng) {
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        try {
+            List<Address> addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
+            if (addresses != null && !addresses.isEmpty()) {
+                Address address = addresses.get(0);
+                
+                // Try to get a specific name (like a museum or building) first
+                String featureName = address.getFeatureName();
+                String addressLine = address.getAddressLine(0);
+                
+                if (featureName != null && !featureName.isEmpty()) {
+                    // If feature name is just coordinates or street number, prefer address line
+                    if (Character.isDigit(featureName.charAt(0)) || featureName.contains("-")) {
+                        return addressLine;
+                    }
+                    return featureName;
+                }
+                return addressLine;
+            }
+        } catch (IOException e) {
+            Log.e("LocationPicker", "Geocoder error", e);
+        }
+        return String.format(Locale.getDefault(), "%.4f, %.4f", latLng.latitude, latLng.longitude);
     }
 
     @Override
@@ -83,10 +118,12 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
                 selectedMarker.remove();
             }
 
+            String title = getAddressFromLatLng(latLng);
             selectedMarker = mMap.addMarker(new MarkerOptions()
                     .position(latLng)
-                    .title("Selected Event Location")
+                    .title(title)
                     .draggable(true));
+            selectedMarker.showInfoWindow();
 
             updateRadiusCircle();
         });
@@ -99,6 +136,9 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
             @Override
             public void onMarkerDragEnd(Marker marker) {
                 selectedLocation = marker.getPosition();
+                String title = getAddressFromLatLng(selectedLocation);
+                marker.setTitle(title);
+                marker.showInfoWindow();
                 updateRadiusCircle();
             }
         });
