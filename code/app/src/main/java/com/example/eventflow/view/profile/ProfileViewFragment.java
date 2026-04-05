@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,9 +21,12 @@ import androidx.fragment.app.Fragment;
 
 import com.example.eventflow.LoginActivity;
 import com.example.eventflow.R;
+import com.example.eventflow.SignupActivity;
 import com.example.eventflow.model.entities.EventHistoryItem;
 import com.example.eventflow.model.entities.Profile;
+import com.example.eventflow.model.repositories.ProfileRepository;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -31,6 +35,7 @@ import java.util.List;
 
 public class ProfileViewFragment extends Fragment {
 
+    private static final String TAG = "ProfileView";
     private static final String ARG_USER_ID   = "userId";
     private static final String ARG_FIRST_NAME = "firstName";
     private static final String ARG_LAST_NAME  = "lastName";
@@ -57,6 +62,7 @@ public class ProfileViewFragment extends Fragment {
 
     private Profile currentProfile;
     private String currentUserId;
+    private ProfileRepository profileRepository;
 
     public ProfileViewFragment() {}
 
@@ -84,6 +90,7 @@ public class ProfileViewFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        profileRepository = new ProfileRepository();
 
         layoutStandard = view.findViewById(R.id.layout_standard_profile);
         layoutAdmin = view.findViewById(R.id.layout_admin_profile);
@@ -142,27 +149,26 @@ public class ProfileViewFragment extends Fragment {
         currentProfile.setDateOfBirth(dob);
         currentProfile.setRole(role);
 
-        // MODIFIED: Improved role detection to distinguish between Admin/Entrant views correctly
         String activeRole = getActiveUserRole();
-        
-        // If the profile data itself says "admin", or the current app mode is "admin", use the admin layout
         boolean isAdminView = "Admin".equalsIgnoreCase(activeRole) || "admin".equalsIgnoreCase(role);
 
         layoutStandard.setVisibility(isAdminView ? View.GONE : View.VISIBLE);
         layoutAdmin.setVisibility(isAdminView ? View.VISIBLE : View.GONE);
 
         String fullName = (firstName + " " + lastName).trim();
-        if (fullName.isEmpty()) fullName = "User";
+        if (fullName.isEmpty()) {
+            SharedPreferences prefs = requireActivity().getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
+            fullName = prefs.getString("userName", "User");
+        }
 
         if (isAdminView) {
             tvFullNameAdmin.setText(fullName);
             tvAvatarLetterAdmin.setText(String.valueOf(fullName.charAt(0)).toUpperCase());
-            String handle = "@" + (firstName + lastName).toLowerCase().replace(" ", "_");
-            if (handle.equals("@")) handle = "@admin";
+            String handle = "@" + fullName.toLowerCase().replace(" ", "_");
             tvUserHandleAdmin.setText(handle);
         } else {
             tvFullName.setText(fullName);
-            tvAvatarLetter.setText(String.valueOf(fullName.charAt(0)).toUpperCase());
+            if (!fullName.isEmpty()) tvAvatarLetter.setText(String.valueOf(fullName.charAt(0)).toUpperCase());
             tvUserRole.setText(activeRole);
 
             String displayEmail = (email != null && !email.isEmpty()) ? email : "no-email@example.com";
@@ -297,22 +303,42 @@ public class ProfileViewFragment extends Fragment {
     }
 
     private void deleteAccount() {
-        FirebaseAuth auth = FirebaseAuth.getInstance();
-        if (auth.getCurrentUser() == null) return;
-        String uid = auth.getCurrentUser().getUid();
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("users").document(uid).delete().addOnSuccessListener(aVoid -> {
-            auth.getCurrentUser().delete().addOnSuccessListener(unused -> {
-                clearUserData();
-                Intent intent = new Intent(getActivity(), LoginActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-                requireActivity().finish();
-            });
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        
+        String uid = user.getUid();
+        String email = user.getEmail();
+
+        profileRepository.deleteAccount(uid, email, new ProfileRepository.DeleteProfileCallback() {
+            @Override
+            public void onSuccess() {
+                // After Firestore deletion, delete the Auth account
+                user.delete().addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d(TAG, "Auth account deleted");
+                    } else {
+                        Log.e(TAG, "Auth deletion failed", task.getException());
+                    }
+                    
+                    clearUserData();
+                    
+                    // Navigate to Signup screen as requested
+                    Intent intent = new Intent(getActivity(), SignupActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    if (getActivity() != null) getActivity().finish();
+                });
+            }
+
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(getContext(), "Failed to delete account data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
     private void clearUserData() {
+        if (getContext() == null) return;
         SharedPreferences prefs = requireContext().getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
         prefs.edit().clear().apply();
     }
