@@ -34,9 +34,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * MainActivity — Role Selection screen.
- * Normal users see Entrant + Organizer only.
- * Admin card is hidden for non-admin users.
+ * MainActivity serves as the initial landing screen where users select their role 
+ * (Entrant, Organizer, or Admin). This activity handles role persistence, 
+ * permission requests, and initial navigation logic.
  */
 public class MainActivity extends AppCompatActivity {
 
@@ -118,14 +118,38 @@ public class MainActivity extends AppCompatActivity {
                 return insets;
             });
         }
+
+        // Handle incoming deep link
+        handleIntent(getIntent());
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        if (intent != null && intent.getData() != null) {
+            String data = intent.getData().toString();
+            handleScanResult(data);
+        }
+    }
+
+    /**
+     * Requests notification permission for Android 13+ devices.
+     */
     private void askNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS);
         }
     }
 
+    /**
+     * Highlights the selected role in the UI.
+     * @param role The role identifier (entrant, organizer, or admin).
+     */
     private void selectRole(String role) {
         selectedRole = role;
         resetIcons();
@@ -151,12 +175,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Resets all role icons to their inactive state.
+     */
     private void resetIcons() {
         applyInactiveStyle(ivEntrant);
         applyInactiveStyle(ivOrganizer);
         applyInactiveStyle(ivAdmin);
     }
 
+    /**
+     * Applies an inactive visual style to an icon.
+     * @param iv The ImageView to style.
+     */
     private void applyInactiveStyle(ImageView iv) {
         if (iv != null) {
             iv.setBackgroundResource(R.drawable.circle_bg_dark);
@@ -164,6 +195,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Persists the selected role locally and in Firestore, then navigates to the appropriate dashboard.
+     */
     private void saveRoleAndNavigate() {
         // Save local state
         SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
@@ -192,6 +226,9 @@ public class MainActivity extends AppCompatActivity {
         navigateToRoleDashboard();
     }
 
+    /**
+     * Starts the activity corresponding to the selected role.
+     */
     private void navigateToRoleDashboard() {
         Intent intent;
         switch (selectedRole) {
@@ -210,6 +247,10 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    /**
+     * Processes the result of a QR code scan and navigates to event details if valid.
+     * @param contents The scanned string content.
+     */
     private void handleScanResult(String contents) {
         String eventId = null;
 
@@ -218,6 +259,9 @@ public class MainActivity extends AppCompatActivity {
         } else if (contents.startsWith("eventflow://details?id=")) {
             Uri uri = Uri.parse(contents);
             eventId = uri.getQueryParameter("id");
+        } else {
+            // Check if it's just the ID
+            eventId = contents;
         }
 
         if (eventId != null && !eventId.isEmpty()) {
@@ -225,8 +269,10 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("eventId", eventId);
             
             String userId = "";
-            if (FirebaseAuth.getInstance().getCurrentUser() != null) {
-                userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            if (mAuth.getCurrentUser() != null) {
+                userId = mAuth.getCurrentUser().getUid();
+            } else {
+                userId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
             }
             intent.putExtra("userId", userId);
             intent.putExtra("userRole", "entrant");

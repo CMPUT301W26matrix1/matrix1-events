@@ -9,7 +9,19 @@ import com.example.eventflow.event.EventListFragment;
 import com.example.eventflow.view.profile.FullHistoryFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+/**
+ * BrowseEventsActivity serves as the main browsing interface for entrants.
+ * It manages a fragment container that toggles between the list of all events 
+ * and the user's personal event history (My Events).
+ */
 public class BrowseEventsActivity extends AppCompatActivity {
+    
+    /**
+     * Initializes the activity, sets up the bottom navigation, and loads the 
+     * appropriate fragment based on the calling intent.
+     * @param savedInstanceState If the activity is being re-initialized after previously 
+     * being shut down then this Bundle contains the data it most recently supplied.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

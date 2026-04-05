@@ -27,8 +27,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Adapter for admin event list.
- * US 03.09.01 — Admin can join events as entrant and create events as organizer.
+ * Adapter class for displaying a list of events in a RecyclerView.
+ * This adapter supports different user roles (Entrant, Organizer, Admin) and 
+ * adjusts the UI (Join/Leave/Delete buttons) accordingly.
+ * It handles image loading from both URLs and Base64 encoded strings.
  */
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
 
@@ -36,14 +38,22 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     private final String userRole;
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
+    /**
+     * Constructs a new EventAdapter.
+     * @param events The list of events to display.
+     * @param userRole The role of the current user, used to determine available actions.
+     */
     public EventAdapter(List<Event> events, String userRole) {
         this.events = events;
         this.userRole = userRole;
     }
 
+    /**
+     * ViewHolder class for holding event item views.
+     */
     public static class EventViewHolder extends RecyclerView.ViewHolder {
         TextView name, location, joinLeaveButton;
-        View deleteButton; // Changed from Button to View to support ImageButton
+        View deleteButton; 
         ImageView eventImage;
 
         public EventViewHolder(@NonNull View itemView) {
@@ -64,6 +74,12 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         return new EventViewHolder(view);
     }
 
+    /**
+     * Binds event data to the view holder and sets up click listeners for join, leave, 
+     * delete, and navigation actions.
+     * @param holder The ViewHolder to update.
+     * @param position The position of the item within the adapter's data set.
+     */
     @Override
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = events.get(position);
@@ -76,13 +92,11 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             String posterData = event.getPosterUrl();
             if (posterData != null && !posterData.isEmpty()) {
                 if (posterData.startsWith("http")) {
-                    // Legacy URL support
                     Picasso.get().load(posterData)
                             .placeholder(R.drawable.ic_placeholder)
                             .error(R.drawable.ic_placeholder)
                             .into(holder.eventImage);
                 } else {
-                    // Base64 Support
                     try {
                         byte[] decodedString = Base64.decode(posterData, Base64.DEFAULT);
                         Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
@@ -148,7 +162,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         }
 
         if (holder.deleteButton != null && holder.joinLeaveButton != null) {
-            // US 03.01.01 — Admin and Organizer can delete events
             if ("organizer".equalsIgnoreCase(userRole) || "Admin".equalsIgnoreCase(userRole)) {
                 holder.deleteButton.setVisibility(View.VISIBLE);
                 holder.joinLeaveButton.setVisibility(View.GONE);
@@ -188,10 +201,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         holder.itemView.setOnClickListener(v -> {
             Intent intent;
             if ("organizer".equalsIgnoreCase(userRole)) {
-                // If the user is an organizer, navigate to EntrantDashboardActivity
                 intent = new Intent(v.getContext(), EntrantDashboardActivity.class);
             } else {
-                // Otherwise, navigate to EventDetailActivity (Entrant/Admin view)
                 intent = new Intent(v.getContext(), EventDetailActivity.class);
             }
             intent.putExtra("eventId", event.getEventId());
@@ -201,6 +212,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         });
     }
 
+    /** @return The total number of items in the list. */
     @Override
     public int getItemCount() {
         return events.size();
