@@ -121,6 +121,13 @@ public class EventController {
             callback.onFailure(new Exception("Already on the waiting list."));
             return;
         }
+        
+        // Block organizers from joining their own event
+        if (event.getOrganizerId() != null && event.getOrganizerId().equals(userId)) {
+            callback.onFailure(new Exception("Organizers cannot join their own event's waiting list."));
+            return;
+        }
+
         // US 02.09.01 — block co-organizers from joining entrant pool
         if (event.getCoOrganizerIds() != null && event.getCoOrganizerIds().contains(userId)) {
             callback.onFailure(new Exception("Co-organizers cannot join the entrant pool."));
