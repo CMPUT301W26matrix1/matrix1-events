@@ -31,7 +31,11 @@ public class Event {
     private List<String> interests;
     private List<String> daysOfWeek;
     private String timeOfDay;
-    private String userRole;  // ADDED: "organizer" or "co-organizer"
+    private String userRole;  // YOUR ADDITION: "organizer" or "co-organizer"
+
+    // US 02.02.03 — Private event flag (TEAMMATE'S ADDITION)
+    @PropertyName("private")
+    private boolean isPrivate;
 
     // Geolocation fields (US 02.01.05)
     private boolean geolocationRequired;
@@ -55,7 +59,8 @@ public class Event {
         this.locationLatitude = 0;
         this.locationLongitude = 0;
         this.locationRadius = 500;
-        this.userRole = "entrant";  // Default role
+        this.isPrivate = false;
+        this.userRole = "entrant";  // YOUR DEFAULT
     }
 
     public Event(String eventId, String name, String description, String location,
@@ -83,7 +88,8 @@ public class Event {
         this.locationLatitude = 0;
         this.locationLongitude = 0;
         this.locationRadius = 500;
-        this.userRole = "entrant";  // Default role
+        this.isPrivate = false;
+        this.userRole = "entrant";  // YOUR DEFAULT
     }
 
     // Existing getters/setters
@@ -152,7 +158,7 @@ public class Event {
     public List<String> getCoOrganizerIds() { return coOrganizerIds; }
     public void setCoOrganizerIds(List<String> coOrganizerIds) { this.coOrganizerIds = coOrganizerIds; }
 
-    // ADDED: userRole getter and setter
+    // YOUR ADDITION: userRole getter and setter
     public String getUserRole() { return userRole; }
     public void setUserRole(String userRole) { this.userRole = userRole; }
 
@@ -175,6 +181,12 @@ public class Event {
     public void setLocationRadius(double locationRadius) {
         this.locationRadius = locationRadius;
     }
+
+    // TEAMMATE'S ADDITION: Private event getters/setters
+    @PropertyName("private")
+    public boolean isPrivate() { return isPrivate; }
+    @PropertyName("private")
+    public void setPrivate(boolean aPrivate) { isPrivate = aPrivate; }
 
     public int getWaitingListCount() {
         return waitingList != null ? waitingList.size() : 0;

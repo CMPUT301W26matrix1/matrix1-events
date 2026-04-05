@@ -195,7 +195,7 @@ public class EventListFragment extends Fragment {
                 }
             }
         });
-        
+
         // Category listener is handled dynamically in updateCategoryChips
     }
 
@@ -227,9 +227,9 @@ public class EventListFragment extends Fragment {
             chip.setText(category);
             chip.setCheckable(true);
             chip.setId(View.generateViewId());
-            
+
             cgCategories.addView(chip);
-            
+
             if (category.trim().equalsIgnoreCase(selectedCategory.trim())) {
                 chip.setChecked(true);
             }
@@ -307,12 +307,37 @@ public class EventListFragment extends Fragment {
 
         List<Event> filtered = allEvents.stream()
                 .filter(e -> {
+                    // 1. Visibility Check (US 02.02.03)
+                    // Admins see everything
+                    if (currentProfile != null && "admin".equalsIgnoreCase(currentProfile.getRole())) {
+                        return true;
+                    }
+
+                    // Organizers and Co-Organizers see their own private events
+                    if (uid.equals(e.getOrganizerId()) || (e.getCoOrganizerIds() != null && e.getCoOrganizerIds().contains(uid))) {
+                        return true;
+                    }
+
+                    // If not private, everyone sees it
+                    if (!e.isPrivate()) {
+                        return true;
+                    }
+
+                    // If private, only show to entrants if they are already part of the waiting list
+                    // (invited and accepted or manually added)
+                    boolean isParticipant = (e.getWaitingList() != null && e.getWaitingList().contains(uid)) ||
+                            (e.getSelectedEntrants() != null && e.getSelectedEntrants().contains(uid)) ||
+                            (e.getRejectedEntrants() != null && e.getRejectedEntrants().contains(uid));
+
+                    return isParticipant;
+                })
+                .filter(e -> {
                     if (catFilter.equalsIgnoreCase("All")) return true;
-                    
+
                     String eventCat = e.getCategory() != null ? e.getCategory().trim() : "";
-                    
+
                     if (eventCat.equalsIgnoreCase(catFilter)) return true;
-                    
+
                     if (e.getInterests() != null) {
                         return e.getInterests().stream()
                                 .anyMatch(i -> i != null && i.trim().equalsIgnoreCase(catFilter));
@@ -322,7 +347,9 @@ public class EventListFragment extends Fragment {
                 .filter(e -> {
                     if (availFilter.equalsIgnoreCase("All")) return true;
                     if (availFilter.equalsIgnoreCase("Available")) return !e.isWaitingListFull();
-                    if (availFilter.equalsIgnoreCase("Waitlist Only")) return e.isWaitingListFull();
+                    if (availFilter.equalsIgnoreCase("Waitlist Only")) {
+                        return e.getWaitingList() != null && e.getWaitingList().contains(uid);
+                    }
                     return true;
                 })
                 .filter(e -> {
@@ -335,7 +362,7 @@ public class EventListFragment extends Fragment {
 
         displayedEvents.clear();
         displayedEvents.addAll(filtered);
-        
+
         if (tvEventCount != null) {
             tvEventCount.setText(displayedEvents.size() + " events");
         }
@@ -360,7 +387,7 @@ public class EventListFragment extends Fragment {
         // Support new format: eventflow://event/[eventId]
         if (contents.startsWith("eventflow://event/")) {
             eventId = contents.replace("eventflow://event/", "");
-        } 
+        }
         // Support legacy format: eventflow://details?id=[eventId]
         else if (contents.startsWith("eventflow://details?id=")) {
             Uri uri = Uri.parse(contents);

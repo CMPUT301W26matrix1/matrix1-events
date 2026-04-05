@@ -25,6 +25,7 @@ import androidx.fragment.app.Fragment;
 
 import com.example.eventflow.LoginActivity;
 import com.example.eventflow.R;
+import com.example.eventflow.SignupActivity;
 import com.example.eventflow.controller.ProfileController;
 import com.example.eventflow.model.entities.Profile;
 import com.example.eventflow.model.repositories.ProfileRepository;
@@ -257,8 +258,12 @@ public class EditProfileFragment extends Fragment {
     }
 
     private void showDeleteConfirmationDialog() {
-        new AlertDialog.Builder(requireContext()).setTitle("Delete Profile").setMessage("Are you sure?")
-                .setPositiveButton("Delete", (dialog, which) -> deleteProfile()).setNegativeButton("Cancel", null).show();
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete Account")
+                .setMessage("Are you sure you want to delete your account? This action cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> deleteProfile())
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void deleteProfile() {
@@ -266,20 +271,28 @@ public class EditProfileFragment extends Fragment {
             clearAndRedirect();
             return;
         }
-        profileRepository.deleteProfile(currentUserId, new ProfileRepository.DeleteProfileCallback() {
+
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String email = user != null ? user.getEmail() : null;
+
+        profileRepository.deleteAccount(currentUserId, email, new ProfileRepository.DeleteProfileCallback() {
             @Override public void onSuccess() {
-                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                if (user != null) user.delete().addOnCompleteListener(task -> clearAndRedirect());
-                else clearAndRedirect();
+                if (user != null) {
+                    user.delete().addOnCompleteListener(task -> clearAndRedirect());
+                } else {
+                    clearAndRedirect();
+                }
             }
-            @Override public void onFailure(@NonNull Exception e) {}
+            @Override public void onFailure(@NonNull Exception e) {
+                Toast.makeText(getContext(), "Failed to delete account data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
     private void clearAndRedirect() {
         SharedPreferences prefs = requireActivity().getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
         prefs.edit().clear().apply();
-        Intent intent = new Intent(requireContext(), LoginActivity.class);
+        Intent intent = new Intent(requireContext(), SignupActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         if (getActivity() != null) getActivity().finish();
