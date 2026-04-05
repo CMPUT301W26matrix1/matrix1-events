@@ -307,6 +307,31 @@ public class EventListFragment extends Fragment {
 
         List<Event> filtered = allEvents.stream()
                 .filter(e -> {
+                    // 1. Visibility Check (US 02.02.03)
+                    // Admins see everything
+                    if (currentProfile != null && "admin".equalsIgnoreCase(currentProfile.getRole())) {
+                        return true;
+                    }
+                    
+                    // Organizers and Co-Organizers see their own private events
+                    if (uid.equals(e.getOrganizerId()) || (e.getCoOrganizerIds() != null && e.getCoOrganizerIds().contains(uid))) {
+                        return true;
+                    }
+
+                    // If not private, everyone sees it
+                    if (!e.isPrivate()) {
+                        return true;
+                    }
+                    
+                    // If private, only show to entrants if they are already part of the waiting list 
+                    // (invited and accepted or manually added)
+                    boolean isParticipant = (e.getWaitingList() != null && e.getWaitingList().contains(uid)) ||
+                                            (e.getSelectedEntrants() != null && e.getSelectedEntrants().contains(uid)) ||
+                                            (e.getRejectedEntrants() != null && e.getRejectedEntrants().contains(uid));
+                    
+                    return isParticipant;
+                })
+                .filter(e -> {
                     if (catFilter.equalsIgnoreCase("All")) return true;
                     
                     String eventCat = e.getCategory() != null ? e.getCategory().trim() : "";
