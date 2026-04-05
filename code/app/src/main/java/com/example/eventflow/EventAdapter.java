@@ -1,5 +1,6 @@
 package com.example.eventflow;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -159,21 +160,28 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
         if (holder.deleteButton != null) {
             holder.deleteButton.setOnClickListener(v -> {
-                db.collection("events")
-                        .document(event.getEventId())
-                        .delete()
-                        .addOnSuccessListener(aVoid -> {
-                            int currentPosition = holder.getAdapterPosition();
-                            if (currentPosition != RecyclerView.NO_POSITION) {
-                                events.remove(currentPosition);
-                                notifyItemRemoved(currentPosition);
-                                Toast.makeText(v.getContext(),
-                                        "Event deleted", Toast.LENGTH_SHORT).show();
-                            }
+                new AlertDialog.Builder(v.getContext())
+                        .setTitle("Delete Event")
+                        .setMessage("Are you sure you want to delete this event: " + event.getName() + "?")
+                        .setPositiveButton("Delete", (dialog, which) -> {
+                            db.collection("events")
+                                    .document(event.getEventId())
+                                    .delete()
+                                    .addOnSuccessListener(aVoid -> {
+                                        int currentPosition = holder.getAdapterPosition();
+                                        if (currentPosition != RecyclerView.NO_POSITION) {
+                                            events.remove(currentPosition);
+                                            notifyItemRemoved(currentPosition);
+                                            Toast.makeText(v.getContext(),
+                                                    "Event deleted", Toast.LENGTH_SHORT).show();
+                                        }
+                                    })
+                                    .addOnFailureListener(e ->
+                                            Toast.makeText(v.getContext(),
+                                                    "Failed to delete event", Toast.LENGTH_SHORT).show());
                         })
-                        .addOnFailureListener(e ->
-                                Toast.makeText(v.getContext(),
-                                        "Failed to delete event", Toast.LENGTH_SHORT).show());
+                        .setNegativeButton("Cancel", null)
+                        .show();
             });
         }
 
