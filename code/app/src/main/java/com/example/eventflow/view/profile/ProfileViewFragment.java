@@ -31,7 +31,7 @@ import java.util.List;
 
 public class ProfileViewFragment extends Fragment {
 
-    private static final String ARG_USER_ID   = "userId";   // Changed from ARG_DEVICE_ID
+    private static final String ARG_USER_ID   = "userId";
     private static final String ARG_FIRST_NAME = "firstName";
     private static final String ARG_LAST_NAME  = "lastName";
     private static final String ARG_EMAIL      = "email";
@@ -39,23 +39,31 @@ public class ProfileViewFragment extends Fragment {
     private static final String ARG_DOB        = "dob";
     private static final String ARG_ROLE       = "role";
 
-    private View btnSignOutLayout, btnDeleteProfileLayout;
-    private View cvEditProfile;
+    private View layoutStandard, layoutAdmin;
+    
+    // Standard UI
+    private View btnSignOutLayout, btnDeleteProfileLayout, cvEditProfile;
     private TextView tvFullName, tvUserRole, tvAvatarLetter;
     private TextView tvNameInside, tvEmailInside, tvPhoneInside;
     private TextView tvNameOutside, tvEmailOutside, tvPhoneOutside;
     private TextView tvJoinedCount, tvSelectedCount, tvRejectedCount, tvViewFullHistory;
     private LinearLayout llContactDetailsInside, llContactDetailsOutside, llEventHistoryContainer, llRecentEventsList;
     private ImageView ivProfilePic;
+
+    // Admin UI
+    private View btnBackAdmin, cvEditProfileAdmin, btnDeleteProfileAdmin, btnSignOutAdmin;
+    private TextView tvAvatarLetterAdmin, tvUserHandleAdmin, tvFullNameAdmin;
+    private ImageView ivProfilePicAdmin;
+
     private Profile currentProfile;
-    private String currentUserId;   // Changed from currentDeviceId
+    private String currentUserId;
 
     public ProfileViewFragment() {}
 
     public static ProfileViewFragment newInstance(@NonNull Profile profile) {
         ProfileViewFragment fragment = new ProfileViewFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_USER_ID,    profile.getUserId());    // Changed from getDeviceId()
+        args.putString(ARG_USER_ID,    profile.getUserId());
         args.putString(ARG_FIRST_NAME, profile.getFirstName());
         args.putString(ARG_LAST_NAME,  profile.getLastName());
         args.putString(ARG_EMAIL,      profile.getEmail());
@@ -77,32 +85,41 @@ public class ProfileViewFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        layoutStandard = view.findViewById(R.id.layout_standard_profile);
+        layoutAdmin = view.findViewById(R.id.layout_admin_profile);
+
+        // Standard Init
         tvFullName   = view.findViewById(R.id.tvFullName);
         tvUserRole   = view.findViewById(R.id.tvUserRole);
         tvAvatarLetter = view.findViewById(R.id.tvAvatarLetter);
         ivProfilePic = view.findViewById(R.id.iv_profile_pic);
         cvEditProfile = view.findViewById(R.id.cv_edit_profile);
-
         llContactDetailsInside   = view.findViewById(R.id.llContactDetailsInside);
         llContactDetailsOutside  = view.findViewById(R.id.llContactDetailsOutside);
         llEventHistoryContainer  = view.findViewById(R.id.llEventHistoryContainer);
         llRecentEventsList       = view.findViewById(R.id.llRecentEventsList);
-
         tvNameInside  = view.findViewById(R.id.tvNameInside);
         tvEmailInside = view.findViewById(R.id.tvEmailInside);
         tvPhoneInside = view.findViewById(R.id.tvPhoneInside);
-
         tvNameOutside  = view.findViewById(R.id.tvNameOutside);
         tvEmailOutside = view.findViewById(R.id.tvEmailOutside);
         tvPhoneOutside = view.findViewById(R.id.tvPhoneOutside);
-
         tvJoinedCount   = view.findViewById(R.id.tvJoinedCount);
         tvSelectedCount = view.findViewById(R.id.tvSelectedCount);
         tvRejectedCount = view.findViewById(R.id.tvRejectedCount);
         tvViewFullHistory = view.findViewById(R.id.tvViewFullHistory);
-
         btnSignOutLayout       = view.findViewById(R.id.btnSignOutLayout);
         btnDeleteProfileLayout = view.findViewById(R.id.btnDeleteProfileLayout);
+
+        // Admin Init
+        btnBackAdmin = view.findViewById(R.id.btnBackAdmin);
+        cvEditProfileAdmin = view.findViewById(R.id.cv_edit_profile_admin);
+        btnDeleteProfileAdmin = view.findViewById(R.id.btnDeleteProfileAdmin);
+        btnSignOutAdmin = view.findViewById(R.id.btnSignOutAdmin);
+        tvAvatarLetterAdmin = view.findViewById(R.id.tvAvatarLetterAdmin);
+        tvUserHandleAdmin = view.findViewById(R.id.tvUserHandleAdmin);
+        tvFullNameAdmin = view.findViewById(R.id.tvFullNameAdmin);
+        ivProfilePicAdmin = view.findViewById(R.id.iv_profile_pic_admin);
 
         setupProfileData();
         setupClickListeners();
@@ -112,7 +129,7 @@ public class ProfileViewFragment extends Fragment {
         Bundle args = getArguments();
         if (args == null) return;
 
-        String userId    = args.getString(ARG_USER_ID, "");   // Changed from ARG_DEVICE_ID
+        String userId    = args.getString(ARG_USER_ID, "");
         String firstName = args.getString(ARG_FIRST_NAME, "");
         String lastName  = args.getString(ARG_LAST_NAME, "");
         String email     = args.getString(ARG_EMAIL, "");
@@ -120,71 +137,81 @@ public class ProfileViewFragment extends Fragment {
         String dob       = args.getString(ARG_DOB, "");
         String role      = args.getString(ARG_ROLE, "entrant");
 
-        currentUserId = userId;                               // Changed from currentDeviceId
+        currentUserId = userId;
         currentProfile = new Profile(userId, firstName, lastName, email, phone);
         currentProfile.setDateOfBirth(dob);
         currentProfile.setRole(role);
 
-        String fullName = (firstName + " " + lastName).trim();
-        if (fullName.isEmpty()) fullName = "John Doe";
-
-        tvFullName.setText(fullName);
-        tvAvatarLetter.setText(String.valueOf(fullName.charAt(0)).toUpperCase());
-
         String activeRole = getActiveUserRole();
-        tvUserRole.setText(activeRole);
+        boolean isAdmin = "Admin".equalsIgnoreCase(activeRole);
 
-        String displayEmail = (email != null && !email.isEmpty()) ? email : "john.doe@example.com";
-        String displayPhone = (phone != null && !phone.isEmpty()) ? phone : "+1 (555) 123-4567";
+        layoutStandard.setVisibility(isAdmin ? View.GONE : View.VISIBLE);
+        layoutAdmin.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
 
-        tvNameInside.setText(fullName);
-        tvEmailInside.setText(displayEmail);
-        tvPhoneInside.setText(displayPhone);
+        String fullName = (firstName + " " + lastName).trim();
+        if (fullName.isEmpty()) fullName = "User";
 
-        tvNameOutside.setText(fullName);
-        tvEmailOutside.setText(displayEmail);
-        tvPhoneOutside.setText(displayPhone);
+        if (isAdmin) {
+            tvFullNameAdmin.setText(fullName);
+            tvAvatarLetterAdmin.setText(String.valueOf(fullName.charAt(0)).toUpperCase());
+            String handle = "@" + (firstName + lastName).toLowerCase().replace(" ", "_");
+            if (handle.equals("@")) handle = "@admin";
+            tvUserHandleAdmin.setText(handle);
+        } else {
+            tvFullName.setText(fullName);
+            tvAvatarLetter.setText(String.valueOf(fullName.charAt(0)).toUpperCase());
+            tvUserRole.setText(activeRole);
 
-        if ("Entrant".equalsIgnoreCase(activeRole)) {
-            llContactDetailsInside.setVisibility(View.GONE);
-            llContactDetailsOutside.setVisibility(View.VISIBLE);
-            llEventHistoryContainer.setVisibility(View.VISIBLE);
-            loadHistoryData();
-        } else if ("Organizer".equalsIgnoreCase(activeRole)) {
-            llContactDetailsInside.setVisibility(View.VISIBLE);
-            llContactDetailsOutside.setVisibility(View.GONE);
-            llEventHistoryContainer.setVisibility(View.GONE);
-        } else if ("Admin".equalsIgnoreCase(activeRole)) {
-            llContactDetailsInside.setVisibility(View.VISIBLE);
-            llContactDetailsOutside.setVisibility(View.GONE);
-            llEventHistoryContainer.setVisibility(View.GONE);
+            String displayEmail = (email != null && !email.isEmpty()) ? email : "no-email@example.com";
+            String displayPhone = (phone != null && !phone.isEmpty()) ? phone : "No phone provided";
+
+            tvNameInside.setText(fullName);
+            tvEmailInside.setText(displayEmail);
+            tvPhoneInside.setText(displayPhone);
+            tvNameOutside.setText(fullName);
+            tvEmailOutside.setText(displayEmail);
+            tvPhoneOutside.setText(displayPhone);
+
+            if ("Entrant".equalsIgnoreCase(activeRole)) {
+                llContactDetailsInside.setVisibility(View.GONE);
+                llContactDetailsOutside.setVisibility(View.VISIBLE);
+                llEventHistoryContainer.setVisibility(View.VISIBLE);
+                loadHistoryData();
+            } else {
+                llContactDetailsInside.setVisibility(View.VISIBLE);
+                llContactDetailsOutside.setVisibility(View.GONE);
+                llEventHistoryContainer.setVisibility(View.GONE);
+            }
         }
     }
 
     private String getActiveUserRole() {
-        SharedPreferences prefs = requireActivity()
-                .getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = requireActivity().getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
         String role = prefs.getString("userRole", "entrant");
         if (role == null || role.isEmpty()) return "Entrant";
         return role.substring(0, 1).toUpperCase() + role.substring(1).toLowerCase();
     }
 
     private void setupClickListeners() {
-        if (cvEditProfile != null) {
-            cvEditProfile.setOnClickListener(v -> {
-                if (getParentFragment() instanceof ProfileContainerFragment) {
-                    ((ProfileContainerFragment) getParentFragment()).showEditProfile(currentProfile);
-                }
-            });
-        }
+        View.OnClickListener editClick = v -> {
+            if (getParentFragment() instanceof ProfileContainerFragment) {
+                ((ProfileContainerFragment) getParentFragment()).showEditProfile(currentProfile);
+            }
+        };
+        if (cvEditProfile != null) cvEditProfile.setOnClickListener(editClick);
+        if (cvEditProfileAdmin != null) cvEditProfileAdmin.setOnClickListener(editClick);
 
-        if (btnSignOutLayout != null) {
-            btnSignOutLayout.setOnClickListener(v -> signOut());
-        }
+        if (btnBackAdmin != null) btnBackAdmin.setOnClickListener(v -> {
+            if (getActivity() != null) getActivity().onBackPressed();
+        });
 
-        if (btnDeleteProfileLayout != null) {
-            btnDeleteProfileLayout.setOnClickListener(v -> showDeleteConfirmation());
-        }
+        View.OnClickListener signOutClick = v -> signOut();
+        if (btnSignOutLayout != null) btnSignOutLayout.setOnClickListener(signOutClick);
+        if (btnSignOutAdmin != null) btnSignOutAdmin.setOnClickListener(signOutClick);
+
+        View.OnClickListener deleteClick = v -> showDeleteConfirmation();
+        if (btnDeleteProfileLayout != null) btnDeleteProfileLayout.setOnClickListener(deleteClick);
+        if (btnDeleteProfileAdmin != null) btnDeleteProfileAdmin.setOnClickListener(deleteClick);
 
         if (tvViewFullHistory != null) {
             tvViewFullHistory.setOnClickListener(v -> {
@@ -196,39 +223,27 @@ public class ProfileViewFragment extends Fragment {
     }
 
     private void loadHistoryData() {
-        // Get UID from FirebaseAuth — no longer uses deviceId
         FirebaseAuth auth = FirebaseAuth.getInstance();
         if (auth.getCurrentUser() == null) return;
         String uid = auth.getCurrentUser().getUid();
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("users").document(uid)          // Changed from deviceId
-                .collection("event_participations")
-                .get()
+        db.collection("users").document(uid).collection("event_participations").get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     int joined = 0, selected = 0, rejected = 0;
                     List<EventHistoryItem> recentEvents = new ArrayList<>();
-
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         EventHistoryItem item = doc.toObject(EventHistoryItem.class);
                         if (item == null) continue;
-
                         String status = item.getStatus() != null ? item.getStatus() : "";
-                        if (status.equalsIgnoreCase("Waiting") || status.equalsIgnoreCase("Joined")) {
-                            joined++;
-                        } else if (status.equalsIgnoreCase("Selected") || status.equalsIgnoreCase("Accepted")) {
-                            selected++;
-                        } else if (status.equalsIgnoreCase("Rejected")) {
-                            rejected++;
-                        }
-
+                        if (status.equalsIgnoreCase("Waiting") || status.equalsIgnoreCase("Joined")) joined++;
+                        else if (status.equalsIgnoreCase("Selected") || status.equalsIgnoreCase("Accepted")) selected++;
+                        else if (status.equalsIgnoreCase("Rejected")) rejected++;
                         if (recentEvents.size() < 4) recentEvents.add(item);
                     }
-
-                    if (tvJoinedCount != null)   tvJoinedCount.setText(String.valueOf(joined));
+                    if (tvJoinedCount != null) tvJoinedCount.setText(String.valueOf(joined));
                     if (tvSelectedCount != null) tvSelectedCount.setText(String.valueOf(selected));
                     if (tvRejectedCount != null) tvRejectedCount.setText(String.valueOf(rejected));
-
                     populateRecentEvents(recentEvents);
                 });
     }
@@ -236,21 +251,15 @@ public class ProfileViewFragment extends Fragment {
     private void populateRecentEvents(List<EventHistoryItem> events) {
         if (llRecentEventsList == null || getContext() == null) return;
         llRecentEventsList.removeAllViews();
-
         for (EventHistoryItem event : events) {
-            View itemView = LayoutInflater.from(getContext())
-                    .inflate(R.layout.item_event_history, llRecentEventsList, false);
-
-            TextView tvTitle  = itemView.findViewById(R.id.tvHistoryEventTitle);
-            TextView tvDate   = itemView.findViewById(R.id.tvHistoryEventDate);
+            View itemView = LayoutInflater.from(getContext()).inflate(R.layout.item_event_history, llRecentEventsList, false);
+            TextView tvTitle = itemView.findViewById(R.id.tvHistoryEventTitle);
+            TextView tvDate = itemView.findViewById(R.id.tvHistoryEventDate);
             TextView tvStatus = itemView.findViewById(R.id.tvHistoryEventStatus);
-
             tvTitle.setText(event.getEventName());
             tvDate.setText(event.getEventDate());
-
             String status = event.getStatus() != null ? event.getStatus() : "";
             tvStatus.setText(status);
-
             if (status.equalsIgnoreCase("Selected") || status.equalsIgnoreCase("Accepted")) {
                 tvStatus.setTextColor(Color.parseColor("#4CAF50"));
                 tvStatus.setBackgroundResource(R.drawable.badge_status_selected);
@@ -261,18 +270,12 @@ public class ProfileViewFragment extends Fragment {
                 tvStatus.setTextColor(Color.parseColor("#FF9800"));
                 tvStatus.setBackgroundResource(R.drawable.badge_status_waiting);
             }
-
-            View actions  = itemView.findViewById(R.id.ll_actions);
-            View btnDelete = itemView.findViewById(R.id.btn_delete);
-            if (actions != null)   actions.setVisibility(View.GONE);
-            if (btnDelete != null) btnDelete.setVisibility(View.GONE);
-
             llRecentEventsList.addView(itemView);
         }
     }
 
     private void signOut() {
-        FirebaseAuth.getInstance().signOut();   // Actually sign out of Firebase Auth
+        FirebaseAuth.getInstance().signOut();
         clearUserData();
         Intent intent = new Intent(getActivity(), LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -291,39 +294,22 @@ public class ProfileViewFragment extends Fragment {
 
     private void deleteAccount() {
         FirebaseAuth auth = FirebaseAuth.getInstance();
-        if (auth.getCurrentUser() == null) {
-            Toast.makeText(getContext(), "No user logged in", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
+        if (auth.getCurrentUser() == null) return;
         String uid = auth.getCurrentUser().getUid();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        // Delete Firestore data first, then delete the Auth account
-        db.collection("users").document(uid).delete()   // Changed from deviceId
-                .addOnSuccessListener(aVoid -> {
-                    // Also delete the Firebase Auth account itself
-                    auth.getCurrentUser().delete()
-                            .addOnSuccessListener(unused -> {
-                                Toast.makeText(getContext(), "Account deleted", Toast.LENGTH_SHORT).show();
-                                clearUserData();
-                                Intent intent = new Intent(getActivity(), LoginActivity.class);
-                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                startActivity(intent);
-                                requireActivity().finish();
-                            })
-                            .addOnFailureListener(e ->
-                                    Toast.makeText(getContext(), "Failed to delete auth account: " + e.getMessage(),
-                                            Toast.LENGTH_SHORT).show());
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(getContext(), "Failed to delete profile: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show());
+        db.collection("users").document(uid).delete().addOnSuccessListener(aVoid -> {
+            auth.getCurrentUser().delete().addOnSuccessListener(unused -> {
+                clearUserData();
+                Intent intent = new Intent(getActivity(), LoginActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                requireActivity().finish();
+            });
+        });
     }
 
     private void clearUserData() {
-        SharedPreferences prefs = requireContext()
-                .getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = requireContext().getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
         prefs.edit().clear().apply();
     }
 }
