@@ -31,6 +31,10 @@ public class Event {
     private List<String> interests;
     private List<String> daysOfWeek;
     private String timeOfDay;
+    
+    // US 02.02.03 — Private event flag
+    @PropertyName("private")
+    private boolean isPrivate;
 
     // Geolocation fields (US 02.01.05)
     private boolean geolocationRequired;
@@ -54,6 +58,7 @@ public class Event {
         this.locationLatitude = 0;
         this.locationLongitude = 0;
         this.locationRadius = 500;
+        this.isPrivate = false;
     }
 
     public Event(String eventId, String name, String description, String location,
@@ -81,6 +86,7 @@ public class Event {
         this.locationLatitude = 0;
         this.locationLongitude = 0;
         this.locationRadius = 500;
+        this.isPrivate = false;
     }
 
     // Existing getters/setters
@@ -168,6 +174,12 @@ public class Event {
     public void setLocationRadius(double locationRadius) {
         this.locationRadius = locationRadius;
     }
+
+    // US 02.02.03 — Private event getters/setters
+    @PropertyName("private")
+    public boolean isPrivate() { return isPrivate; }
+    @PropertyName("private")
+    public void setPrivate(boolean aPrivate) { isPrivate = aPrivate; }
 
     public int getWaitingListCount() {
         return waitingList != null ? waitingList.size() : 0;

@@ -249,6 +249,21 @@ public class EventDetailActivity extends AppCompatActivity {
                         currentEvent = snapshot.toObject(Event.class);
                         if (currentEvent != null) {
                             currentEvent.setEventId(snapshot.getId());
+                            
+                            // US 02.02.03 — Visibility check for Entrants
+                            if (!isAdmin && !isOrganizer) {
+                                boolean isCoOrganizer = currentEvent.getCoOrganizerIds() != null && currentEvent.getCoOrganizerIds().contains(uid);
+                                boolean isParticipant = (currentEvent.getWaitingList() != null && currentEvent.getWaitingList().contains(uid)) ||
+                                                        (currentEvent.getSelectedEntrants() != null && currentEvent.getSelectedEntrants().contains(uid)) ||
+                                                        (currentEvent.getRejectedEntrants() != null && currentEvent.getRejectedEntrants().contains(uid));
+                                
+                                if (currentEvent.isPrivate() && !isCoOrganizer && !isParticipant) {
+                                    Toast.makeText(this, "This is a private event. You must be invited to view details.", Toast.LENGTH_LONG).show();
+                                    finish();
+                                    return;
+                                }
+                            }
+
                             displayEventDetails(currentEvent);
                         }
                     }
