@@ -66,6 +66,7 @@
                 android:ellipsize="end" />
 
             <TextView
+                android:id="@+id/tv_image_type"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"

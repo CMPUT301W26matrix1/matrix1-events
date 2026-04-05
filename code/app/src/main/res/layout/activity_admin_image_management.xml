@@ -1,14 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Purpose: Layout for the Image Management screen. It uses a GridView to show
-  all event posters in a neat gallery format so admins can easily spot
-  inappropriate content.
-
-  Design Pattern: Grid-View pattern for visual content browsing.
-
-  Issues: The title text is manually set in the Activity, which could lead to
-  inconsistencies if the same layout is reused elsewhere.
--->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -45,15 +35,32 @@
 
     </RelativeLayout>
 
-    <!-- GridView -->
-    <GridView
-        android:id="@+id/gridView"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:numColumns="2"
-        android:verticalSpacing="16dp"
-        android:horizontalSpacing="16dp"
-        android:padding="16dp"
-        android:clipToPadding="false"/>
+        android:layout_height="match_parent">
+
+        <!-- GridView -->
+        <GridView
+            android:id="@+id/gridView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:numColumns="2"
+            android:verticalSpacing="16dp"
+            android:horizontalSpacing="16dp"
+            android:padding="16dp"
+            android:clipToPadding="false"/>
+
+        <!-- Empty State -->
+        <TextView
+            android:id="@+id/tv_empty_state"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="No images found to moderate"
+            android:textColor="#666666"
+            android:textSize="16sp"
+            android:visibility="gone"/>
+
+    </FrameLayout>
 
 </LinearLayout>
