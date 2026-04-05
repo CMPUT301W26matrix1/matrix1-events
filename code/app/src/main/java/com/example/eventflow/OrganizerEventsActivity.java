@@ -20,7 +20,9 @@ import com.example.eventflow.org_event.OrgEventActivity;
 import com.example.eventflow.org_event.manage_entrant.CancelledEntrantsActivity;
 import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.example.eventflow.org_event.manage_entrant.NotificationsActivity;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.squareup.picasso.Picasso;
 
@@ -162,9 +164,10 @@ public class OrganizerEventsActivity extends AppCompatActivity {
     }
 
     private void loadMyEvents() {
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        String uid = FirebaseAuth.getInstance().getCurrentUser() != null ? FirebaseAuth.getInstance().getCurrentUser().getUid() : "";
+        
+        // Load events where user is organizer OR co-organizer
         db.collection("events")
-                .whereEqualTo("organizerId", deviceId)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     myEvents.clear();
@@ -173,7 +176,14 @@ public class OrganizerEventsActivity extends AppCompatActivity {
                             Event event = doc.toObject(Event.class);
                             if (event != null) {
                                 event.setEventId(doc.getId());
-                                myEvents.add(event);
+                                
+                                String organizerId = doc.getString("organizerId");
+                                List<String> coOrgIds = (List<String>) doc.get("coOrganizerIds");
+                                
+                                if ((organizerId != null && organizerId.equals(uid)) || 
+                                    (coOrgIds != null && coOrgIds.contains(uid))) {
+                                    myEvents.add(event);
+                                }
                             }
                         } catch (Exception e) { e.printStackTrace(); }
                     }

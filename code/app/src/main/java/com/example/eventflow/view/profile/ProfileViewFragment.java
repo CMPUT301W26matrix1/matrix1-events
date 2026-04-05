@@ -28,10 +28,13 @@ import com.example.eventflow.model.repositories.ProfileRepository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ProfileViewFragment extends Fragment {
 
@@ -238,24 +241,80 @@ public class ProfileViewFragment extends Fragment {
         String uid = auth.getCurrentUser().getUid();
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
+        final List<EventHistoryItem> allItems = new ArrayList<>();
+        final Set<String> eventIds = new HashSet<>();
+
+        // 1. Load from event_participations
         db.collection("users").document(uid).collection("event_participations").get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    int joined = 0, selected = 0, rejected = 0;
-                    List<EventHistoryItem> recentEvents = new ArrayList<>();
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                .addOnSuccessListener(snapshot -> {
+                    for (QueryDocumentSnapshot doc : snapshot) {
                         EventHistoryItem item = doc.toObject(EventHistoryItem.class);
                         if (item == null) continue;
-                        String status = item.getStatus() != null ? item.getStatus() : "";
-                        if (status.equalsIgnoreCase("Waiting") || status.equalsIgnoreCase("Joined")) joined++;
-                        else if (status.equalsIgnoreCase("Selected") || status.equalsIgnoreCase("Accepted")) selected++;
-                        else if (status.equalsIgnoreCase("Rejected")) rejected++;
-                        if (recentEvents.size() < 4) recentEvents.add(item);
+                        item.setEventId(doc.getId());
+                        
+                        String role = doc.getString("role");
+                        if ("co-organizer".equalsIgnoreCase(role)) {
+                            item.setUserRole("co-organizer");
+                        }
+                        
+                        allItems.add(item);
+                        eventIds.add(doc.getId());
                     }
-                    if (tvJoinedCount != null) tvJoinedCount.setText(String.valueOf(joined));
-                    if (tvSelectedCount != null) tvSelectedCount.setText(String.valueOf(selected));
-                    if (tvRejectedCount != null) tvRejectedCount.setText(String.valueOf(rejected));
-                    populateRecentEvents(recentEvents);
+
+                    // 2. Load directly from events collection to catch Co-organizers correctly
+                    db.collection("events").whereArrayContains("coOrganizerIds", uid).get()
+                            .addOnSuccessListener(eventSnapshot -> {
+                                for (QueryDocumentSnapshot eventDoc : eventSnapshot) {
+                                    String eid = eventDoc.getId();
+                                    boolean found = false;
+                                    for (EventHistoryItem existing : allItems) {
+                                        if (existing.getEventId().equals(eid)) {
+                                            existing.setUserRole("co-organizer");
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!found) {
+                                        EventHistoryItem item = new EventHistoryItem();
+                                        item.setEventId(eid);
+                                        item.setEventName(eventDoc.getString("name"));
+                                        item.setEventDate(eventDoc.getString("date"));
+                                        item.setStatus("Co-organizer");
+                                        item.setUserRole("co-organizer");
+                                        allItems.add(item);
+                                    }
+                                }
+                                processAndDisplayItems(allItems);
+                            });
                 });
+    }
+
+    private void processAndDisplayItems(List<EventHistoryItem> items) {
+        int joined = 0, selected = 0, rejected = 0;
+        List<EventHistoryItem> recentEvents = new ArrayList<>();
+
+        for (EventHistoryItem item : items) {
+            String status = item.getStatus();
+            String role = item.getUserRole();
+
+            if ("co-organizer".equalsIgnoreCase(role) || "Co-organizer".equalsIgnoreCase(status)) {
+                selected++;
+            } else if (status != null) {
+                if (status.equalsIgnoreCase("Waiting") || status.equalsIgnoreCase("Joined") || status.equalsIgnoreCase("Pending")) {
+                    joined++;
+                } else if (status.equalsIgnoreCase("Selected") || status.equalsIgnoreCase("Accepted")) {
+                    selected++;
+                } else if (status.equalsIgnoreCase("Rejected") || status.equalsIgnoreCase("Declined") || status.equalsIgnoreCase("EXPIRED")) {
+                    rejected++;
+                }
+            }
+            if (recentEvents.size() < 3) recentEvents.add(item);
+        }
+
+        if (tvJoinedCount != null) tvJoinedCount.setText(String.valueOf(joined));
+        if (tvSelectedCount != null) tvSelectedCount.setText(String.valueOf(selected));
+        if (tvRejectedCount != null) tvRejectedCount.setText(String.valueOf(rejected));
+        populateRecentEvents(recentEvents);
     }
 
     private void populateRecentEvents(List<EventHistoryItem> events) {
@@ -266,19 +325,35 @@ public class ProfileViewFragment extends Fragment {
             TextView tvTitle = itemView.findViewById(R.id.tvHistoryEventTitle);
             TextView tvDate = itemView.findViewById(R.id.tvHistoryEventDate);
             TextView tvStatus = itemView.findViewById(R.id.tvHistoryEventStatus);
+            
             tvTitle.setText(event.getEventName());
             tvDate.setText(event.getEventDate());
+            
             String status = event.getStatus() != null ? event.getStatus() : "";
-            tvStatus.setText(status);
-            if (status.equalsIgnoreCase("Selected") || status.equalsIgnoreCase("Accepted")) {
+            String role = event.getUserRole();
+
+            // Match My Events Page Logic
+            if ("co-organizer".equalsIgnoreCase(role) || status.equalsIgnoreCase("Co-organizer")) {
+                tvStatus.setText("Co-organizer");
+                tvStatus.setTextColor(Color.parseColor("#2196F3"));
+                tvStatus.setBackgroundResource(R.drawable.rounded_card_bg);
+                tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#332196F3")));
+            } 
+            else if (status.equalsIgnoreCase("ACCEPTED") || status.equalsIgnoreCase("Selected")) {
+                tvStatus.setText(status.equalsIgnoreCase("ACCEPTED") ? "Enrolled" : "Selected");
                 tvStatus.setTextColor(Color.parseColor("#4CAF50"));
-                tvStatus.setBackgroundResource(R.drawable.badge_status_selected);
-            } else if (status.equalsIgnoreCase("Rejected")) {
+                tvStatus.setBackgroundResource(R.drawable.rounded_card_bg);
+                tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#334CAF50")));
+            } else if (status.equalsIgnoreCase("Rejected") || status.equalsIgnoreCase("Declined") || status.equalsIgnoreCase("EXPIRED")) {
+                tvStatus.setText(status);
                 tvStatus.setTextColor(Color.parseColor("#F44336"));
-                tvStatus.setBackgroundResource(R.drawable.badge_status_rejected);
+                tvStatus.setBackgroundResource(R.drawable.rounded_card_bg);
+                tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33F44336")));
             } else {
+                tvStatus.setText(status);
                 tvStatus.setTextColor(Color.parseColor("#FF9800"));
-                tvStatus.setBackgroundResource(R.drawable.badge_status_waiting);
+                tvStatus.setBackgroundResource(R.drawable.rounded_card_bg);
+                tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33FF9800")));
             }
             llRecentEventsList.addView(itemView);
         }

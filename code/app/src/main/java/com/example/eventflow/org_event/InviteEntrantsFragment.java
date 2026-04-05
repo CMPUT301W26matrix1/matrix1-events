@@ -240,8 +240,7 @@ public class InviteEntrantsFragment extends Fragment {
     }
     /**
      * US 02.09.01 — Assign entrant as co-organizer.
-     * Adds deviceId to coOrganizerIds array in Firestore.
-     * Co-organizer cannot join the entrant pool for this event.
+     * Permission only granted on Acceptance.
      */
     private void assignCoOrganizer(Profile profile) {
         if (eventId == null) {
@@ -250,23 +249,27 @@ public class InviteEntrantsFragment extends Fragment {
         }
 
         String userId = profile.getDeviceId();
+        String userEmail = profile.getEmail();
 
-        // 1. Add to coOrganizerIds
+        // 1. Update coOrganizerEmail so organizer sees it as pending
         db.collection("events")
                 .document(eventId)
-                .update("coOrganizerIds", FieldValue.arrayUnion(userId))
+                .update("coOrganizerEmail", userEmail)
                 .addOnSuccessListener(aVoid -> {
 
                     // 2. CREATE NOTIFICATION
                     Notification notification = new Notification(
-                            "You’ve been assigned as a co-organizer",
+                            "You’ve been invited as a co-organizer",
                             eventName,
-                            "You are now a co-organizer",
+                            "Tap to respond",
                             Notification.TYPE_CO_ORGANIZER,
                             eventId
                     );
 
                     notification.setUserId(userId);
+                    notification.setAccepted(false);
+                    notification.setDeclined(false);
+                    notification.setRead(false);
 
                     // 3. SAVE TO FIRESTORE
                     db.collection("users")
@@ -278,7 +281,7 @@ public class InviteEntrantsFragment extends Fragment {
                                 db.collection("notifications").document(doc.getId()).set(notification);
                                 
                                 if (getContext() != null) Toast.makeText(getContext(),
-                                        profile.getFullName() + " is now a co-organizer!",
+                                        "Invitation sent to " + profile.getFullName(),
                                         Toast.LENGTH_SHORT).show();
                             })
                             .addOnFailureListener(e -> {
@@ -290,7 +293,7 @@ public class InviteEntrantsFragment extends Fragment {
                 })
                 .addOnFailureListener(e -> {
                         if (getContext() != null) Toast.makeText(getContext(),
-                                "Failed to assign co-organizer: " + e.getMessage(),
+                                "Failed to send invitation: " + e.getMessage(),
                                 Toast.LENGTH_SHORT).show();
                 });
     }

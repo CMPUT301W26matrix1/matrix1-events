@@ -386,6 +386,7 @@ public class EventDetailActivity extends AppCompatActivity {
         participation.put("eventName", event.getName());
         participation.put("eventDate", dateString);
         participation.put("eventLocation", event.getLocation());
+        participation.put("posterUrl", event.getPosterUrl()); // FIX: Save poster URL when joining
         participation.put("status", status);
         participation.put("joinedAt", FieldValue.serverTimestamp());
         participation.put("userId", uid);
@@ -394,7 +395,7 @@ public class EventDetailActivity extends AppCompatActivity {
                 .document(uid)
                 .collection("event_participations")
                 .document(this.eventId)
-                .set(participation)
+                .set(participation, com.google.firebase.firestore.SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
                     Log.d("EventDetail", "Event saved to user's joined events: " + event.getName());
                 })

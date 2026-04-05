@@ -1,12 +1,16 @@
 package com.example.eventflow.view.profile;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,11 +26,14 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class FullHistoryFragment extends Fragment {
 
@@ -130,12 +137,15 @@ public class FullHistoryFragment extends Fragment {
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
+        final Set<String> eventIdSet = new HashSet<>();
+
         // FIRST: Load from event_participations subcollection
         db.collection("users").document(userId)
                 .collection("event_participations")
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     allEvents.clear();
+                    eventIdSet.clear();
 
                     for (QueryDocumentSnapshot doc : snapshot) {
                         EventHistoryItem item = new EventHistoryItem();
@@ -143,122 +153,185 @@ public class FullHistoryFragment extends Fragment {
                         item.setEventName(doc.getString("eventName"));
                         item.setEventDate(doc.getString("eventDate"));
                         item.setEventLocation(doc.getString("eventLocation"));
+                        item.setPosterUrl(doc.getString("posterUrl"));
 
                         String status = doc.getString("status");
                         if (status == null) status = "Waiting";
                         item.setStatus(status);
-                        item.setUserRole("entrant");
+                        
+                        // Check if role is co-organizer
+                        String role = doc.getString("role");
+                        if ("co-organizer".equalsIgnoreCase(role)) {
+                            item.setUserRole("co-organizer");
+                        } else {
+                            item.setUserRole("entrant");
+                        }
 
-                        Log.d("FullHistory", "Event from participations: " + item.getEventName() + ", Status: " + status);
+                        eventIdSet.add(doc.getId());
                         allEvents.add(item);
                     }
 
-                    // SECOND: Load co-organizer events
-                    loadCoOrganizerEvents();
+                    // SECOND: Load co-organizer events from the global events collection (to be sure)
+                    loadCoOrganizerEvents(eventIdSet);
                 })
                 .addOnFailureListener(e -> {
                     Log.e("FullHistory", "Error loading participations: " + e.getMessage());
-                    loadCoOrganizerEvents();
+                    loadCoOrganizerEvents(new HashSet<>());
                 });
     }
 
     // Load events where user is a co-organizer
-    private void loadCoOrganizerEvents() {
+    private void loadCoOrganizerEvents(final Set<String> existingEventIds) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         db.collection("events")
                 .whereArrayContains("coOrganizerIds", userId)
                 .get()
                 .addOnSuccessListener(snapshots -> {
-                    int addedCount = 0;
-
-                    for (QueryDocumentSnapshot doc : snapshots) {
-                        // Check if this event is already in allEvents
-                        boolean exists = false;
-                        for (EventHistoryItem item : allEvents) {
-                            if (item.getEventId().equals(doc.getId())) {
-                                exists = true;
-                                break;
-                            }
-                        }
-
-                        if (!exists) {
-                            EventHistoryItem item = new EventHistoryItem();
-                            item.setEventId(doc.getId());
-                            item.setEventName(doc.getString("name"));
-
-                            // Format date
-                            Timestamp eventDate = doc.getTimestamp("eventDate");
-                            if (eventDate != null) {
-                                SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
-                                item.setEventDate(sdf.format(eventDate.toDate()));
-                            } else {
-                                item.setEventDate("Date TBD");
-                            }
-
-                            item.setEventLocation(doc.getString("location"));
-                            item.setStatus("Co-organizer");
-                            item.setUserRole("co-organizer");
-
-                            allEvents.add(item);
-                            addedCount++;
-                            Log.d("FullHistory", "Added co-organizer event: " + item.getEventName());
-                        }
+                    if (snapshots.isEmpty()) {
+                        loadEventsFromWaitingList(existingEventIds);
+                        return;
                     }
 
-                    Log.d("FullHistory", "Added " + addedCount + " co-organizer events");
-
-                    // THIRD: Load rejected events
-                    loadRejectedEvents();
+                    for (final QueryDocumentSnapshot doc : snapshots) {
+                        if (existingEventIds.contains(doc.getId())) {
+                            // Update existing item to ensure it has co-organizer role
+                            for (EventHistoryItem item : allEvents) {
+                                if (item.getEventId().equals(doc.getId())) {
+                                    item.setUserRole("co-organizer");
+                                    item.setStatus("Co-organizer");
+                                }
+                            }
+                            continue;
+                        }
+                        checkAndAddCoOrganizerEvent(doc, existingEventIds);
+                    }
+                    loadEventsFromWaitingList(existingEventIds);
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("FullHistory", "Error loading co-organizer events: " + e.getMessage());
-                    loadRejectedEvents();
+                    loadEventsFromWaitingList(existingEventIds);
                 });
     }
 
-    // Load events where user is in rejectedEntrants array
-    private void loadRejectedEvents() {
+    private void checkAndAddCoOrganizerEvent(final QueryDocumentSnapshot doc, final Set<String> existingEventIds) {
+        final String eventId = doc.getId();
+        final String eventName = doc.getString("name");
+        final String posterUrl = doc.getString("posterUrl");
+
+        Timestamp eventDate = doc.getTimestamp("eventDate");
+        final String formattedDate;
+        if (eventDate != null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
+            formattedDate = sdf.format(eventDate.toDate());
+        } else {
+            formattedDate = "Date TBD";
+        }
+
+        final String eventLocation = doc.getString("location");
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("users").document(userId)
+                .collection("notifications")
+                .whereEqualTo("eventId", eventId)
+                .whereEqualTo("type", "CO_ORGANIZER")
+                .get()
+                .addOnSuccessListener(notificationSnap -> {
+                    boolean isAccepted = false;
+
+                    for (QueryDocumentSnapshot notifDoc : notificationSnap) {
+                        Boolean accepted = notifDoc.getBoolean("accepted");
+                        if (accepted != null && accepted) {
+                            isAccepted = true;
+                            break;
+                        }
+                    }
+
+                    EventHistoryItem item = new EventHistoryItem();
+                    item.setEventId(eventId);
+                    item.setEventName(eventName);
+                    item.setEventDate(formattedDate);
+                    item.setEventLocation(eventLocation);
+                    item.setPosterUrl(posterUrl);
+
+                    if (isAccepted) {
+                        item.setStatus("Co-organizer");
+                        item.setUserRole("co-organizer");
+                    } else {
+                        item.setStatus("Pending");
+                        item.setUserRole("entrant");
+                    }
+
+                    allEvents.add(item);
+                    existingEventIds.add(eventId);
+                });
+    }
+
+    private void loadEventsFromWaitingList(final Set<String> existingEventIds) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("events")
+                .whereArrayContains("waitingList", userId)
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    for (QueryDocumentSnapshot doc : snapshots) {
+                        if (existingEventIds.contains(doc.getId())) continue;
+
+                        EventHistoryItem item = new EventHistoryItem();
+                        item.setEventId(doc.getId());
+                        item.setEventName(doc.getString("name"));
+                        item.setPosterUrl(doc.getString("posterUrl"));
+                        item.setEventLocation(doc.getString("location"));
+
+                        Timestamp ts = doc.getTimestamp("eventDate");
+                        if (ts != null) {
+                            item.setEventDate(new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(ts.toDate()));
+                        } else {
+                            item.setEventDate("Date TBD");
+                        }
+
+                        item.setStatus("Waiting");
+                        item.setUserRole("entrant");
+
+                        allEvents.add(item);
+                        existingEventIds.add(doc.getId());
+                    }
+                    loadRejectedEvents(existingEventIds);
+                })
+                .addOnFailureListener(e -> loadRejectedEvents(existingEventIds));
+    }
+
+    private void loadRejectedEvents(final Set<String> existingEventIds) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         db.collection("events")
                 .whereArrayContains("rejectedEntrants", userId)
                 .get()
                 .addOnSuccessListener(snapshots -> {
-                    int addedCount = 0;
-
                     for (QueryDocumentSnapshot doc : snapshots) {
-                        // Check if this event is already in allEvents
-                        boolean exists = false;
-                        for (EventHistoryItem item : allEvents) {
-                            if (item.getEventId().equals(doc.getId())) {
-                                exists = true;
-                                break;
-                            }
+                        if (existingEventIds.contains(doc.getId())) continue;
+
+                        EventHistoryItem item = new EventHistoryItem();
+                        item.setEventId(doc.getId());
+                        item.setEventName(doc.getString("name") != null ? doc.getString("name") : "Untitled Event");
+                        item.setEventLocation(doc.getString("location") != null ? doc.getString("location") : "Unknown Location");
+                        item.setPosterUrl(doc.getString("posterUrl"));
+
+                        Timestamp ts = doc.getTimestamp("eventDate");
+                        if (ts != null) {
+                            item.setEventDate(new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(ts.toDate()));
+                        } else {
+                            item.setEventDate("Date TBD");
                         }
 
-                        if (!exists) {
-                            EventHistoryItem item = new EventHistoryItem();
-                            item.setEventId(doc.getId());
-                            item.setEventName(doc.getString("eventName"));
-                            item.setEventDate(doc.getString("eventDate"));
-                            item.setEventLocation(doc.getString("eventLocation"));
-                            item.setStatus("Rejected");
-                            item.setUserRole("entrant");
+                        item.setStatus("Rejected");
+                        item.setUserRole("entrant");
 
-                            allEvents.add(item);
-                            addedCount++;
-                            Log.d("FullHistory", "Added rejected event: " + item.getEventName());
-                        }
+                        allEvents.add(item);
+                        existingEventIds.add(doc.getId());
                     }
-
-                    Log.d("FullHistory", "Added " + addedCount + " rejected events from rejectedEntrants");
                     filterEvents();
                 })
-                .addOnFailureListener(e -> {
-                    Log.e("FullHistory", "Error loading rejected events: " + e.getMessage());
-                    filterEvents();
-                });
+                .addOnFailureListener(e -> filterEvents());
     }
 
     private void filterEvents() {
@@ -270,7 +343,8 @@ public class FullHistoryFragment extends Fragment {
                 if (status.equalsIgnoreCase("Waiting") ||
                         status.equalsIgnoreCase("Pending") ||
                         status.equalsIgnoreCase("ACCEPTED") ||
-                        status.equalsIgnoreCase("Co-organizer")) {
+                        status.equalsIgnoreCase("Co-organizer") ||
+                        "co-organizer".equalsIgnoreCase(item.getUserRole())) {
                     filtered.add(item);
                 }
             } else if (currentTab.equals("Selected")) {
@@ -289,7 +363,6 @@ public class FullHistoryFragment extends Fragment {
         adapter.updateData(filtered, currentTab);
     }
 
-    // Inner Adapter Class
     private class MyEventsAdapter extends RecyclerView.Adapter<MyEventsAdapter.ViewHolder> {
         private List<EventHistoryItem> items;
         private String tab;
@@ -316,60 +389,75 @@ public class FullHistoryFragment extends Fragment {
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             EventHistoryItem item = items.get(position);
             String status = item.getStatus();
+            String role = item.getUserRole();
 
             holder.tvTitle.setText(item.getEventName());
             holder.tvDate.setText(item.getEventDate());
             holder.tvLocation.setText(item.getEventLocation());
 
-            // Show co-organizer badge if user is co-organizer
-            if ("co-organizer".equals(item.getUserRole())) {
-                holder.tvCoOrganizerBadge.setVisibility(View.VISIBLE);
-                holder.tvCoOrganizerBadge.setText("Co-organizer");
-                holder.tvCoOrganizerBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#2196F3"))); // BLUE
-                holder.tvCoOrganizerBadge.setTextColor(Color.WHITE);
+            String posterData = item.getPosterUrl();
+            if (posterData != null && !posterData.isEmpty()) {
+                if (posterData.startsWith("http")) {
+                    Picasso.get().load(posterData).placeholder(R.drawable.ic_placeholder).into(holder.ivPoster);
+                } else {
+                    try {
+                        byte[] decodedString = Base64.decode(posterData, Base64.DEFAULT);
+                        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                        holder.ivPoster.setImageBitmap(decodedByte);
+                    } catch (Exception e) {
+                        holder.ivPoster.setImageResource(R.drawable.ic_placeholder);
+                    }
+                }
             } else {
-                holder.tvCoOrganizerBadge.setVisibility(View.GONE);
+                holder.ivPoster.setImageResource(R.drawable.ic_placeholder);
             }
 
-            // Set status text and color based on actual status
-            if ("ACCEPTED".equalsIgnoreCase(status)) {
+            holder.tvCoOrganizerBadge.setVisibility(View.GONE);
+
+            // PRIORITY: If role is co-organizer, show the blue badge
+            if ("co-organizer".equalsIgnoreCase(role)) {
+                holder.tvStatus.setText("Co-organizer");
+                holder.tvStatus.setTextColor(Color.parseColor("#2196F3"));
+                holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#332196F3")));
+            } 
+            // Otherwise, show standard status badges
+            else if ("ACCEPTED".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Enrolled");
-                holder.tvStatus.setTextColor(Color.parseColor("#4CAF50"));      // Green
+                holder.tvStatus.setTextColor(Color.parseColor("#4CAF50"));
                 holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#334CAF50")));
             } else if ("Selected".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Selected");
-                holder.tvStatus.setTextColor(Color.parseColor("#4CAF50"));      // Green
+                holder.tvStatus.setTextColor(Color.parseColor("#4CAF50"));
                 holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#334CAF50")));
-            } else if ("PENDING".equalsIgnoreCase(status)) {
+            } else if ("Pending".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Pending");
-                holder.tvStatus.setTextColor(Color.parseColor("#FF9800"));      // Orange
+                holder.tvStatus.setTextColor(Color.parseColor("#FF9800"));
                 holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33FF9800")));
             } else if ("Waiting".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Waiting");
-                holder.tvStatus.setTextColor(Color.parseColor("#FFA726"));      // Yellow/Orange
+                holder.tvStatus.setTextColor(Color.parseColor("#FFA726"));
                 holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33FFA726")));
             } else if ("Declined".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Declined");
-                holder.tvStatus.setTextColor(Color.parseColor("#F44336"));      // Bright Red
+                holder.tvStatus.setTextColor(Color.parseColor("#F44336"));
                 holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33F44336")));
             } else if ("Rejected".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Rejected");
-                holder.tvStatus.setTextColor(Color.parseColor("#F44336"));      // Bright Red
+                holder.tvStatus.setTextColor(Color.parseColor("#F44336"));
                 holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33F44336")));
             } else if ("Co-organizer".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Co-organizer");
-                holder.tvStatus.setTextColor(Color.parseColor("#2196F3"));      // Blue
+                holder.tvStatus.setTextColor(Color.parseColor("#2196F3"));
                 holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#332196F3")));
             } else if ("EXPIRED".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Expired");
-                holder.tvStatus.setTextColor(Color.parseColor("#666666"));      // Gray
+                holder.tvStatus.setTextColor(Color.parseColor("#666666"));
                 holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33666666")));
             } else {
                 holder.tvStatus.setText(status);
-                holder.tvStatus.setTextColor(Color.parseColor("#888888"));      // Light Gray
+                holder.tvStatus.setTextColor(Color.parseColor("#888888"));
             }
 
-            // Reset visibilities
             holder.llActions.setVisibility(View.GONE);
             holder.btnDelete.setVisibility(View.GONE);
 
@@ -387,6 +475,7 @@ public class FullHistoryFragment extends Fragment {
 
         class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvTitle, tvDate, tvLocation, tvStatus, tvCoOrganizerBadge;
+            ImageView ivPoster;
             View llActions;
             ImageButton btnDelete;
 
@@ -397,6 +486,7 @@ public class FullHistoryFragment extends Fragment {
                 tvLocation = v.findViewById(R.id.tvHistoryEventLocation);
                 tvStatus = v.findViewById(R.id.tvHistoryEventStatus);
                 tvCoOrganizerBadge = v.findViewById(R.id.tvCoOrganizerBadge);
+                ivPoster = v.findViewById(R.id.ivEventIcon);
                 llActions = v.findViewById(R.id.ll_actions);
                 btnDelete = v.findViewById(R.id.btn_delete);
             }

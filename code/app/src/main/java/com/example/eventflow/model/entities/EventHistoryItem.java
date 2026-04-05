@@ -6,7 +6,8 @@ public class EventHistoryItem {
     private String eventDate;
     private String eventLocation;
     private String status;
-    private String userRole;  // ADDED: "entrant" or "co-organizer"
+    private String userRole;
+    private String posterUrl; // Added field for event image
 
     public EventHistoryItem() {
         // Required empty constructor for Firestore
@@ -18,10 +19,9 @@ public class EventHistoryItem {
         this.eventDate = eventDate;
         this.eventLocation = eventLocation;
         this.status = status;
-        this.userRole = "entrant";  // Default role
+        this.userRole = "entrant";
     }
 
-    // ADDED: Constructor with userRole
     public EventHistoryItem(String eventId, String eventName, String eventDate, String eventLocation, String status, String userRole) {
         this.eventId = eventId;
         this.eventName = eventName;
@@ -46,7 +46,9 @@ public class EventHistoryItem {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
-    // ADDED: Getter and Setter for userRole
     public String getUserRole() { return userRole; }
     public void setUserRole(String userRole) { this.userRole = userRole; }
+
+    public String getPosterUrl() { return posterUrl; }
+    public void setPosterUrl(String posterUrl) { this.posterUrl = posterUrl; }
 }

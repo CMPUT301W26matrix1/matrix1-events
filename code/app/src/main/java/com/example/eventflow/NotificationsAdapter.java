@@ -22,8 +22,10 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 import com.squareup.picasso.Picasso;
 
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -71,9 +73,6 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
         } else {
             userId = "";
         }
-
-        Log.d("NOTIFICATION", "UserId from FirebaseAuth: " + userId);
-        Log.d("NOTIFICATION", "Type: " + n.getType() + ", Accepted: " + n.isAccepted() + ", Declined: " + n.isDeclined());
 
         if (holder instanceof CoOrganizerViewHolder) {
             CoOrganizerViewHolder h = (CoOrganizerViewHolder) holder;
@@ -142,14 +141,12 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
                 if (Notification.TYPE_SELECTED.equals(n.getType()) || Notification.TYPE_PRIVATE_INVITE.equals(n.getType())) {
                     if (n.isAccepted() || n.isDeclined()) {
                         h.actionsContainer.setVisibility(View.GONE);
-                        Log.d("NOTIFICATION", "Hiding buttons - already handled");
                     } else {
                         h.actionsContainer.setVisibility(View.VISIBLE);
                         h.acceptButton.setText("Accept");
                         h.declineButton.setText("Decline");
                         h.acceptButton.setOnClickListener(v -> handleDefaultAccept(n, userId, h));
                         h.declineButton.setOnClickListener(v -> handleDefaultDecline(n, userId, h));
-                        Log.d("NOTIFICATION", "Showing Accept/Decline buttons for: " + n.getType());
                     }
                 }
                 else if (Notification.TYPE_LOST_LOTTERY.equals(n.getType())) {
@@ -160,7 +157,6 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
                         h.acceptButton.setText("Try Again");
                         h.declineButton.setVisibility(View.GONE);
                         h.acceptButton.setOnClickListener(v -> handleTryAgain(n, userId, h));
-                        Log.d("NOTIFICATION", "Showing Try Again button for: " + n.getType());
                     }
                 }
                 else {
@@ -172,103 +168,125 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     private void handleCoOrganizerAccept(Notification n, String userId, CoOrganizerViewHolder holder) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("events").document(n.getEventId())
-                .update("coOrganizerIds", FieldValue.arrayUnion(userId))
-                .addOnSuccessListener(unused -> {
-                    markNotificationAsHandled(n, userId, true);
-                    Toast.makeText(holder.itemView.getContext(), "Accepted Invitation", Toast.LENGTH_SHORT).show();
-                    n.setAccepted(true);
-                    notifyItemChanged(holder.getAdapterPosition());
+        
+        db.collection("events").document(n.getEventId()).get().addOnSuccessListener(eventDoc -> {
+            if (!eventDoc.exists()) return;
+            
+            final String eventName = eventDoc.getString("name");
+            final String posterUrl = eventDoc.getString("posterUrl");
+            final String location = eventDoc.getString("location");
+            Timestamp eventDate = eventDoc.getTimestamp("eventDate");
+            
+            String tempDate = "";
+            if (eventDate != null) {
+                tempDate = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(eventDate.toDate());
+            }
+            final String dateStr = tempDate;
 
-                    // Send notification to organizer
-                    sendOrganizerNotificationForCoOrganizer(n.getEventId(), n.getEventName(), userId, "ACCEPTED");
-                });
+            db.collection("users").document(userId).get().addOnSuccessListener(userDoc -> {
+                String userEmail = userDoc.getString("email");
+                
+                Map<String, Object> eventUpdates = new HashMap<>();
+                eventUpdates.put("coOrganizerIds", FieldValue.arrayUnion(userId));
+                if (userEmail != null) eventUpdates.put("coOrganizerEmail", userEmail);
+
+                db.collection("events").document(n.getEventId())
+                        .update(eventUpdates)
+                        .addOnSuccessListener(unused -> {
+                            markNotificationAsHandled(n, userId, true);
+                            n.setAccepted(true);
+                            notifyItemChanged(holder.getAdapterPosition());
+
+                            // Save to participation history with FULL details
+                            Map<String, Object> participation = new HashMap<>();
+                            participation.put("eventId", n.getEventId());
+                            participation.put("eventName", eventName);
+                            participation.put("eventDate", dateStr);
+                            participation.put("eventLocation", location);
+                            participation.put("posterUrl", posterUrl);
+                            participation.put("status", "Co-organizer");
+                            participation.put("role", "co-organizer");
+                            participation.put("joinedAt", Timestamp.now());
+
+                            db.collection("users").document(userId)
+                                    .collection("event_participations")
+                                    .document(n.getEventId())
+                                    .set(participation, SetOptions.merge());
+
+                            sendOrganizerNotificationForCoOrganizer(n.getEventId(), eventName, userId, "ACCEPTED");
+                            Toast.makeText(holder.itemView.getContext(), "Accepted Invitation", Toast.LENGTH_SHORT).show();
+                        });
+            });
+        });
     }
 
     private void handleCoOrganizerDecline(Notification n, String userId, CoOrganizerViewHolder holder) {
-        markNotificationAsHandled(n, userId, false);
-        Toast.makeText(holder.itemView.getContext(), "Declined Invitation", Toast.LENGTH_SHORT).show();
-        n.setDeclined(true);
-        notifyItemChanged(holder.getAdapterPosition());
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Map<String, Object> eventUpdates = new HashMap<>();
+        eventUpdates.put("coOrganizerIds", FieldValue.arrayRemove(userId));
+        eventUpdates.put("coOrganizerEmail", "");
 
-        // Send notification to organizer
-        sendOrganizerNotificationForCoOrganizer(n.getEventId(), n.getEventName(), userId, "DECLINED");
+        db.collection("events").document(n.getEventId()).update(eventUpdates).addOnSuccessListener(aVoid -> {
+            markNotificationAsHandled(n, userId, false);
+            n.setDeclined(true);
+            notifyItemChanged(holder.getAdapterPosition());
+            sendOrganizerNotificationForCoOrganizer(n.getEventId(), n.getEventName(), userId, "DECLINED");
+            Toast.makeText(holder.itemView.getContext(), "Declined Invitation", Toast.LENGTH_SHORT).show();
+        });
     }
 
     private void handleDefaultAccept(Notification n, String userId, DefaultViewHolder holder) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        Log.d("ACCEPT_DEBUG", "=== ACCEPT BUTTON CLICKED ===");
-        Log.d("ACCEPT_DEBUG", "Notification ID: " + n.getId());
-        Log.d("ACCEPT_DEBUG", "Event ID: " + n.getEventId());
-        Log.d("ACCEPT_DEBUG", "User ID (Firebase Auth): " + userId);
+        db.collection("events").document(n.getEventId()).get().addOnSuccessListener(eventDoc -> {
+            if (!eventDoc.exists()) return;
 
-        if (n.getId() != null) {
-            Map<String, Object> notificationUpdates = new HashMap<>();
-            notificationUpdates.put("accepted", true);
-            notificationUpdates.put("declined", false);
-            notificationUpdates.put("read", true);
+            final String eventName = eventDoc.getString("name");
+            final String posterUrl = eventDoc.getString("posterUrl");
+            final String location = eventDoc.getString("location");
+            Timestamp eventDate = eventDoc.getTimestamp("eventDate");
+            
+            String tempDate = "";
+            if (eventDate != null) {
+                tempDate = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(eventDate.toDate());
+            }
+            final String dateStr = tempDate;
+
+            if (n.getId() != null) {
+                Map<String, Object> notificationUpdates = new HashMap<>();
+                notificationUpdates.put("accepted", true);
+                notificationUpdates.put("read", true);
+                db.collection("users").document(userId).collection("notifications").document(n.getId()).update(notificationUpdates);
+            }
+
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("status", "ACCEPTED");
+            updates.put("eventName", eventName);
+            updates.put("posterUrl", posterUrl);
+            updates.put("eventDate", dateStr);
+            updates.put("eventLocation", location);
+            updates.put("acceptedAt", FieldValue.serverTimestamp());
 
             db.collection("users").document(userId)
-                    .collection("notifications").document(n.getId())
-                    .update(notificationUpdates)
+                    .collection("event_participations").document(n.getEventId())
+                    .set(updates, SetOptions.merge())
                     .addOnSuccessListener(aVoid -> {
-                        Log.d("ACCEPT_DEBUG", "✅ Notification updated successfully");
                         n.setAccepted(true);
-                        n.setDeclined(false);
                         notifyItemChanged(holder.getAdapterPosition());
-                    })
-                    .addOnFailureListener(e -> {
-                        Log.e("ACCEPT_DEBUG", "❌ Failed to update notification: " + e.getMessage());
-                        Toast.makeText(holder.itemView.getContext(), "Failed to accept: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        getUserNameAndSendNotification(n.getEventId(), eventName, userId, "ACCEPTED");
                     });
-        }
 
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("status", "ACCEPTED");
-        updates.put("acceptedAt", FieldValue.serverTimestamp());
-
-        db.collection("users").document(userId)
-                .collection("event_participations").document(n.getEventId())
-                .set(updates, SetOptions.merge())
-                .addOnSuccessListener(aVoid -> {
-                    Log.d("ACCEPT_DEBUG", "✅ Event participation updated to ACCEPTED");
-                    // Get user name and send organizer notification
-                    getUserNameAndSendNotification(n.getEventId(), n.getEventName(), userId, "ACCEPTED");
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("ACCEPT_DEBUG", "❌ Failed to update event participation: " + e.getMessage());
-                });
-
-        Toast.makeText(holder.itemView.getContext(), "You've accepted the invitation! 🎉", Toast.LENGTH_LONG).show();
+            Toast.makeText(holder.itemView.getContext(), "You've accepted the invitation! 🎉", Toast.LENGTH_LONG).show();
+        });
     }
 
     private void handleDefaultDecline(Notification n, String userId, DefaultViewHolder holder) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        Log.d("DECLINE_DEBUG", "=== DECLINE BUTTON CLICKED ===");
-        Log.d("DECLINE_DEBUG", "Notification ID: " + n.getId());
-        Log.d("DECLINE_DEBUG", "User ID (Firebase Auth): " + userId);
-
         if (n.getId() != null) {
             Map<String, Object> notificationUpdates = new HashMap<>();
-            notificationUpdates.put("accepted", false);
             notificationUpdates.put("declined", true);
             notificationUpdates.put("read", true);
-
-            db.collection("users").document(userId)
-                    .collection("notifications").document(n.getId())
-                    .update(notificationUpdates)
-                    .addOnSuccessListener(aVoid -> {
-                        Log.d("DECLINE_DEBUG", "✅ Notification updated to declined");
-                        n.setDeclined(true);
-                        n.setAccepted(false);
-                        notifyItemChanged(holder.getAdapterPosition());
-                    })
-                    .addOnFailureListener(e -> {
-                        Log.e("DECLINE_DEBUG", "❌ Failed to update notification: " + e.getMessage());
-                        Toast.makeText(holder.itemView.getContext(), "Failed to decline: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
+            db.collection("users").document(userId).collection("notifications").document(n.getId()).update(notificationUpdates);
         }
 
         db.collection("users").document(userId)
@@ -276,17 +294,11 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
                 .update("status", "DECLINED", "declinedAt", FieldValue.serverTimestamp());
 
         db.collection("events").document(n.getEventId())
-                .update(
-                        "selectedEntrants", FieldValue.arrayRemove(userId),
-                        "rejectedEntrants", FieldValue.arrayUnion(userId)
-                )
+                .update("selectedEntrants", FieldValue.arrayRemove(userId), "rejectedEntrants", FieldValue.arrayUnion(userId))
                 .addOnSuccessListener(aVoid -> {
-                    Log.d("DECLINE_DEBUG", "✅ User moved from selectedEntrants to rejectedEntrants");
-                    // Get user name and send organizer notification
+                    n.setDeclined(true);
+                    notifyItemChanged(holder.getAdapterPosition());
                     getUserNameAndSendNotification(n.getEventId(), n.getEventName(), userId, "DECLINED");
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("DECLINE_DEBUG", "❌ Failed to update event: " + e.getMessage());
                 });
 
         Toast.makeText(holder.itemView.getContext(), "You've declined the invitation.", Toast.LENGTH_SHORT).show();
@@ -294,203 +306,102 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     private void handleTryAgain(Notification n, String userId, DefaultViewHolder holder) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
         markNotificationAsHandled(n, userId, true);
-
-        // Move from rejectedEntrants to waitingList
         db.collection("events").document(n.getEventId())
-                .update(
-                        "waitingList", FieldValue.arrayUnion(userId),
-                        "rejectedEntrants", FieldValue.arrayRemove(userId)
-                )
+                .update("waitingList", FieldValue.arrayUnion(userId), "rejectedEntrants", FieldValue.arrayRemove(userId))
                 .addOnSuccessListener(aVoid -> {
-                    db.collection("users").document(userId)
-                            .collection("event_participations").document(n.getEventId())
-                            .update("status", "Waiting")
-                            .addOnSuccessListener(unused -> {
-                                Log.d("NotificationsAdapter", "User added back to waiting list");
-                                Toast.makeText(holder.itemView.getContext(),
-                                        "You've been added back to the waiting list!",
-                                        Toast.LENGTH_LONG).show();
-                                // Get user name and send organizer notification
-                                getUserNameAndSendNotification(n.getEventId(), n.getEventName(), userId, "TRY_AGAIN");
-                            });
-
+                    db.collection("users").document(userId).collection("event_participations").document(n.getEventId()).update("status", "Waiting");
                     n.setAccepted(true);
                     notifyItemChanged(holder.getAdapterPosition());
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(holder.itemView.getContext(),
-                            "Failed to add back to waiting list: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
+                    getUserNameAndSendNotification(n.getEventId(), n.getEventName(), userId, "TRY_AGAIN");
                 });
     }
 
     private void getUserNameAndSendNotification(String eventId, String eventName, String userId, String action) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("users").document(userId).get()
-                .addOnSuccessListener(userDoc -> {
-                    String userName = userId;
-                    if (userDoc.exists()) {
-                        String firstName = userDoc.getString("firstName");
-                        String lastName = userDoc.getString("lastName");
-                        if (firstName != null && !firstName.isEmpty()) {
-                            userName = firstName;
-                            if (lastName != null && !lastName.isEmpty()) {
-                                userName = firstName + " " + lastName;
-                            }
-                        }
-                    }
-                    sendOrganizerNotification(eventId, eventName, userId, userName, action);
-                });
+        db.collection("users").document(userId).get().addOnSuccessListener(userDoc -> {
+            String firstName = userDoc.getString("firstName");
+            String lastName = userDoc.getString("lastName");
+            String userName = (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
+            sendOrganizerNotification(eventId, eventName, userId, userName.trim(), action);
+        });
     }
 
     private void sendOrganizerNotification(String eventId, String eventName, String userId, String userName, String action) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("events").document(eventId).get()
-                .addOnSuccessListener(eventDoc -> {
-                    String organizerId = eventDoc.getString("organizerId");
-                    if (organizerId == null || organizerId.isEmpty()) return;
-
-                    Map<String, Object> notification = new HashMap<>();
-                    String title = "";
-                    String message = "";
-                    String type = "";
-
-                    switch (action) {
-                        case "ACCEPTED":
-                            title = "Invitation Accepted ✅";
-                            message = userName + " accepted the invitation and will be joining " + eventName;
-                            type = "ENTRANT_ACCEPTED";
-                            break;
-                        case "DECLINED":
-                            title = "Invitation Declined ❌";
-                            message = userName + " declined the invitation and will not be joining " + eventName;
-                            type = "ENTRANT_DECLINED";
-                            break;
-                        case "TRY_AGAIN":
-                            title = "Rejoined Waiting List 🔄";
-                            message = userName + " lost the lottery and rejoined the waiting list for " + eventName;
-                            type = "ENTRANT_TRY_AGAIN";
-                            break;
-                    }
-
-                    notification.put("title", title);
-                    notification.put("message", message);
-                    notification.put("type", type);
-                    notification.put("eventId", eventId);
-                    notification.put("eventName", eventName);
-                    notification.put("userId", userId);
-                    notification.put("userName", userName);
-                    notification.put("timestamp", Timestamp.now());
-                    notification.put("isRead", false);
-
-                    db.collection("users").document(organizerId)
-                            .collection("organizer_notifications")
-                            .add(notification);
-                });
+        db.collection("events").document(eventId).get().addOnSuccessListener(eventDoc -> {
+            String organizerId = eventDoc.getString("organizerId");
+            if (organizerId == null) return;
+            Map<String, Object> n = new HashMap<>();
+            n.put("userId", userId);
+            n.put("userName", userName);
+            n.put("eventId", eventId);
+            n.put("eventName", eventName);
+            n.put("timestamp", Timestamp.now());
+            n.put("isRead", false);
+            if ("ACCEPTED".equals(action)) { n.put("title", "Invitation Accepted ✅"); n.put("type", "ENTRANT_ACCEPTED"); }
+            else if ("DECLINED".equals(action)) { n.put("title", "Invitation Declined ❌"); n.put("type", "ENTRANT_DECLINED"); }
+            else { n.put("title", "Rejoined Waiting List 🔄"); n.put("type", "ENTRANT_TRY_AGAIN"); }
+            db.collection("users").document(organizerId).collection("organizer_notifications").add(n);
+        });
     }
 
     private void sendOrganizerNotificationForCoOrganizer(String eventId, String eventName, String userId, String action) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        db.collection("events").document(eventId).get()
-                .addOnSuccessListener(eventDoc -> {
-                    String organizerId = eventDoc.getString("organizerId");
-                    if (organizerId == null || organizerId.isEmpty()) return;
-
-                    db.collection("users").document(userId).get()
-                            .addOnSuccessListener(userDoc -> {
-                                String userName = userId;
-                                if (userDoc.exists()) {
-                                    String firstName = userDoc.getString("firstName");
-                                    String lastName = userDoc.getString("lastName");
-                                    if (firstName != null && !firstName.isEmpty()) {
-                                        userName = firstName;
-                                        if (lastName != null && !lastName.isEmpty()) {
-                                            userName = firstName + " " + lastName;
-                                        }
-                                    }
-                                }
-
-                                Map<String, Object> notification = new HashMap<>();
-                                String title = "";
-                                String message = "";
-                                String type = "";
-
-                                if ("ACCEPTED".equals(action)) {
-                                    title = "Co-organizer Accepted ✅";
-                                    message = userName + " accepted the co-organizer invitation and will help manage " + eventName;
-                                    type = "CO_ORGANIZER_ACCEPTED";
-                                } else {
-                                    title = "Co-organizer Declined ❌";
-                                    message = userName + " declined the co-organizer invitation for " + eventName;
-                                    type = "CO_ORGANIZER_DECLINED";
-                                }
-
-                                notification.put("title", title);
-                                notification.put("message", message);
-                                notification.put("type", type);
-                                notification.put("eventId", eventId);
-                                notification.put("eventName", eventName);
-                                notification.put("userId", userId);
-                                notification.put("userName", userName);
-                                notification.put("timestamp", Timestamp.now());
-                                notification.put("isRead", false);
-
-                                db.collection("users").document(organizerId)
-                                        .collection("organizer_notifications")
-                                        .add(notification);
-                            });
-                });
+        db.collection("events").document(eventId).get().addOnSuccessListener(eventDoc -> {
+            String organizerId = eventDoc.getString("organizerId");
+            if (organizerId == null) return;
+            db.collection("users").document(userId).get().addOnSuccessListener(userDoc -> {
+                String firstName = userDoc.getString("firstName");
+                String lastName = userDoc.getString("lastName");
+                String userName = (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
+                Map<String, Object> n = new HashMap<>();
+                n.put("eventId", eventId);
+                n.put("eventName", eventName);
+                n.put("userId", userId);
+                n.put("userName", userName.trim());
+                n.put("timestamp", Timestamp.now());
+                n.put("isRead", false);
+                if ("ACCEPTED".equals(action)) { n.put("title", "Co-organizer Accepted ✅"); n.put("type", "CO_ORGANIZER_ACCEPTED"); }
+                else { n.put("title", "Co-organizer Declined ❌"); n.put("type", "CO_ORGANIZER_DECLINED"); }
+                db.collection("users").document(organizerId).collection("organizer_notifications").add(n);
+            });
+        });
     }
 
     private void markNotificationAsHandled(Notification notification, String userId, boolean accepted) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
         if (notification.getId() != null) {
             Map<String, Object> updates = new HashMap<>();
             updates.put("read", true);
             updates.put("accepted", accepted);
             updates.put("declined", !accepted);
-
-            db.collection("users").document(userId)
-                    .collection("notifications").document(notification.getId())
-                    .update(updates);
+            FirebaseFirestore.getInstance().collection("users").document(userId).collection("notifications").document(notification.getId()).update(updates);
         }
     }
 
     private void markNotificationAsRead(Notification notification, String userId) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
         if (notification.getId() != null) {
-            db.collection("users").document(userId)
-                    .collection("notifications").document(notification.getId())
-                    .update("read", true);
+            FirebaseFirestore.getInstance().collection("users").document(userId).collection("notifications").document(notification.getId()).update("read", true);
         }
     }
 
     private String getTimeAgo(Timestamp timestamp) {
+        if (timestamp == null) return "";
         long diff = System.currentTimeMillis() - timestamp.toDate().getTime();
         long minutes = TimeUnit.MILLISECONDS.toMinutes(diff);
-        long hours = TimeUnit.MILLISECONDS.toHours(diff);
-        long days = TimeUnit.MILLISECONDS.toDays(diff);
-
         if (minutes < 1) return "Just now";
         if (minutes < 60) return minutes + " min ago";
-        if (hours < 24) return hours + " hr ago";
-        return days + " days ago";
+        if (minutes < 1440) return (minutes / 60) + " hr ago";
+        return (minutes / 1440) + " days ago";
     }
 
-    @Override
-    public int getItemCount() {
-        return notifications.size();
-    }
+    @Override public int getItemCount() { return notifications.size(); }
 
     static class DefaultViewHolder extends RecyclerView.ViewHolder {
         TextView message, details, time;
         ImageView ivIcon;
         View unreadDot, actionsContainer;
         Button acceptButton, declineButton;
-
         DefaultViewHolder(View v) {
             super(v);
             message = v.findViewById(R.id.messageTextView);
@@ -509,7 +420,6 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
         TextView eventName, statusBadge, invitationText;
         MaterialButton btnAccept, btnDecline;
         View actionsContainer;
-
         CoOrganizerViewHolder(View v) {
             super(v);
             eventImage = v.findViewById(R.id.iv_event_image);

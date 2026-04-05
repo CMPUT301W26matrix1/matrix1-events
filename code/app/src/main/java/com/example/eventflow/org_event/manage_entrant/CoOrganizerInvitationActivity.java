@@ -52,25 +52,46 @@ public class CoOrganizerInvitationActivity extends AppCompatActivity {
 
     private void respondToInvitation(boolean accept) {
         if (accept) {
-            // Add user as co-organizer to the event
+            // Fetch user's email first
+            db.collection("users").document(userId).get().addOnSuccessListener(userDoc -> {
+                String userEmail = userDoc.getString("email");
+                
+                Map<String, Object> eventUpdates = new HashMap<>();
+                eventUpdates.put("coOrganizerIds", FieldValue.arrayUnion(userId));
+                if (userEmail != null) {
+                    eventUpdates.put("coOrganizerEmail", userEmail);
+                }
+
+                // Add user as co-organizer to the event
+                db.collection("events").document(eventId)
+                        .update(eventUpdates)
+                        .addOnSuccessListener(aVoid -> {
+                            Toast.makeText(this, "You are now a co-organizer!", Toast.LENGTH_SHORT).show();
+                            updateNotificationStatus(true);
+
+                            // US 02.09.01 — Save to user's history with CO-ORGANIZER status
+                            saveUserAsCoOrganizer();
+
+                            finish();
+                        })
+                        .addOnFailureListener(e -> {
+                            Toast.makeText(this, "Failed to accept: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        });
+            });
+        } else {
+            // DECLINE LOGIC: Remove email from event document so organizer can add someone else
+            Map<String, Object> eventUpdates = new HashMap<>();
+            eventUpdates.put("coOrganizerIds", FieldValue.arrayRemove(userId));
+            eventUpdates.put("coOrganizerEmail", ""); // Clear email field
+
             db.collection("events").document(eventId)
-                    .update("coOrganizerIds", FieldValue.arrayUnion(userId))
+                    .update(eventUpdates)
                     .addOnSuccessListener(aVoid -> {
-                        Toast.makeText(this, "You are now a co-organizer!", Toast.LENGTH_SHORT).show();
-                        updateNotificationStatus(true);
-
-                        // Also save to user's event_participations with role
-                        saveUserAsCoOrganizer();
-
+                        Toast.makeText(this, "You declined the invitation", Toast.LENGTH_SHORT).show();
+                        updateNotificationStatus(false);
                         finish();
                     })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Failed to accept: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
-        } else {
-            Toast.makeText(this, "You declined the invitation", Toast.LENGTH_SHORT).show();
-            updateNotificationStatus(false);
-            finish();
+                    .addOnFailureListener(e -> finish());
         }
     }
 
@@ -78,13 +99,14 @@ public class CoOrganizerInvitationActivity extends AppCompatActivity {
         Map<String, Object> participation = new HashMap<>();
         participation.put("eventId", eventId);
         participation.put("eventName", eventName);
+        participation.put("status", "Co-organizer"); // ENSURE STATUS IS CORRECT
         participation.put("role", "co-organizer");
         participation.put("joinedAt", Timestamp.now());
 
         db.collection("users").document(userId)
                 .collection("event_participations")
                 .document(eventId)
-                .set(participation)
+                .set(participation, com.google.firebase.firestore.SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
                     Log.d("CoOrganizer", "Saved co-organizer role to user's participations");
                 });
