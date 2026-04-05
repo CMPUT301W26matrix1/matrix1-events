@@ -7,7 +7,10 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -38,6 +41,8 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
     private Marker selectedMarker;
     private Circle radiusCircle;
     private Button btnConfirm;
+    private EditText etSearch;
+    private ImageButton btnSearch;
     private int radiusMeters = 500;
     private FusedLocationProviderClient fusedLocationClient;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
@@ -48,6 +53,8 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
         setContentView(R.layout.activity_location_picker);
 
         btnConfirm = findViewById(R.id.btnConfirmLocation);
+        etSearch = findViewById(R.id.et_map_search);
+        btnSearch = findViewById(R.id.btn_map_search);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -71,6 +78,53 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
                 Toast.makeText(this, "Please select a location on the map", Toast.LENGTH_SHORT).show();
             }
         });
+
+        btnSearch.setOnClickListener(v -> searchLocation());
+
+        etSearch.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                searchLocation();
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void searchLocation() {
+        String locationName = etSearch.getText().toString().trim();
+        if (locationName.isEmpty()) return;
+
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        try {
+            List<Address> addresses = geocoder.getFromLocationName(locationName, 1);
+            if (addresses != null && !addresses.isEmpty()) {
+                Address address = addresses.get(0);
+                LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
+
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
+                updateMarkerAtLocation(latLng);
+            } else {
+                Toast.makeText(this, "Location not found", Toast.LENGTH_SHORT).show();
+            }
+        } catch (IOException e) {
+            Log.e("LocationPicker", "Search error", e);
+            Toast.makeText(this, "Search failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void updateMarkerAtLocation(LatLng latLng) {
+        selectedLocation = latLng;
+        if (selectedMarker != null) {
+            selectedMarker.remove();
+        }
+
+        String title = getAddressFromLatLng(latLng);
+        selectedMarker = mMap.addMarker(new MarkerOptions()
+                .position(latLng)
+                .title(title)
+                .draggable(true));
+        selectedMarker.showInfoWindow();
+        updateRadiusCircle();
     }
 
     private String getAddressFromLatLng(LatLng latLng) {
@@ -80,12 +134,10 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
             if (addresses != null && !addresses.isEmpty()) {
                 Address address = addresses.get(0);
                 
-                // Try to get a specific name (like a museum or building) first
                 String featureName = address.getFeatureName();
                 String addressLine = address.getAddressLine(0);
                 
                 if (featureName != null && !featureName.isEmpty()) {
-                    // If feature name is just coordinates or street number, prefer address line
                     if (Character.isDigit(featureName.charAt(0)) || featureName.contains("-")) {
                         return addressLine;
                     }
@@ -107,26 +159,10 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
 
         checkLocationPermission();
 
-        // Default location (Edmonton) if permission not granted
         LatLng defaultLocation = new LatLng(53.5461, -113.4938);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 12));
 
-        mMap.setOnMapClickListener(latLng -> {
-            selectedLocation = latLng;
-
-            if (selectedMarker != null) {
-                selectedMarker.remove();
-            }
-
-            String title = getAddressFromLatLng(latLng);
-            selectedMarker = mMap.addMarker(new MarkerOptions()
-                    .position(latLng)
-                    .title(title)
-                    .draggable(true));
-            selectedMarker.showInfoWindow();
-
-            updateRadiusCircle();
-        });
+        mMap.setOnMapClickListener(latLng -> updateMarkerAtLocation(latLng));
 
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
