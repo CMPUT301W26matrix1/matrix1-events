@@ -35,8 +35,10 @@ import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class EntrantDashboardActivity extends AppCompatActivity {
 
@@ -101,8 +103,8 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         if (eventId != null && !eventId.isEmpty() && lotteryController != null) {
             lotteryController.checkAndAutoRejectExpiredSelections(eventId);
         }
-        // Refresh events list when returning to dashboard
-        loadMyEvents();
+        // REMOVED: loadMyEvents() from here to prevent duplicate loading
+        // The events list will refresh when user clicks dashboard or selects an event
     }
 
     private void initViews() {
@@ -385,6 +387,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         tvEnrolledSubtitle.setText("0 confirmed attendees");
     }
 
+    // FIXED: Prevents duplicate events by using Set to track event IDs
     private void loadMyEvents() {
         if (userId == null || userId.isEmpty()) {
             SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
@@ -402,6 +405,9 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         // Clear existing events
         myEvents.clear();
 
+        // Use a Set to track unique event IDs and prevent duplicates
+        Set<String> eventIdSet = new HashSet<>();
+
         // First, load events where user is the organizer
         db.collection("events")
                 .whereEqualTo("organizerId", userId)
@@ -410,7 +416,8 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                     for (var doc : organizerEvents) {
                         try {
                             Event event = doc.toObject(Event.class);
-                            if (event != null) {
+                            if (event != null && !eventIdSet.contains(doc.getId())) {
+                                eventIdSet.add(doc.getId());
                                 event.setEventId(doc.getId());
                                 event.setUserRole("organizer");
                                 myEvents.add(event);
@@ -427,19 +434,12 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                             .get()
                             .addOnSuccessListener(coOrganizerEvents -> {
                                 for (var doc : coOrganizerEvents) {
-                                    // Check if already added
-                                    boolean exists = false;
-                                    for (Event e : myEvents) {
-                                        if (e.getEventId().equals(doc.getId())) {
-                                            exists = true;
-                                            break;
-                                        }
-                                    }
-
-                                    if (!exists) {
+                                    // Check if already added using Set
+                                    if (!eventIdSet.contains(doc.getId())) {
                                         try {
                                             Event event = doc.toObject(Event.class);
                                             if (event != null) {
+                                                eventIdSet.add(doc.getId());
                                                 event.setEventId(doc.getId());
                                                 event.setUserRole("co-organizer");
                                                 myEvents.add(event);

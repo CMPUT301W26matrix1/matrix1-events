@@ -46,7 +46,7 @@ public class OrgEventActivity extends AppCompatActivity {
     private static final int PICK_IMAGE_REQUEST    = 1;
     private static final int PICK_LOCATION_REQUEST = 2;
 
-    private EditText etName, etLocation, etDate, etTime, etDescription, etLimit, etRegStart, etRegEnd, etCoOrganizerEmail;
+    private EditText etName, etCategory, etLocation, etDate, etTime, etDescription, etLimit, etRegStart, etRegEnd, etCoOrganizerEmail;
     private SwitchCompat switchGeo, switchPrivate;
     private ImageView ivEventPoster;
     private View btnBack, cvUploadImage;
@@ -90,6 +90,7 @@ public class OrgEventActivity extends AppCompatActivity {
 
     private void initViews() {
         etName        = findViewById(R.id.et_event_name);
+        etCategory    = findViewById(R.id.et_event_category);
         etLocation    = findViewById(R.id.et_event_location);
         etDate        = findViewById(R.id.et_event_date);
         etTime        = findViewById(R.id.et_event_time);
@@ -232,7 +233,7 @@ public class OrgEventActivity extends AppCompatActivity {
             pickedLat = data.getDoubleExtra("latitude", 0);
             pickedLng = data.getDoubleExtra("longitude", 0);
             pickedRadius = data.getIntExtra("radius", 500);
-            
+
             String address = data.getStringExtra("address");
             if (address != null && !address.isEmpty()) {
                 etLocation.setText(address);
@@ -362,6 +363,7 @@ public class OrgEventActivity extends AppCompatActivity {
         eventMap.put("eventId", eventId);
         eventMap.put("organizerId", userId);
         eventMap.put("name", eventNameStr);
+        eventMap.put("category", etCategory.getText().toString().trim());  // ← ADDED CATEGORY
         eventMap.put("location", etLocation.getText().toString());
         eventMap.put("description", etDescription.getText().toString());
 
@@ -441,6 +443,7 @@ public class OrgEventActivity extends AppCompatActivity {
         db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
             if (doc.exists()) {
                 etName.setText(doc.getString("name"));
+                etCategory.setText(doc.getString("category"));  // ← ADDED CATEGORY LOAD
                 etLocation.setText(doc.getString("location"));
                 etDate.setText(doc.getString("date"));
                 etTime.setText(doc.getString("time"));
