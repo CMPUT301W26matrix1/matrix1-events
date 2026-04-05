@@ -2,6 +2,7 @@ package com.example.eventflow;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -111,9 +112,14 @@ public class AdminProfileAdapter extends BaseAdapter {
         }
 
         if (imageUrl != null && !imageUrl.isEmpty()) {
+            Log.d("AdminProfileAdapter", "Loading image: " + imageUrl + " for " + name);
             profilePic.setVisibility(View.VISIBLE);
             tvAvatarInitial.setVisibility(View.GONE);
-            Picasso.get().load(imageUrl).into(profilePic);
+            Picasso.get()
+                .load(imageUrl)
+                .placeholder(R.drawable.ic_profile_placeholder) // Use a placeholder while loading
+                .error(R.drawable.ic_profile_placeholder) // Show placeholder on error
+                .into(profilePic);
         } else {
             profilePic.setVisibility(View.GONE);
             tvAvatarInitial.setVisibility(View.VISIBLE);
