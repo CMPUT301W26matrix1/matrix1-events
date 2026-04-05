@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Purpose: Layout for the Event Management screen. It includes a search bar,
+  navigation tabs for switching between Users/Images, and a RecyclerView
+  to display the list of all events.
+
+  Design Pattern: ConstraintLayout based list screen with a sticky bottom navigation.
+
+  Issues: The BottomNavigationView uses a different menu resource (bottom_nav_menu)
+  than the Dashboard (admin_bottom_nav), which might cause slight navigation
+  inconsistencies.
+-->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"

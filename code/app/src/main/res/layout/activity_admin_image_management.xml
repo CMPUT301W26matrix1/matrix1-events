@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Purpose: Layout for the Image Management screen. It uses a GridView to show
+  all event posters in a neat gallery format so admins can easily spot
+  inappropriate content.
+
+  Design Pattern: Grid-View pattern for visual content browsing.
+
+  Issues: The title text is manually set in the Activity, which could lead to
+  inconsistencies if the same layout is reused elsewhere.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -27,7 +37,7 @@
             android:id="@+id/tv_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Manage Events"
+            android:text="Manage Images"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"

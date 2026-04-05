@@ -23,8 +23,14 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Admin activity to view all notification logs.
- * US 03.08.01 - Administrators can review all notification logs
+ * Purpose: This activity lets admins look at the history of all notifications 
+ * sent through the system. It's a "paper trail" for tracking lottery results 
+ * and organizer announcements.
+ * 
+ * Design Pattern: Standard List-View pattern with a search/filter bar for logs.
+ * 
+ * Issues: The logs are fetched from a global "notifications" collection; 
+ * if this collection gets very large, loading might become slow.
  */
 public class AdminNotificationLogsActivity extends AppCompatActivity {
 
@@ -62,8 +68,7 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
         // Search functionality
         if (searchBar != null) {
             searchBar.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -86,7 +91,6 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
 
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         try {
-                            // Get fields from the notification document
                             String userId = doc.getString("userId");
                             String eventName = doc.getString("eventName");
                             String message = doc.getString("message");
@@ -96,10 +100,6 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
                             Object timestampObj = doc.get("timestamp");
                             String timestamp = formatTimestamp(timestampObj);
 
-                            // System notifications (LotteryController) use 'message' as title 
-                            // and 'details' as message body.
-                            // Organizer broadcasts use 'title' and 'message'.
-                            
                             String displayTitle = title;
                             String displayMessage = message;
 
@@ -170,7 +170,10 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
         return "Unknown date";
     }
 
-    // Inner class for notification log data
+    /**
+     * Purpose: A simple data structure to hold notification log details 
+     * so they can be easily displayed in a list.
+     */
     public static class NotificationLog {
         public String userId;
         public String userName;
@@ -180,6 +183,9 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
         public String type;
         public String timestamp;
 
+        /**
+         * Constructor to create a new log entry.
+         */
         public NotificationLog(String userId, String userName, String eventName,
                                String message, String title, String type, String timestamp) {
             this.userId = userId;
