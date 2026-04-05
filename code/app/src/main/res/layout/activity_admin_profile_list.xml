@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Purpose: Layout for the User Management screen. Shows a list of all registered
+  users with options to search by name and filter by role (Entrant, Organizer, Admin).
+
+  Design Pattern: Filterable List-View pattern.
+
+  Issues: The filter tabs are simple TextViews; using a TabLayout or ChipGroup
+  might provide a more standard Material Design experience.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
