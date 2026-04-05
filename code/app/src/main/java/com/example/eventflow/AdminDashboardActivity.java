@@ -12,7 +12,15 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 /**
- * AdminDashboardActivity - Central hub for administrative tasks.
+ * Purpose: This is the main control center for Administrators. It gives a quick 
+ * overview of the system's stats and provides shortcuts to manage events, users, 
+ * images, and logs.
+ * 
+ * Design Pattern: Uses the Dashboard pattern to organize multiple entry points 
+ * into specialized management activities.
+ * 
+ * Issues: Stats are currently fetched once on creation and don't update in real-time
+ * without a refresh or activity restart.
  */
 public class AdminDashboardActivity extends AppCompatActivity {
 
