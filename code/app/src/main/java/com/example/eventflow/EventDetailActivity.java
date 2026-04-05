@@ -61,7 +61,8 @@ public class EventDetailActivity extends AppCompatActivity {
     private com.google.android.material.button.MaterialButton btnJoinNow;
 
     // UI components
-    private TextView tvName, tvLocation, tvDate, tvTime, tvSpots, tvTotalSpots, tvRegPeriod, tvDescription, tvCommentsHeader;
+    private TextView tvName, tvLocation, tvDate, tvTime, tvSpots, tvTotalSpots, tvRegPeriod, tvDescription, tvCommentsHeader, tvCategory;
+    private View llCategoryRow;
     private ImageView ivPoster;
     private EditText etCommentInput;
     private ImageButton btnPostComment, btnEditEvent, btnViewQR;
@@ -130,6 +131,8 @@ public class EventDetailActivity extends AppCompatActivity {
     private void initUI() {
         tvName = findViewById(R.id.tv_detail_name);
         tvLocation = findViewById(R.id.tv_event_location);
+        tvCategory = findViewById(R.id.tv_detail_category);
+        llCategoryRow = findViewById(R.id.ll_category_row);
         tvDate = findViewById(R.id.tv_detail_date);
         tvTime = findViewById(R.id.tv_detail_time);
         tvSpots = findViewById(R.id.tv_detail_spots);
@@ -265,6 +268,17 @@ public class EventDetailActivity extends AppCompatActivity {
         tvLocation.setText(e.getLocation());
         tvDescription.setText(e.getDescription());
 
+        // Display category row
+        if (llCategoryRow != null && tvCategory != null) {
+            String cat = e.getCategory();
+            if (cat != null && !cat.isEmpty()) {
+                tvCategory.setText(cat);
+                llCategoryRow.setVisibility(View.VISIBLE);
+            } else {
+                llCategoryRow.setVisibility(View.GONE);
+            }
+        }
+
         if (e.getEventDate() != null) {
             SimpleDateFormat df = new SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault());
             SimpleDateFormat tf = new SimpleDateFormat("'at' HH:mm", Locale.getDefault());
@@ -272,7 +286,7 @@ public class EventDetailActivity extends AppCompatActivity {
             tvTime.setText(tf.format(e.getEventDate().toDate()));
         }
 
-        // FIXED: Spots available = capacity - selectedEntrants (confirmed attendees)
+        // Spots available = capacity - selectedEntrants (confirmed attendees)
         int selectedCount = e.getSelectedEntrants() != null ? e.getSelectedEntrants().size() : 0;
         int spotsAvailable = Math.max(0, e.getCapacity() - selectedCount);
         tvSpots.setText(spotsAvailable + " spots available");

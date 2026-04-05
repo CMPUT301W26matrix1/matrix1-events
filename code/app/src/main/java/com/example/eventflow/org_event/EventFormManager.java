@@ -15,6 +15,7 @@ public class EventFormManager {
     public static Event validateAndCreateEvent(
             Context context,
             EditText etName,
+            EditText etCategory,
             EditText etLocation,
             EditText etDate,
             EditText etDescription,
@@ -26,6 +27,7 @@ public class EventFormManager {
             String posterUrl) {
 
         String name = etName.getText().toString().trim();
+        String category = etCategory != null ? etCategory.getText().toString().trim() : "";
         String location = etLocation.getText().toString().trim();
         String date = etDate.getText().toString().trim();
         String description = etDescription.getText().toString().trim();
@@ -60,7 +62,7 @@ public class EventFormManager {
         boolean isPrivate = cbPrivate != null && cbPrivate.isChecked();
         String newEventId = UUID.randomUUID().toString();
 
-        return new Event(newEventId, name, location, date, description, limitValue, isPrivate, regStart, regEnd, posterUrl);
+        return new Event(newEventId, name, location, date, description, limitValue, isPrivate, regStart, regEnd, posterUrl, category);
     }
 
     /**
@@ -73,21 +75,22 @@ public class EventFormManager {
     }
 
     /**
-     * Overload for 8 arguments (with private checkbox)
+     * Overload for 9 arguments (with category)
      */
     public static Event validateAndCreateEvent(
             Context context,
             EditText etName,
+            EditText etCategory,
             EditText etLocation,
             EditText etDate,
             EditText etDescription,
             CheckBox cbLimit,
             EditText etLimit,
             CheckBox cbPrivate) {
-        return validateAndCreateEvent(context, etName, etLocation, etDate, etDescription, cbLimit, etLimit, cbPrivate, null, null, null);
+        return validateAndCreateEvent(context, etName, etCategory, etLocation, etDate, etDescription, cbLimit, etLimit, cbPrivate, null, null, null);
     }
 
-    // Overload for backward compatibility (7 arguments)
+    // Overload for backward compatibility
     public static Event validateAndCreateEvent(
             Context context,
             EditText etName,
@@ -96,6 +99,6 @@ public class EventFormManager {
             EditText etDescription,
             CheckBox cbLimit,
             EditText etLimit) {
-        return validateAndCreateEvent(context, etName, etLocation, etDate, etDescription, cbLimit, etLimit, null, null, null, null);
+        return validateAndCreateEvent(context, etName, null, etLocation, etDate, etDescription, cbLimit, etLimit, null, null, null, null);
     }
 }
