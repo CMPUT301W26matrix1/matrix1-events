@@ -16,6 +16,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -134,7 +138,23 @@ public class LoginActivity extends AppCompatActivity {
                 .setPositiveButton("Login", (dialog, which) -> {
                     String entered = etAdminPass.getText().toString().trim();
                     if (ADMIN_PASSWORD.equals(entered)) {
-                        saveLoginState("admin@eventflow.com", "Admin", "", true);
+                        // 1. Save local login state
+                        saveLoginState("admin@eventflow.com", "Admin", "admin_global_id", true);
+                        
+                        // 2. Persist Admin Profile to Firestore so it shows up in Manage Users
+                        Map<String, Object> adminProfile = new HashMap<>();
+                        adminProfile.put("firstName", "Admin");
+                        adminProfile.put("lastName", "User");
+                        adminProfile.put("email", "admin@eventflow.com");
+                        adminProfile.put("role", "admin");
+                        adminProfile.put("userId", "admin_global_id");
+
+                        db.collection("profiles").document("admin_global_id")
+                                .set(adminProfile, SetOptions.merge());
+                        
+                        db.collection("users").document("admin_global_id")
+                                .set(adminProfile, SetOptions.merge());
+
                         Toast.makeText(this, "Welcome, Admin!", Toast.LENGTH_SHORT).show();
                         startActivity(new Intent(this, AdminDashboardActivity.class));
                         finish();
