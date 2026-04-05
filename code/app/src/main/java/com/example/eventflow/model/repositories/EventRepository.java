@@ -10,19 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Repository abstraction over the Firestore {@code events} collection.
- *
- * <p>Provides CRUD-style operations used by controllers to load events
- * and to join or leave waiting lists without exposing Firestore details
- * to the UI layer.</p>
- *
- * <p><b>Outstanding issues:</b>
- * <ul>
- *   <li>No real-time listeners; only one-shot fetch of events.</li>
- *   <li>No transaction or server-side validation around capacity rules.</li>
- *   <li>Error handling is callback-only; no centralized logging.</li>
- * </ul>
- * </p>
+ * Repository class providing an abstraction over the Firestore 'events' collection.
+ * It handles all CRUD operations and real-time updates for events.
+ * This class follows the Repository design pattern to decouple data access from business logic.
  */
 public class EventRepository {
 
@@ -30,63 +20,58 @@ public class EventRepository {
     private final FirebaseFirestore db;
 
     /**
-     * Creates a repository backed by the default {@link FirebaseFirestore}
-     * instance.
+     * Initializes the repository with the default FirebaseFirestore instance.
      */
     public EventRepository() {
         db = FirebaseFirestore.getInstance();
     }
 
     /**
-     * Callback used when loading a collection of {@link Event} instances.
+     * Callback interface for loading a list of events.
      */
     public interface EventListCallback {
         /**
-         * Invoked when events have been loaded successfully.
-         *
-         * @param events list of loaded events (possibly empty, never {@code null})
+         * Invoked when events are successfully loaded.
+         * @param events The list of loaded events.
          */
         void onSuccess(List<Event> events);
 
         /**
          * Invoked when loading events fails.
-         *
-         * @param e underlying exception from Firestore
+         * @param e The exception that occurred.
          */
         void onFailure(Exception e);
     }
 
     /**
-     * Callback used when loading a single {@link Event}.
+     * Callback interface for loading a single event.
      */
     public interface EventCallback {
+        /**
+         * Invoked when the event is successfully loaded.
+         * @param event The loaded event object.
+         */
         void onSuccess(Event event);
+        /**
+         * Invoked when loading the event fails.
+         * @param e The exception that occurred.
+         */
         void onFailure(Exception e);
     }
 
     /**
-     * Callback for simple success/failure actions (join/leave).
+     * Callback interface for simple success/failure actions.
      */
     public interface ActionCallback {
-        /**
-         * Called when the operation completes successfully.
-         */
+        /** Invoked on successful operation. */
         void onSuccess();
-
-        /**
-         * Called when the operation fails.
-         *
-         * @param e underlying exception from Firestore
-         */
+        /** Invoked on operation failure. @param e The exception. */
         void onFailure(Exception e);
     }
 
     /**
-     * Fetches all events from the {@code events} collection.
-     *
-     * <p>User story: US 01.01.03 — Get all events.</p>
-     *
-     * @param callback callback to receive the result or an error
+     * Fetches all events from the Firestore collection.
+     * @param callback The callback to receive results or errors.
      */
     public void getAllEvents(EventListCallback callback) {
         db.collection(EVENTS_COLLECTION)
@@ -104,10 +89,9 @@ public class EventRepository {
     }
 
     /**
-     * Fetches a single event by its ID.
-     *
-     * @param eventId  ID of the event to fetch
-     * @param callback callback to receive the result or an error
+     * Fetches a specific event by its ID.
+     * @param eventId The ID of the event to retrieve.
+     * @param callback The callback to handle the result.
      */
     public void getEventById(String eventId, EventCallback callback) {
         db.collection(EVENTS_COLLECTION)
@@ -130,14 +114,10 @@ public class EventRepository {
     }
 
     /**
-     * Adds the given user identifier to the waiting list array of the
-     * event document with the supplied ID.
-     *
-     * <p>User story: US 01.01.01 — Join waiting list.</p>
-     *
-     * @param eventId ID of the event document
-     * @param userId  unique user identifier (Firebase Auth UID) to add
-     * @param callback callback notified of success or failure
+     * Adds a user to an event's waiting list in Firestore.
+     * @param eventId The event ID.
+     * @param userId The ID of the user joining the waiting list.
+     * @param callback The callback notified of success or failure.
      */
     public void joinWaitingList(String eventId, String userId, ActionCallback callback) {
         db.collection(EVENTS_COLLECTION)
@@ -148,14 +128,10 @@ public class EventRepository {
     }
 
     /**
-     * Removes the given user identifier from the waiting list array of
-     * the event document with the supplied ID.
-     *
-     * <p>User story: US 01.01.02 — Leave waiting list.</p>
-     *
-     * @param eventId ID of the event document
-     * @param userId  unique user identifier (Firebase Auth UID) to remove
-     * @param callback callback notified of success or failure
+     * Removes a user from an event's waiting list in Firestore.
+     * @param eventId The event ID.
+     * @param userId The ID of the user leaving the waiting list.
+     * @param callback The callback notified of success or failure.
      */
     public void leaveWaitingList(String eventId, String userId, ActionCallback callback) {
         db.collection(EVENTS_COLLECTION)
@@ -166,10 +142,9 @@ public class EventRepository {
     }
 
     /**
-     * Attaches a real-time snapshot listener to the entire events collection.
-     * The callback fires immediately with current data and again on every change.
-     *
-     * @return a {@link ListenerRegistration} the caller must remove when done
+     * Sets up a real-time listener for the events collection.
+     * @param callback The callback to handle real-time data changes.
+     * @return A ListenerRegistration to allow the caller to stop listening.
      */
     public ListenerRegistration listenAllEvents(EventListCallback callback) {
         return db.collection(EVENTS_COLLECTION)

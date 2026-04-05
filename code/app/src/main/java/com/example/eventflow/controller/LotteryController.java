@@ -14,11 +14,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Controller class responsible for managing the lottery system for event entrants.
+ * It handles the selection process, notification of winners and losers, and management of expired invitations.
+ */
 public class LotteryController {
 
     private static final String TAG = "LotteryController";
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
+    /**
+     * Saves a notification both to the user's specific notification sub-collection and to a global notifications collection.
+     * @param notification The notification object to save.
+     * @param userId The ID of the user receiving the notification.
+     */
     private void saveNotificationToBoth(Notification notification, String userId) {
         if (notification.getId() == null || notification.getId().isEmpty()) {
             notification.setId(UUID.randomUUID().toString());
@@ -54,6 +63,12 @@ public class LotteryController {
                 });
     }
 
+    /**
+     * Updates the participation status for a user in a specific event.
+     * @param userId The ID of the user.
+     * @param eventId The ID of the event.
+     * @param newStatus The new status to set (e.g., PENDING, REJECTED, EXPIRED).
+     */
     private void updateUserEventStatus(String userId, String eventId, String newStatus) {
         Log.d(TAG, "Updating user " + userId + " status to: " + newStatus);
 
@@ -70,6 +85,12 @@ public class LotteryController {
                 });
     }
 
+    /**
+     * Sends a selection notification to a winner and updates their event status to PENDING.
+     * @param userId The winner's user ID.
+     * @param eventId The event ID.
+     * @param eventName The name of the event.
+     */
     private void sendSelectionNotification(String userId, String eventId, String eventName) {
         Log.d(TAG, "=== SENDING SELECTION NOTIFICATION ===");
         Log.d(TAG, "UserId: " + userId);
@@ -90,6 +111,12 @@ public class LotteryController {
         Log.d(TAG, "Selection notification sent to: " + userId);
     }
 
+    /**
+     * Sends a notification to users who were not selected in the lottery draw.
+     * @param userId The user ID.
+     * @param eventId The event ID.
+     * @param eventName The name of the event.
+     */
     private void sendLostLotteryNotification(String userId, String eventId, String eventName) {
         Log.d(TAG, "Sending LOST LOTTERY notification to: " + userId);
 
@@ -105,6 +132,12 @@ public class LotteryController {
         saveNotificationToBoth(notification, userId);
     }
 
+    /**
+     * Draws a replacement for a selected entrant who declined or expired.
+     * @param waitingList The list of users still on the waiting list.
+     * @param selectedEntrants The current list of selected entrants.
+     * @return The ID of the replacement user, or null if no one is available.
+     */
     public String drawReplacement(List<String> waitingList, List<String> selectedEntrants) {
         if (waitingList == null || waitingList.isEmpty()) return null;
 
@@ -120,6 +153,11 @@ public class LotteryController {
         return null;
     }
 
+    /**
+     * Executes the main lottery draw for an event, selecting winners up to the capacity limit.
+     * Moves users from waiting list to selectedEntrants and rejectedEntrants in Firestore.
+     * @param eventId The unique identifier of the event.
+     */
     public void runLotteryDraw(String eventId) {
         Log.d(TAG, "=== RUNNING LOTTERY DRAW for event: " + eventId);
 
@@ -189,6 +227,11 @@ public class LotteryController {
         });
     }
 
+    /**
+     * Handles acceptance of a private invite to an event's waiting list.
+     * @param userId The ID of the user.
+     * @param eventId The ID of the event.
+     */
     public void acceptPrivateInvite(String userId, String eventId) {
         db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
             if (doc.exists()) {
@@ -222,6 +265,11 @@ public class LotteryController {
                 .update("waitingList", FieldValue.arrayUnion(userId));
     }
 
+    /**
+     * Checks all selected entrants for an event and automatically rejects those 
+     * whose invitation response time (2 days) has expired.
+     * @param eventId The unique identifier of the event.
+     */
     public void checkAndAutoRejectExpiredSelections(String eventId) {
         db.collection("events").document(eventId).get()
                 .addOnSuccessListener(eventDoc -> {
@@ -257,6 +305,12 @@ public class LotteryController {
                 });
     }
 
+    /**
+     * Sends an expiry notification to a user who failed to respond to an invitation in time.
+     * @param userId The ID of the user.
+     * @param eventId The ID of the event.
+     * @param eventName The name of the event.
+     */
     private void sendExpiryNotification(String userId, String eventId, String eventName) {
         Notification notification = new Notification(
                 "Invitation Expired",

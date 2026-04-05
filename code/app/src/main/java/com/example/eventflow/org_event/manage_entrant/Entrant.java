@@ -1,8 +1,9 @@
 package com.example.eventflow.org_event.manage_entrant;
 
 /**
- * Model class for Entrants.
- * Updated to support Waitlist, Cancelled, and Final Enrolled screens.
+ * Model class representing an Entrant specifically for organizer management screens.
+ * This class supports various views including Waitlist, Cancelled, and Final Enrolled lists,
+ * capturing names, contact details, and relevant status dates.
  */
 public class Entrant {
     private String name;
@@ -12,19 +13,35 @@ public class Entrant {
     private String phoneNumber;
     private String acceptDate; // NEW: Specific for Enrolled Entrants
 
-    // 1. Constructor for the Waitlist
+    /**
+     * Constructor for the Waitlist view.
+     * @param name The entrant's name.
+     * @param email The entrant's email.
+     * @param status The current status on the waitlist.
+     */
     public Entrant(String name, String email, String status) {
         this.name = name;
         this.email = email;
         this.status = status;
     }
 
+    /**
+     * Minimal constructor for simple list displays.
+     * @param name The entrant's name.
+     * @param date A relevant date (e.g., join date).
+     */
     public Entrant(String name, String date) {
         this.name = name;
         this.date = date;
     }
 
-    // 2. Constructor for Cancelled List (Needs details + one date)
+    /**
+     * Constructor for the Cancelled List view.
+     * @param name The entrant's name.
+     * @param email The entrant's email.
+     * @param phoneNumber The entrant's phone number.
+     * @param date The date the entrant was cancelled.
+     */
     public Entrant(String name, String email, String phoneNumber, String date) {
         this.name = name;
         this.email = email;
@@ -32,7 +49,14 @@ public class Entrant {
         this.date = date;
     }
 
-    // 3. NEW: Constructor for Enrolled List (Needs both Join and Accept dates)
+    /**
+     * Constructor for the Enrolled List view.
+     * @param name The entrant's name.
+     * @param email The entrant's email.
+     * @param phoneNumber The entrant's phone number.
+     * @param joinDate The date the entrant joined the waiting list.
+     * @param acceptDate The date the entrant accepted the invitation.
+     */
     public Entrant(String name, String email, String phoneNumber, String joinDate, String acceptDate) {
         this.name = name;
         this.email = email;
@@ -41,15 +65,21 @@ public class Entrant {
         this.acceptDate = acceptDate;
     }
 
-    // --- Getters ---
+    /** @return The name of the entrant. */
     public String getName() { return name; }
+    /** @return The email address of the entrant. */
     public String getEmail() { return email; }
+    /** @return The current status of the entrant. */
     public String getStatus() { return status; }
+    /** @return The phone number of the entrant. */
     public String getPhoneNumber() { return phoneNumber; }
 
-    // Date getters (naming them clearly to avoid confusion)
+    /** @return The date the entrant was invited. */
     public String getInviteDate() { return date; }
+    /** @return The date the entrant cancelled. */
     public String getCancelDate() { return date; }
+    /** @return The date the entrant joined. */
     public String getJoinDate() { return date; }
+    /** @return The date the entrant accepted the invitation. */
     public String getAcceptDate() { return acceptDate; }
 }
