@@ -1,6 +1,5 @@
 package com.example.eventflow;
 
-import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,24 +12,27 @@ import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
+/**
+ * Adapter for the Admin Image Moderation grid.
+ */
 public class EventImageAdapter extends BaseAdapter {
 
     private AdminImageManagementActivity context;
-    private List<AdminImageManagementActivity.EventImage> eventImages;
+    private List<AdminImageManagementActivity.ImageItem> imageItems;
 
-    public EventImageAdapter(AdminImageManagementActivity context, List<AdminImageManagementActivity.EventImage> eventImages) {
+    public EventImageAdapter(AdminImageManagementActivity context, List<AdminImageManagementActivity.ImageItem> imageItems) {
         this.context = context;
-        this.eventImages = eventImages;
+        this.imageItems = imageItems;
     }
 
     @Override
     public int getCount() {
-        return eventImages.size();
+        return imageItems.size();
     }
 
     @Override
     public Object getItem(int position) {
-        return eventImages.get(position);
+        return imageItems.get(position);
     }
 
     @Override
@@ -41,41 +43,38 @@ public class EventImageAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         if (convertView == null) {
-            convertView = LayoutInflater.from(context)
+            convertView = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.item_admin_image, parent, false);
         }
 
         ImageView imageView = convertView.findViewById(R.id.iv_event_image);
-        TextView eventName = convertView.findViewById(R.id.tv_event_name);
+        TextView displayName = convertView.findViewById(R.id.tv_event_name);
+        TextView typeLabel = convertView.findViewById(R.id.tv_image_type);
         ImageButton deleteButton = convertView.findViewById(R.id.btn_delete_event_image);
 
-        AdminImageManagementActivity.EventImage eventImage = eventImages.get(position);
+        AdminImageManagementActivity.ImageItem item = imageItems.get(position);
 
-        eventName.setText(eventImage.eventName != null ? eventImage.eventName : "Untitled Event");
+        displayName.setText(item.displayName);
+        typeLabel.setText(item.type.toUpperCase() + " IMAGE");
 
         // Load image using Picasso
-        if (eventImage.posterUrl != null && !eventImage.posterUrl.isEmpty()) {
-            Picasso.get().load(eventImage.posterUrl)
+        if (item.imageUrl != null && !item.imageUrl.isEmpty()) {
+            Picasso.get().load(item.imageUrl)
                     .placeholder(R.drawable.ic_placeholder)
                     .error(R.drawable.ic_placeholder)
                     .into(imageView);
-            deleteButton.setVisibility(View.VISIBLE);
         } else {
             imageView.setImageResource(R.drawable.ic_placeholder);
-            deleteButton.setVisibility(View.GONE); // Hide delete button if no image
         }
 
         // Click on delete button
         deleteButton.setOnClickListener(v -> {
-            context.showDeleteConfirmation(eventImage, position);
+            context.showDeleteConfirmation(item, position);
         });
 
-        // Click on the whole card to view event details
+        // Click on the whole card to show delete confirmation (requested behavior)
         convertView.setOnClickListener(v -> {
-            Intent intent = new Intent(context, EventDetailActivity.class);
-            intent.putExtra("eventId", eventImage.eventId);
-            intent.putExtra("userRole", "admin");
-            context.startActivity(intent);
+            context.showDeleteConfirmation(item, position);
         });
 
         return convertView;

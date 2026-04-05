@@ -1,7 +1,8 @@
 package com.example.eventflow;
 
-import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
 import android.widget.GridView;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -19,22 +20,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Purpose: This activity is where admins go to clean up event images.
- * It shows a grid of all event posters and lets the admin delete any 
- * inappropriate or unnecessary images from both Firestore and Firebase Storage.
- *
- * Design Pattern: Grid-View pattern for browsing visual content.
- *
- * Issues: Currently, it only handles event posters. Profile images are managed 
- * separately in the user management section.
+ * Admin activity to moderate all images in the system (Event Posters and Profile Pictures).
+ * Only shows items that actually have an image.
  */
 public class AdminImageManagementActivity extends AppCompatActivity {
 
     private GridView gridView;
-    private List<EventImage> eventImages = new ArrayList<>();
+    private List<ImageItem> imageItems = new ArrayList<>();
     private EventImageAdapter adapter;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private FirebaseStorage storage = FirebaseStorage.getInstance();
+    private TextView tvEmptyState;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,94 +42,126 @@ public class AdminImageManagementActivity extends AppCompatActivity {
 
         TextView title = findViewById(R.id.tv_title);
         title.setText("Manage Images");
+        
+        tvEmptyState = findViewById(R.id.tv_empty_state);
 
         gridView = findViewById(R.id.gridView);
-        adapter = new EventImageAdapter(this, eventImages);
+        adapter = new EventImageAdapter(this, imageItems);
         gridView.setAdapter(adapter);
 
-        loadEventsWithImages();
+        loadAllImages();
     }
 
-    private void loadEventsWithImages() {
-        db.collection("events")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    eventImages.clear();
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        String eventId = doc.getId();
-                        String eventName = doc.getString("name");
-                        String posterUrl = doc.getString("posterUrl");
+    private void loadAllImages() {
+        imageItems.clear();
+        
+        // 1. Load Event Posters
+        db.collection("events").get().addOnSuccessListener(queryDocumentSnapshots -> {
+            for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                String url = doc.getString("posterUrl");
+                if (url != null && !url.isEmpty()) {
+                    imageItems.add(new ImageItem(
+                            doc.getId(),
+                            doc.getString("name"),
+                            url,
+                            "event",
+                            "events",
+                            "posterUrl"
+                    ));
+                }
+            }
+            adapter.notifyDataSetChanged();
+            updateEmptyState();
+        });
 
-                        eventImages.add(new EventImage(eventId, eventName, posterUrl));
-                    }
-                    adapter.notifyDataSetChanged();
-
-                    if (eventImages.isEmpty()) {
-                        Toast.makeText(this, "No events found", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to load events: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+        // 2. Load Profile Pictures
+        db.collection("profiles").get().addOnSuccessListener(queryDocumentSnapshots -> {
+            for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                String url = doc.getString("profileImageUrl");
+                if (url != null && !url.isEmpty()) {
+                    String fName = doc.getString("firstName");
+                    String lName = doc.getString("lastName");
+                    String displayName = (fName != null ? fName : "") + " " + (lName != null ? lName : "");
+                    
+                    imageItems.add(new ImageItem(
+                            doc.getId(),
+                            displayName.trim().isEmpty() ? "User Profile" : displayName,
+                            url,
+                            "profile",
+                            "profiles",
+                            "profileImageUrl"
+                    ));
+                }
+            }
+            adapter.notifyDataSetChanged();
+            updateEmptyState();
+        });
     }
 
-    public void showDeleteConfirmation(EventImage eventImage, int position) {
-        if (eventImage.posterUrl == null || eventImage.posterUrl.isEmpty()) {
-            Toast.makeText(this, "This event has no image to delete", Toast.LENGTH_SHORT).show();
-            return;
+    private void updateEmptyState() {
+        if (tvEmptyState != null) {
+            tvEmptyState.setVisibility(imageItems.isEmpty() ? View.VISIBLE : View.GONE);
         }
+    }
 
+    public void showDeleteConfirmation(ImageItem item, int position) {
         new AlertDialog.Builder(this)
                 .setTitle("Delete Image")
-                .setMessage("Are you sure you want to delete the image for " + eventImage.eventName + "?")
-                .setPositiveButton("Delete", (dialog, which) -> deleteImage(eventImage, position))
+                .setMessage("Are you sure you want to remove this image for " + item.displayName + "?")
+                .setPositiveButton("Delete", (dialog, which) -> deleteImage(item, position))
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
-    private void deleteImage(EventImage eventImage, int position) {
-        String posterUrl = eventImage.posterUrl;
-
-        if (posterUrl != null && posterUrl.contains("firebasestorage.googleapis.com")) {
-            StorageReference imageRef = storage.getReferenceFromUrl(posterUrl);
-            imageRef.delete()
-                    .addOnSuccessListener(aVoid -> {
-                        updateFirestoreAndUI(eventImage, position);
-                    })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Failed to delete from Storage: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
+    private void deleteImage(ImageItem item, int position) {
+        // 1. Delete from Firebase Storage if it's a storage URL
+        if (item.imageUrl.contains("firebasestorage.googleapis.com")) {
+            try {
+                StorageReference imageRef = storage.getReferenceFromUrl(item.imageUrl);
+                imageRef.delete().addOnSuccessListener(aVoid -> {
+                    updateFirestoreAndUI(item, position);
+                }).addOnFailureListener(e -> {
+                    Log.e("AdminImage", "Storage delete failed, proceeding to clear DB link", e);
+                    updateFirestoreAndUI(item, position);
+                });
+            } catch (Exception e) {
+                updateFirestoreAndUI(item, position);
+            }
         } else {
-            updateFirestoreAndUI(eventImage, position);
+            updateFirestoreAndUI(item, position);
         }
     }
 
-    private void updateFirestoreAndUI(EventImage eventImage, int position) {
-        db.collection("events")
-                .document(eventImage.eventId)
-                .update("posterUrl", null)
+    private void updateFirestoreAndUI(ImageItem item, int position) {
+        db.collection(item.collectionName)
+                .document(item.id)
+                .update(item.fieldName, null)
                 .addOnSuccessListener(aVoid -> {
-                    eventImage.posterUrl = null;
+                    imageItems.remove(position);
                     adapter.notifyDataSetChanged();
+                    updateEmptyState();
                     Toast.makeText(this, "Image removed successfully", Toast.LENGTH_SHORT).show();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to update: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Database update failed", Toast.LENGTH_SHORT).show();
                 });
     }
 
-    /**
-     * Purpose: Simple data holder for event image information.
-     */
-    public static class EventImage {
-        public String eventId;
-        public String eventName;
-        public String posterUrl;
+    public static class ImageItem {
+        public String id;
+        public String displayName;
+        public String imageUrl;
+        public String type; // "event" or "profile"
+        public String collectionName;
+        public String fieldName;
 
-        public EventImage(String eventId, String eventName, String posterUrl) {
-            this.eventId = eventId;
-            this.eventName = eventName;
-            this.posterUrl = posterUrl;
+        public ImageItem(String id, String displayName, String imageUrl, String type, String collectionName, String fieldName) {
+            this.id = id;
+            this.displayName = displayName;
+            this.imageUrl = imageUrl;
+            this.type = type;
+            this.collectionName = collectionName;
+            this.fieldName = fieldName;
         }
     }
 }
