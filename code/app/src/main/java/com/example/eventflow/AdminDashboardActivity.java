@@ -12,21 +12,23 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 /**
- * Purpose: This is the main control center for Administrators. It gives a quick 
- * overview of the system's stats and provides shortcuts to manage events, users, 
- * images, and logs.
+ * AdminDashboardActivity serves as the central control hub for system administrators.
+ * It provides high-level statistics (total events and users) and navigation links to 
+ * various management modules such as event moderation, user profiles, image management, 
+ * and system logs.
  * 
- * Design Pattern: Uses the Dashboard pattern to organize multiple entry points 
- * into specialized management activities.
- * 
- * Issues: Stats are currently fetched once on creation and don't update in real-time
- * without a refresh or activity restart.
+ * This activity implements the Dashboard design pattern to centralize administrative tasks.
  */
 public class AdminDashboardActivity extends AppCompatActivity {
 
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private TextView tvEventCount, tvUserCount;
 
+    /**
+     * Initializes the dashboard UI and triggers the loading of system statistics.
+     * @param savedInstanceState If the activity is being re-initialized after previously 
+     * being shut down then this Bundle contains the data it most recently supplied.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,6 +42,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         loadStats();
     }
 
+    /**
+     * Sets up click listeners for the various management cards in the dashboard.
+     */
     private void setupClickListeners() {
         CardView manageEvents  = findViewById(R.id.card_manage_events);
         CardView manageUsers   = findViewById(R.id.card_manage_users);
@@ -73,6 +78,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     startActivity(new Intent(this, EntrantDashboardActivity.class)));
     }
 
+    /**
+     * Configures the bottom navigation bar specifically for the admin view.
+     */
     private void setupBottomNavigation() {
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         if (bottomNav == null) return;
@@ -93,6 +101,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Fetches and displays system-wide statistics from Firestore.
+     */
     private void loadStats() {
         db.collection("events").get().addOnSuccessListener(snap -> {
             if (tvEventCount != null)

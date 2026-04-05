@@ -10,29 +10,48 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Application-level controller encapsulating business rules around
- * joining and leaving an event waiting list, as well as searching and filtering events.
+ * Controller class managing the business logic related to events.
+ * It coordinates between the UI and the EventRepository, handling actions such as 
+ * searching, filtering, and joining/leaving event waiting lists.
  */
 public class EventController {
 
     private final EventRepository eventRepository;
     private final String userId;  // Changed from deviceId to userId (Firebase Auth UID)
 
+    /**
+     * Initializes the controller with a user ID and creates an EventRepository.
+     * @param userId The unique ID of the current user.
+     */
     public EventController(String userId) {
         this.userId = userId;
         this.eventRepository = new EventRepository();
     }
 
+    /**
+     * Loads all available events using the repository.
+     * @param callback Callback to handle the list of events.
+     */
     public void loadAllEvents(EventRepository.EventListCallback callback) {
         eventRepository.getAllEvents(callback);
     }
 
+    /**
+     * Loads a specific event by its unique ID.
+     * @param eventId The ID of the event to load.
+     * @param callback Callback to handle the single event result.
+     */
     public void loadEventById(String eventId, EventRepository.EventCallback callback) {
         eventRepository.getEventById(eventId, callback);
     }
 
     /**
-     * Filters a list of events based on keyword, profile, and explicit filter options.
+     * Applies search keywords and explicit filters to a list of events.
+     * @param events The initial list of events.
+     * @param keyword The search keyword.
+     * @param profile The user profile for preference-based filtering.
+     * @param explicitFilters Explicit filter options chosen by the user.
+     * @return A filtered list of events.
      */
     public List<Event> applySearchAndFilters(List<Event> events, String keyword, Profile profile, EventFilterOptions explicitFilters) {
         List<Event> results = new ArrayList<>(events);
@@ -43,6 +62,12 @@ public class EventController {
         return results;
     }
 
+    /**
+     * Searches for events that match a keyword in their name, description, or interests.
+     * @param events The list of events to search.
+     * @param keyword The search term.
+     * @return A list of events matching the search term.
+     */
     public List<Event> searchEvents(List<Event> events, String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) return events;
         String searchLower = keyword.toLowerCase().trim();
@@ -57,6 +82,12 @@ public class EventController {
         return filtered;
     }
 
+    /**
+     * Filters events based on specific criteria such as interests, days, and time of day.
+     * @param events The list of events to filter.
+     * @param options The filtering options.
+     * @return A filtered list of events.
+     */
     public List<Event> filterEvents(List<Event> events, EventFilterOptions options) {
         if (options == null || options.isEmpty()) return events;
         List<Event> filtered = new ArrayList<>();
@@ -99,6 +130,12 @@ public class EventController {
         return filtered;
     }
 
+    /**
+     * Filters events based on user preferences stored in their profile.
+     * @param events The list of events to filter.
+     * @param profile The user profile containing preferences.
+     * @return A list of events matching user preferences.
+     */
     public List<Event> filterEventsByProfile(List<Event> events, Profile profile) {
         if (profile == null) return events;
         EventFilterOptions options = new EventFilterOptions();
@@ -108,6 +145,12 @@ public class EventController {
         return filterEvents(events, options);
     }
 
+    /**
+     * Attempts to add the current user to an event's waiting list.
+     * Validates registration period, capacity, and role restrictions.
+     * @param event The event to join.
+     * @param callback Callback notified of success or failure.
+     */
     public void joinWaitingList(Event event, EventRepository.ActionCallback callback) {
         if (!event.isRegistrationOpen()) {
             callback.onFailure(new Exception("Registration is closed."));
@@ -136,18 +179,38 @@ public class EventController {
         eventRepository.joinWaitingList(event.getEventId(), userId, callback);
     }
 
+    /**
+     * Removes the current user from an event's waiting list.
+     * @param event The event to leave.
+     * @param callback Callback notified of success or failure.
+     */
     public void leaveWaitingList(Event event, EventRepository.ActionCallback callback) {
         eventRepository.leaveWaitingList(event.getEventId(), userId, callback);
     }
 
+    /**
+     * Checks if the current user is on the waiting list for an event.
+     * @param event The event to check.
+     * @return true if the user is on the waiting list.
+     */
     public boolean isOnWaitingList(Event event) {
         return event.getWaitingList() != null && event.getWaitingList().contains(userId);
     }
 
+    /**
+     * Checks if the current user has been selected for an event.
+     * @param event The event to check.
+     * @return true if the user has been selected.
+     */
     public boolean isSelected(Event event) {
         return event.getSelectedEntrants() != null && event.getSelectedEntrants().contains(userId);
     }
 
+    /**
+     * Checks if the current user has been rejected for an event.
+     * @param event The event to check.
+     * @return true if the user has been rejected.
+     */
     public boolean isRejected(Event event) {
         return event.getRejectedEntrants() != null && event.getRejectedEntrants().contains(userId);
     }
@@ -156,7 +219,8 @@ public class EventController {
      * Returns the user's participation status string for display on event cards.
      * Checks selectedEntrants, waitingList, and rejectedEntrants in priority order.
      *
-     * @return one of "Selected", "Waiting List", "Rejected", or null if not participating
+     * @param event The event object.
+     * @return one of "Selected", "Waiting List", "Rejected", or null if not participating.
      */
     public String getParticipationStatus(Event event) {
         if (isSelected(event)) return "Selected";
@@ -165,11 +229,20 @@ public class EventController {
         return null;
     }
 
+    /**
+     * Starts listening for real-time updates to all events.
+     * @param callback Callback to handle data updates.
+     * @return A registration object that can be used to stop listening.
+     */
     public ListenerRegistration listenAllEvents(EventRepository.EventListCallback callback) {
         return eventRepository.listenAllEvents(callback);
     }
 
-    // US 02.09.01 — check if current user is a co-organizer
+    /**
+     * Checks if the current user is a co-organizer for the given event.
+     * @param event The event object.
+     * @return true if the current user is a co-organizer.
+     */
     public boolean isCoOrganizer(Event event) {
         return event.getCoOrganizerIds() != null && event.getCoOrganizerIds().contains(userId);
     }

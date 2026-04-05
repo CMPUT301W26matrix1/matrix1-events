@@ -8,35 +8,58 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.WriteBatch;
 
+/**
+ * Repository class for managing user profile data in Firestore.
+ * This class handles saving, updating, loading, and deleting profile information across multiple Firestore collections
+ * (e.g., "profiles" and "users").
+ */
 public class ProfileRepository {
 
     private final FirebaseFirestore db;
     private final CollectionReference profilesCollection;
     private final CollectionReference usersCollection;
 
+    /**
+     * Initializes the repository with Firestore instances and collection references.
+     */
     public ProfileRepository() {
         db = FirebaseFirestore.getInstance();
         profilesCollection = db.collection("profiles");
         usersCollection = db.collection("users");
     }
 
+    /** Callback interface for profile saving operations. */
     public interface SaveProfileCallback {
+        /** Invoked on successful save or update. */
         void onSuccess();
+        /** Invoked when an error occurs during saving. @param e The exception. */
         void onFailure(@NonNull Exception e);
     }
 
+    /** Callback interface for profile loading operations. */
     public interface LoadProfileCallback {
+        /** Invoked when the profile is successfully loaded. @param profile The loaded profile. */
         void onSuccess(@NonNull Profile profile);
+        /** Invoked when the requested profile is not found. */
         void onNotFound();
+        /** Invoked when an error occurs during loading. @param e The exception. */
         void onFailure(@NonNull Exception e);
     }
 
+    /** Callback interface for profile deletion operations. */
     public interface DeleteProfileCallback {
+        /** Invoked on successful deletion. */
         void onSuccess();
+        /** Invoked when an error occurs during deletion. @param e The exception. */
         void onFailure(@NonNull Exception e);
     }
 
-    // SAVE PROFILE
+    /**
+     * Saves or merges the given profile into Firestore.
+     * Updates both the "profiles" and "users" collections.
+     * @param profile The profile object to save.
+     * @param callback The callback to handle the result.
+     */
     public void saveProfile(@NonNull Profile profile, @NonNull SaveProfileCallback callback) {
         String userId = profile.getUserId();
 
@@ -58,7 +81,11 @@ public class ProfileRepository {
                 .addOnFailureListener(callback::onFailure);
     }
 
-    // UPDATE PROFILE
+    /**
+     * Updates an existing profile in Firestore.
+     * @param profile The profile object with updated details.
+     * @param callback The callback to handle the result.
+     */
     public void updateProfile(@NonNull Profile profile, @NonNull SaveProfileCallback callback) {
         String userId = profile.getUserId();
 
@@ -81,7 +108,10 @@ public class ProfileRepository {
     }
 
     /**
-     * Deletes entire user account data from Firestore (profiles, users, and credentials collections).
+     * Deletes entire user account data from Firestore across multiple collections.
+     * @param userId The ID of the user to delete.
+     * @param email The email of the user (used for credential deletion).
+     * @param callback The callback to handle the result.
      */
     public void deleteAccount(@NonNull String userId, String email, @NonNull DeleteProfileCallback callback) {
         if (userId.isEmpty()) {
@@ -102,12 +132,22 @@ public class ProfileRepository {
                 .addOnFailureListener(callback::onFailure);
     }
 
-    // DELETE PROFILE (Deprecated - use deleteAccount for full cleanup)
+    /**
+     * Deletes a user profile.
+     * @deprecated Use {@link #deleteAccount(String, String, DeleteProfileCallback)} for full cleanup.
+     * @param userId The ID of the user to delete.
+     * @param callback The callback to handle the result.
+     */
+    @Deprecated
     public void deleteProfile(@NonNull String userId, @NonNull DeleteProfileCallback callback) {
         deleteAccount(userId, null, callback);
     }
 
-    // LOAD PROFILE BY USER ID (Firebase Auth UID)
+    /**
+     * Loads a profile by the user ID.
+     * @param userId The unique user ID.
+     * @param callback The callback to handle the profile result.
+     */
     public void getProfileByUserId(@NonNull String userId, @NonNull LoadProfileCallback callback) {
         if (userId.isEmpty()) {
             callback.onNotFound();
@@ -132,14 +172,22 @@ public class ProfileRepository {
                 .addOnFailureListener(callback::onFailure);
     }
 
-    // Backward-compatibility alias
-    /** @deprecated Use {@link #getProfileByUserId(String, LoadProfileCallback)} instead */
+    /**
+     * Loads a profile by device ID.
+     * @deprecated Use {@link #getProfileByUserId(String, LoadProfileCallback)} instead.
+     * @param deviceId The device ID (aliased to user ID).
+     * @param callback The callback to handle the profile result.
+     */
     @Deprecated
     public void getProfileByDeviceId(@NonNull String deviceId, @NonNull LoadProfileCallback callback) {
         getProfileByUserId(deviceId, callback);
     }
 
-    // LOAD PROFILE BY EMAIL
+    /**
+     * Loads a profile by its email address.
+     * @param email The email to search for.
+     * @param callback The callback to handle the result.
+     */
     public void getProfileByEmail(@NonNull String email, @NonNull LoadProfileCallback callback) {
         usersCollection
                 .whereEqualTo("email", email)
@@ -159,10 +207,12 @@ public class ProfileRepository {
                 .addOnFailureListener(callback::onFailure);
     }
 
+    /** @return Reference to the profiles collection. */
     public CollectionReference getProfilesCollection() {
         return profilesCollection;
     }
 
+    /** @return Reference to the users collection. */
     public CollectionReference getUsersCollection() {
         return usersCollection;
     }
