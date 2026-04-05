@@ -21,8 +21,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * AdminProfileListActivity - Manages and displays the list of users (Profiles).
- * Supports filtering by role (All, Entrant, Organizer, Admin) and search by name.
+ * Purpose: This activity lets admins browse through all users in the system.
+ * It's basically a directory where you can filter people by their roles (like Entrant or Organizer)
+ * or search for someone specific by name. It also allows the admin to delete profiles.
+ *
+ * Design Pattern: Standard List-View pattern with a filtering mechanism.
+ *
+ * Issues: Deleting a profile here removes it from the database, but it doesn't 
+ * automatically sign that user out if they are currently using the app.
  */
 public class AdminProfileListActivity extends AppCompatActivity {
 
