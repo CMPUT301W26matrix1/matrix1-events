@@ -19,7 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Admin activity to manage and remove event images.
+ * Purpose: This activity is where admins go to clean up event images.
+ * It shows a grid of all event posters and lets the admin delete any 
+ * inappropriate or unnecessary images from both Firestore and Firebase Storage.
+ *
+ * Design Pattern: Grid-View pattern for browsing visual content.
+ *
+ * Issues: Currently, it only handles event posters. Profile images are managed 
+ * separately in the user management section.
  */
 public class AdminImageManagementActivity extends AppCompatActivity {
 
@@ -38,7 +45,7 @@ public class AdminImageManagementActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
 
         TextView title = findViewById(R.id.tv_title);
-        title.setText("Manage Images"); // Corrected title from "Manage Events" to "Manage Images"
+        title.setText("Manage Images");
 
         gridView = findViewById(R.id.gridView);
         adapter = new EventImageAdapter(this, eventImages);
@@ -48,7 +55,6 @@ public class AdminImageManagementActivity extends AppCompatActivity {
     }
 
     private void loadEventsWithImages() {
-        // Get ALL events from Firestore (not just those with posterUrl)
         db.collection("events")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
@@ -58,7 +64,6 @@ public class AdminImageManagementActivity extends AppCompatActivity {
                         String eventName = doc.getString("name");
                         String posterUrl = doc.getString("posterUrl");
 
-                        // Add ALL events, regardless of whether they have a posterUrl
                         eventImages.add(new EventImage(eventId, eventName, posterUrl));
                     }
                     adapter.notifyDataSetChanged();
@@ -73,7 +78,6 @@ public class AdminImageManagementActivity extends AppCompatActivity {
     }
 
     public void showDeleteConfirmation(EventImage eventImage, int position) {
-        // Only show delete confirmation if there's an image to delete
         if (eventImage.posterUrl == null || eventImage.posterUrl.isEmpty()) {
             Toast.makeText(this, "This event has no image to delete", Toast.LENGTH_SHORT).show();
             return;
@@ -90,9 +94,7 @@ public class AdminImageManagementActivity extends AppCompatActivity {
     private void deleteImage(EventImage eventImage, int position) {
         String posterUrl = eventImage.posterUrl;
 
-        // Check if it's a Firebase Storage URL
         if (posterUrl != null && posterUrl.contains("firebasestorage.googleapis.com")) {
-            // Delete from Firebase Storage
             StorageReference imageRef = storage.getReferenceFromUrl(posterUrl);
             imageRef.delete()
                     .addOnSuccessListener(aVoid -> {
@@ -102,7 +104,6 @@ public class AdminImageManagementActivity extends AppCompatActivity {
                         Toast.makeText(this, "Failed to delete from Storage: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     });
         } else {
-            // For external/test URLs, just update Firestore
             updateFirestoreAndUI(eventImage, position);
         }
     }
@@ -121,6 +122,9 @@ public class AdminImageManagementActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Purpose: Simple data holder for event image information.
+     */
     public static class EventImage {
         public String eventId;
         public String eventName;
