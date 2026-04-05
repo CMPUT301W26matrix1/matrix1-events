@@ -15,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -461,9 +462,11 @@ public class EntrantDashboardActivity extends AppCompatActivity {
 
         if (cardCancelledActions != null) {
             cardCancelledActions.setOnClickListener(v -> {
-                Intent intent = new Intent(this, CancelledEntrantsActivity.class);
-                intent.putExtra("eventId", eventId);
-                startActivity(intent);
+                if (eventId != null) {
+                    showDeleteConfirmation();
+                } else {
+                    Toast.makeText(this, "No event selected to delete", Toast.LENGTH_SHORT).show();
+                }
             });
         }
 
@@ -475,6 +478,40 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+    }
+
+    private void showDeleteConfirmation() {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Event")
+                .setMessage("Are you sure you want to delete \'" + eventName + "\'? This action cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> deleteCurrentEvent())
+                .setNegativeButton("Cancel", null)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
+    }
+
+    private void deleteCurrentEvent() {
+        if (eventId == null) return;
+
+        db.collection("events").document(eventId).delete()
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Event deleted successfully", Toast.LENGTH_SHORT).show();
+                    // Reset UI
+                    eventId = null;
+                    eventName = null;
+                    tvEventName.setText("No Event Selected");
+                    tvEventDate.setText("Date");
+                    tvEventLocation.setText("Location");
+                    if (ivEventBackground != null) ivEventBackground.setImageDrawable(null);
+                    resetStats();
+                    
+                    // Refresh the lists
+                    loadMyEvents();
+                    fetchLatestEvent();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to delete event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     // ==================== MIGRATION METHOD 1: Convert waitingList from deviceId to UID ====================
@@ -541,25 +578,6 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> {
                     newWaitingList.add(deviceId);
                     Log.e("Migration", "Error finding UID for: " + deviceId);
-                });
-    }
-
-    private void deleteCurrentEvent() {
-        if (eventId == null) return;
-
-        db.collection("events").document(eventId).delete()
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Event deleted successfully", Toast.LENGTH_SHORT).show();
-                    // Reset UI
-                    eventId = null;
-                    eventName = null;
-                    tvEventName.setText("No Event Selected");
-                    tvEventDate.setText("Date");
-                    tvEventLocation.setText("Location");
-                    if (ivEventBackground != null) ivEventBackground.setImageDrawable(null);
-                    resetStats();
-                    // Load the next available event if any
-                    fetchLatestEvent();
                 });
     }
 

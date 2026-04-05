@@ -49,21 +49,35 @@ public class QRDisplayActivity extends AppCompatActivity {
         }
 
         // 5. Button Logic
-        findViewById(R.id.btn_qr_back).setOnClickListener(v -> finish());
+        View btnBack = findViewById(R.id.btn_qr_back);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
 
-        findViewById(R.id.btn_download).setOnClickListener(v -> {
-            Toast.makeText(this, "Downloading QR Code...", Toast.LENGTH_SHORT).show();
-            // Logic for saving bitmap to gallery would go here
-        });
+        View btnDownload = findViewById(R.id.btn_download);
+        if (btnDownload != null) {
+            btnDownload.setOnClickListener(v -> {
+                Toast.makeText(this, "Downloading QR Code...", Toast.LENGTH_SHORT).show();
+                // Logic for saving bitmap to gallery would go here
+            });
+        }
 
-        findViewById(R.id.btn_share).setOnClickListener(v -> {
-            showShareMenu();
-        });
+        View btnShare = findViewById(R.id.btn_share);
+        if (btnShare != null) {
+            btnShare.setOnClickListener(v -> {
+                showShareMenu();
+            });
+        }
 
         // 6. Navigation Mockup
-        findViewById(R.id.nav_dashboard).setOnClickListener(v -> finish());
-        findViewById(R.id.nav_create).setOnClickListener(v -> finish());
-        findViewById(R.id.nav_profile).setOnClickListener(v -> finish());
+        View navDashboard = findViewById(R.id.nav_dashboard);
+        if (navDashboard != null) navDashboard.setOnClickListener(v -> finish());
+        
+        View navCreate = findViewById(R.id.nav_create);
+        if (navCreate != null) navCreate.setOnClickListener(v -> finish());
+        
+        View navProfile = findViewById(R.id.nav_profile);
+        if (navProfile != null) navProfile.setOnClickListener(v -> finish());
     }
 
     /**
@@ -74,7 +88,10 @@ public class QRDisplayActivity extends AppCompatActivity {
         View view = getLayoutInflater().inflate(R.layout.fragment_share_sheet, null);
         bottomSheet.setContentView(view);
 
-        view.findViewById(R.id.btn_share_cancel).setOnClickListener(v -> bottomSheet.dismiss());
+        View cancelBtn = view.findViewById(R.id.btn_share_cancel);
+        if (cancelBtn != null) {
+            cancelBtn.setOnClickListener(v -> bottomSheet.dismiss());
+        }
 
         bottomSheet.show();
     }

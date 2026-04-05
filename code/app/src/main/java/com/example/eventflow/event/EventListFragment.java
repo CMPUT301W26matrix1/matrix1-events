@@ -274,16 +274,26 @@ public class EventListFragment extends Fragment {
     }
 
     private void handleScanResult(String contents) {
-        if (contents.startsWith("eventflow://details?id=")) {
+        String eventId = null;
+
+        // Support new format: eventflow://event/[eventId]
+        if (contents.startsWith("eventflow://event/")) {
+            eventId = contents.replace("eventflow://event/", "");
+        } 
+        // Support legacy format: eventflow://details?id=[eventId]
+        else if (contents.startsWith("eventflow://details?id=")) {
             Uri uri = Uri.parse(contents);
-            String eventId = uri.getQueryParameter("id");
-            if (eventId != null) {
-                Intent intent = new Intent(getActivity(), EventDetailActivity.class);
-                intent.putExtra("eventId", eventId);
-                intent.putExtra("userId", deviceId);
-                intent.putExtra("userRole", "entrant");
-                startActivity(intent);
-            }
+            eventId = uri.getQueryParameter("id");
+        }
+
+        if (eventId != null && !eventId.isEmpty()) {
+            Intent intent = new Intent(getActivity(), EventDetailActivity.class);
+            intent.putExtra("eventId", eventId);
+            intent.putExtra("userId", deviceId);
+            intent.putExtra("userRole", "entrant");
+            startActivity(intent);
+        } else {
+            Toast.makeText(getContext(), "Invalid QR Code format", Toast.LENGTH_SHORT).show();
         }
     }
 }

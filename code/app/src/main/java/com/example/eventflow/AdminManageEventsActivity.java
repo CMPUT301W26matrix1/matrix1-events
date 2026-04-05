@@ -1,6 +1,7 @@
 package com.example.eventflow;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -123,16 +124,20 @@ public class AdminManageEventsActivity extends AppCompatActivity {
      * Handles the result of a QR scan.
      */
     private void handleScanResult(String contents) {
-        if (contents.startsWith("eventflow://details?id=")) {
-            android.net.Uri uri = android.net.Uri.parse(contents);
-            String eventId = uri.getQueryParameter("id");
-            if (eventId != null) {
-                Intent intent = new Intent(this, EventDetailActivity.class);
-                intent.putExtra("eventId", eventId);
-                // For admin, we might want to pass a specific role or just view it
-                intent.putExtra("userRole", "admin");
-                startActivity(intent);
-            }
+        String eventId = null;
+
+        if (contents.startsWith("eventflow://event/")) {
+            eventId = contents.replace("eventflow://event/", "");
+        } else if (contents.startsWith("eventflow://details?id=")) {
+            Uri uri = Uri.parse(contents);
+            eventId = uri.getQueryParameter("id");
+        }
+
+        if (eventId != null && !eventId.isEmpty()) {
+            Intent intent = new Intent(this, EventDetailActivity.class);
+            intent.putExtra("eventId", eventId);
+            intent.putExtra("userRole", "admin");
+            startActivity(intent);
         } else {
             Toast.makeText(this, "Scanned: " + contents, Toast.LENGTH_LONG).show();
         }

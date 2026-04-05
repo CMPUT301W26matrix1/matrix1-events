@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,6 +18,7 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -26,31 +26,38 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.eventflow.R;
 import com.example.eventflow.model.entities.Entrant;
-import com.google.firebase.Timestamp;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.text.SimpleDateFormat;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
+/**
+ * Activity for organizers to view the final list of confirmed entrants.
+ * Supports searching, exporting to CSV (locally or to Cloud/Drive), and bulk emailing.
+ */
 public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
 
+    private static final String TAG = "FinalEntrants";
     private RecyclerView rvEnrolledEntrants;
     private EditText etSearch;
     private TextView tvConfirmedCount, tvEmptyState;
     private LinearLayout btnExportCSV, btnEmailAll;
     private EnrolledEntrantsAdapter adapter;
-    private List<Entrant> enrolledList = new ArrayList<>();
-    private List<Entrant> filteredList = new ArrayList<>();
+    private final List<Entrant> enrolledList = new ArrayList<>();
+    private final List<Entrant> filteredList = new ArrayList<>();
     private FirebaseFirestore db;
     private String eventId;
     private String eventName;
 
+    // Launcher for saving the CSV file to a user-selected local location
     private final ActivityResultLauncher<String> createDocumentLauncher = registerForActivityResult(
             new ActivityResultContracts.CreateDocument("text/csv"),
             uri -> {
@@ -70,6 +77,17 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
+        initViews();
+        setupListeners();
+
+        if (eventId != null && !eventId.isEmpty()) {
+            loadConfirmedEntrants();
+        } else {
+            updateUI();
+        }
+    }
+
+    private void initViews() {
         rvEnrolledEntrants = findViewById(R.id.rvEnrolledEntrants);
         etSearch = findViewById(R.id.etSearch);
         tvConfirmedCount = findViewById(R.id.tvConfirmedCount);
@@ -85,7 +103,9 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
         adapter = new EnrolledEntrantsAdapter(filteredList);
         rvEnrolledEntrants.setLayoutManager(new LinearLayoutManager(this));
         rvEnrolledEntrants.setAdapter(adapter);
+    }
 
+    private void setupListeners() {
         if (etSearch != null) {
             etSearch.addTextChangedListener(new TextWatcher() {
                 @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -97,45 +117,30 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
         }
 
         if (btnExportCSV != null) {
-            btnExportCSV.setOnClickListener(v -> exportToCSV());
+            btnExportCSV.setOnClickListener(v -> showExportOptions());
         }
         if (btnEmailAll != null) {
             btnEmailAll.setOnClickListener(v -> emailAllEntrants());
         }
-
-        if (eventId != null && !eventId.isEmpty()) {
-            loadConfirmedEntrants();
-        } else {
-            updateEmptyState(true);
-            if (tvConfirmedCount != null) tvConfirmedCount.setText("0");
-        }
     }
 
     private void loadConfirmedEntrants() {
-        if (eventId == null) return;
-
         db.collection("events").document(eventId).get()
                 .addOnSuccessListener(eventDoc -> {
                     List<String> selectedIds = (List<String>) eventDoc.get("selectedEntrants");
-
-                    Log.d("FINAL_ENTRANTS", "Selected IDs from event: " + selectedIds);
-                    Log.d("FINAL_ENTRANTS", "Count: " + (selectedIds != null ? selectedIds.size() : 0));
-
                     if (selectedIds == null || selectedIds.isEmpty()) {
-                        updateEmptyState(true);
-                        if (tvConfirmedCount != null) tvConfirmedCount.setText("0");
+                        updateUI();
                         return;
                     }
 
                     enrolledList.clear();
-
                     for (String userId : selectedIds) {
                         checkIfAccepted(userId);
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    updateEmptyState(true);
+                    Toast.makeText(this, "Error loading entrants: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    updateUI();
                 });
     }
 
@@ -146,16 +151,10 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
                         String status = doc.getString("status");
-                        Log.d("FINAL_ENTRANTS", "User " + userId + " status: " + status);
                         if ("ACCEPTED".equals(status)) {
                             fetchUserProfile(userId);
                         }
-                    } else {
-                        Log.d("FINAL_ENTRANTS", "No participation record for: " + userId);
                     }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("FINAL_ENTRANTS", "Error checking status for: " + userId);
                 });
     }
 
@@ -170,34 +169,17 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
                         String firstName = doc.getString("firstName");
                         String lastName = doc.getString("lastName");
                         if (firstName != null && !firstName.isEmpty()) {
-                            name = firstName;
-                            if (lastName != null && !lastName.isEmpty()) {
-                                name = firstName + " " + lastName;
-                            }
-                        } else {
-                            // If no name, try to get from credentials
-                            findNameFromCredentials(userId);
-                            return;
+                            name = firstName + (lastName != null && !lastName.isEmpty() ? " " + lastName : "");
                         }
                         email = doc.getString("email");
-                        if (email == null) email = "";
                         phone = doc.getString("phone");
-                        if (phone == null) phone = "";
-
-                        enrolledList.add(new Entrant(name, email, phone, "", "Confirmed"));
-                        filterEntrants(etSearch != null ? etSearch.getText().toString() : "");
-                        updateUI();
+                        
+                        addEntrantToList(new Entrant(name, email != null ? email : "", phone != null ? phone : "", "", "Confirmed"));
                     } else {
-                        // User document doesn't exist, try to find from credentials
                         findNameFromCredentials(userId);
                     }
                 })
-                .addOnFailureListener(e -> {
-                    // Add with userId as name
-                    enrolledList.add(new Entrant(userId, "", "", "", "Confirmed"));
-                    filterEntrants(etSearch != null ? etSearch.getText().toString() : "");
-                    updateUI();
-                });
+                .addOnFailureListener(e -> addEntrantToList(new Entrant(userId, "", "", "", "Confirmed")));
     }
 
     private void findNameFromCredentials(String userId) {
@@ -208,43 +190,35 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
                     if (!snapshots.isEmpty()) {
                         String username = snapshots.getDocuments().get(0).getString("username");
                         String email = snapshots.getDocuments().get(0).getString("email");
-                        if (username != null && !username.isEmpty()) {
-                            enrolledList.add(new Entrant(username, email != null ? email : "", "", "", "Confirmed"));
-                        } else if (email != null && !email.isEmpty()) {
-                            String nameFromEmail = email.split("@")[0];
-                            enrolledList.add(new Entrant(nameFromEmail, email, "", "", "Confirmed"));
-                        } else {
-                            enrolledList.add(new Entrant(userId, "", "", "", "Confirmed"));
-                        }
+                        String name = (username != null && !username.isEmpty()) ? username : 
+                                     (email != null ? email.split("@")[0] : userId);
+                        addEntrantToList(new Entrant(name, email != null ? email : "", "", "", "Confirmed"));
                     } else {
-                        enrolledList.add(new Entrant(userId, "", "", "", "Confirmed"));
+                        addEntrantToList(new Entrant(userId, "", "", "", "Confirmed"));
                     }
-                    filterEntrants(etSearch != null ? etSearch.getText().toString() : "");
-                    updateUI();
                 })
-                .addOnFailureListener(e -> {
-                    enrolledList.add(new Entrant(userId, "", "", "", "Confirmed"));
-                    filterEntrants(etSearch != null ? etSearch.getText().toString() : "");
-                    updateUI();
-                });
+                .addOnFailureListener(e -> addEntrantToList(new Entrant(userId, "", "", "", "Confirmed")));
+    }
+
+    private void addEntrantToList(Entrant entrant) {
+        enrolledList.add(entrant);
+        filterEntrants(etSearch != null ? etSearch.getText().toString() : "");
     }
 
     private void filterEntrants(String query) {
         filteredList.clear();
-
         if (query.isEmpty()) {
             filteredList.addAll(enrolledList);
         } else {
             String lowerQuery = query.toLowerCase();
             for (Entrant e : enrolledList) {
                 if ((e.getName() != null && e.getName().toLowerCase().contains(lowerQuery)) ||
-                        (e.getEmail() != null && e.getEmail().toLowerCase().contains(lowerQuery))) {
+                    (e.getEmail() != null && e.getEmail().toLowerCase().contains(lowerQuery))) {
                     filteredList.add(e);
                 }
             }
         }
-
-        adapter.updateList(filteredList);
+        adapter.notifyDataSetChanged();
         updateUI();
     }
 
@@ -252,49 +226,129 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
         if (tvConfirmedCount != null) {
             tvConfirmedCount.setText(String.valueOf(filteredList.size()));
         }
-        updateEmptyState(filteredList.isEmpty());
+        boolean isEmpty = filteredList.isEmpty();
+        if (tvEmptyState != null) tvEmptyState.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+        if (rvEnrolledEntrants != null) rvEnrolledEntrants.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
     }
 
-    private void updateEmptyState(boolean isEmpty) {
-        if (isEmpty) {
-            if (tvEmptyState != null) tvEmptyState.setVisibility(View.VISIBLE);
-            if (rvEnrolledEntrants != null) rvEnrolledEntrants.setVisibility(View.GONE);
-        } else {
-            if (tvEmptyState != null) tvEmptyState.setVisibility(View.GONE);
-            if (rvEnrolledEntrants != null) rvEnrolledEntrants.setVisibility(View.VISIBLE);
-        }
-    }
-
-    private void exportToCSV() {
+    private void showExportOptions() {
         if (filteredList.isEmpty()) {
             Toast.makeText(this, "No entrants to export", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String fileName = "confirmed_entrants_" + (eventName != null ? eventName.replaceAll("\\s+", "_") : "event") + "_" + System.currentTimeMillis() + ".csv";
+        String[] options = {"Save to Device (Local)", "Upload to Google Drive / Share"};
+        new AlertDialog.Builder(this)
+                .setTitle("Export CSV")
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        exportLocally();
+                    } else {
+                        exportToCloud();
+                    }
+                })
+                .show();
+    }
+
+    private void exportLocally() {
+        String safeEventName = (eventName != null ? eventName.replaceAll("[^a-zA-Z0-9]", "_") : "event");
+        String fileName = "confirmed_entrants_" + safeEventName + ".csv";
         createDocumentLauncher.launch(fileName);
     }
 
-    private void writeCsvToUri(Uri uri) {
+    private void exportToCloud() {
         try {
-            StringBuilder csv = new StringBuilder();
-            csv.append("Name,Email,Phone,Status\n");
-            for (Entrant e : filteredList) {
-                csv.append("\"").append(e.getName()).append("\",");
-                csv.append("\"").append(e.getEmail()).append("\",");
-                csv.append("\"").append(e.getPhoneNumber() != null ? e.getPhoneNumber() : "").append("\",");
-                csv.append("\"Confirmed\"\n");
+            String safeEventName = (eventName != null ? eventName.replaceAll("[^a-zA-Z0-9]", "_") : "event");
+            File tempFile = new File(getCacheDir(), "confirmed_entrants_" + safeEventName + ".csv");
+            
+            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                // Write BOM for Excel
+                fos.write(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
+                
+                StringBuilder sb = new StringBuilder();
+                sb.append("Name,Email,Phone,Status\n");
+                for (Entrant e : filteredList) {
+                    sb.append(escapeCsv(e.getName())).append(",");
+                    sb.append(escapeCsv(e.getEmail())).append(",");
+                    sb.append(escapeCsv(e.getPhoneNumber())).append(",");
+                    sb.append("\"Confirmed\"\n");
+                }
+                fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+                fos.flush();
             }
 
-            OutputStream outputStream = getContentResolver().openOutputStream(uri);
-            if (outputStream != null) {
-                outputStream.write(csv.toString().getBytes());
-                outputStream.close();
-                Toast.makeText(this, "CSV exported successfully", Toast.LENGTH_SHORT).show();
-            }
+            Uri uri = FileProvider.getUriForFile(this, "com.example.eventflow.fileprovider", tempFile);
+            
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.setType("text/csv");
+            shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            
+            startActivity(Intent.createChooser(shareIntent, "Save to Drive or Share via..."));
+
         } catch (IOException e) {
-            e.printStackTrace();
-            Toast.makeText(this, "Error creating CSV: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Error sharing CSV", e);
+            Toast.makeText(this, "Failed to prepare file for upload", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void writeCsvToUri(Uri uri) {
+        try (OutputStream outputStream = getContentResolver().openOutputStream(uri)) {
+            if (outputStream == null) return;
+
+            // Write BOM for Excel UTF-8 compatibility
+            outputStream.write(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
+
+            StringBuilder sb = new StringBuilder();
+            // Header
+            sb.append("Name,Email,Phone,Status\n");
+            
+            // Data
+            for (Entrant e : filteredList) {
+                sb.append(escapeCsv(e.getName())).append(",");
+                sb.append(escapeCsv(e.getEmail())).append(",");
+                sb.append(escapeCsv(e.getPhoneNumber())).append(",");
+                sb.append("\"Confirmed\"\n");
+            }
+
+            outputStream.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+            outputStream.flush();
+            
+            Log.d(TAG, "Successfully wrote " + filteredList.size() + " rows to CSV locally");
+            runOnUiThread(() -> showDownloadSuccess(uri));
+
+        } catch (IOException e) {
+            Log.e(TAG, "Error writing CSV locally", e);
+            runOnUiThread(() -> Toast.makeText(this, "Failed to write file", Toast.LENGTH_SHORT).show());
+        }
+    }
+
+    private String escapeCsv(String value) {
+        if (value == null) return "\"\"";
+        return "\"" + value.replace("\"", "\"\"") + "\"";
+    }
+
+    private void showDownloadSuccess(Uri uri) {
+        View rootView = findViewById(android.R.id.content);
+        if (rootView != null) {
+            Snackbar.make(rootView, "File saved locally", Snackbar.LENGTH_LONG)
+                    .setAction("Open", v -> {
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setDataAndType(uri, "text/csv");
+                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        try {
+                            startActivity(Intent.createChooser(intent, "Open with..."));
+                        } catch (Exception ex) {
+                            intent.setDataAndType(uri, "text/plain");
+                            try {
+                                startActivity(intent);
+                            } catch (Exception e2) {
+                                Toast.makeText(this, "No app found to open CSV.", Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    })
+                    .show();
         }
     }
 
@@ -314,20 +368,15 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
         Intent emailIntent = new Intent(Intent.ACTION_SENDTO);
         emailIntent.setData(Uri.parse("mailto:"));
         emailIntent.putExtra(Intent.EXTRA_EMAIL, emails.toArray(new String[0]));
-        emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Event Update - " + (eventName != null ? eventName : "Event"));
-        startActivity(Intent.createChooser(emailIntent, "Send email"));
+        emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Event Update: " + (eventName != null ? eventName : "Event"));
+        startActivity(Intent.createChooser(emailIntent, "Send email via..."));
     }
 
     private class EnrolledEntrantsAdapter extends RecyclerView.Adapter<EnrolledEntrantsAdapter.ViewHolder> {
-        private List<Entrant> entrants;
+        private final List<Entrant> entrants;
 
         EnrolledEntrantsAdapter(List<Entrant> entrants) {
-            this.entrants = entrants != null ? entrants : new ArrayList<>();
-        }
-
-        void updateList(List<Entrant> newList) {
-            this.entrants = newList != null ? newList : new ArrayList<>();
-            notifyDataSetChanged();
+            this.entrants = entrants;
         }
 
         @NonNull
@@ -340,26 +389,21 @@ public class OrganizerFinalEntrantsActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            if (position < entrants.size()) {
-                Entrant e = entrants.get(position);
-                if (e != null) {
-                    holder.tvName.setText(e.getName() != null ? e.getName() : "Unknown");
-                    holder.tvEmail.setText(e.getEmail() != null ? e.getEmail() : "");
-                    holder.tvPhone.setText(e.getPhoneNumber() != null && !e.getPhoneNumber().isEmpty() ? e.getPhoneNumber() : "No phone");
-                    holder.tvStatus.setText("Confirmed");
-                    holder.tvStatus.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
-                }
-            }
+            Entrant e = entrants.get(position);
+            holder.tvName.setText(e.getName() != null ? e.getName() : "Unknown");
+            holder.tvEmail.setText(e.getEmail() != null ? e.getEmail() : "");
+            holder.tvPhone.setText(e.getPhoneNumber() != null && !e.getPhoneNumber().isEmpty() ? e.getPhoneNumber() : "No phone");
+            holder.tvStatus.setText("Confirmed");
+            holder.tvStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
         }
 
         @Override
         public int getItemCount() {
-            return entrants != null ? entrants.size() : 0;
+            return entrants.size();
         }
 
         class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvName, tvEmail, tvPhone, tvStatus;
-
             ViewHolder(View v) {
                 super(v);
                 tvName = v.findViewById(R.id.tvEnrolledName);
