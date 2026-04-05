@@ -4,6 +4,7 @@ package com.example.eventflow.org_event;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,6 +37,7 @@ import java.util.List;
 /**
  * US 02.01.03 — Invite entrants to private event waiting list
  * US 02.09.01 — Assign co-organizer (blocks them from joining entrant pool)
+ * US 03.08.01 — Mirror notifications to global collection for Admin review
  */
 public class InviteEntrantsFragment extends Fragment {
 
@@ -57,6 +59,7 @@ public class InviteEntrantsFragment extends Fragment {
     private EventRepository eventRepository;
     private FirebaseFirestore db;
     private String eventId;
+    private String eventName = "Private Event";
 
 
     public static InviteEntrantsFragment newInstance(String eventId) {
@@ -111,6 +114,7 @@ public class InviteEntrantsFragment extends Fragment {
         }
 
 
+        loadEventDetails();
         loadAllProfiles();
 
 
@@ -124,6 +128,18 @@ public class InviteEntrantsFragment extends Fragment {
 
 
         return view;
+    }
+
+    private void loadEventDetails() {
+        if (eventId == null) return;
+        db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
+            if (doc.exists()) {
+                String fetchedName = doc.getString("name");
+                if (fetchedName != null) {
+                    eventName = fetchedName;
+                }
+            }
+        });
     }
 
 
@@ -142,8 +158,9 @@ public class InviteEntrantsFragment extends Fragment {
                     }
                     filterProfiles(etSearch.getText().toString().trim());
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(getContext(), "Failed to load profiles.", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                        if (getContext() != null) Toast.makeText(getContext(), "Failed to load profiles.", Toast.LENGTH_SHORT).show();
+                });
     }
 
 
@@ -188,7 +205,7 @@ public class InviteEntrantsFragment extends Fragment {
         // CREATE NOTIFICATION
         Notification notification = new Notification(
                 "You’ve been invited to a private event",
-                "Private Event",
+                eventName,
                 "Tap to respond",
                 Notification.TYPE_PRIVATE_INVITE,
                 eventId
@@ -211,12 +228,12 @@ public class InviteEntrantsFragment extends Fragment {
                     // Mirror to top-level notifications collection for Admin review (US 03.08.01)
                     db.collection("notifications").document(doc.getId()).set(notification);
                     
-                    Toast.makeText(getContext(),
+                    if (getContext() != null) Toast.makeText(getContext(),
                             "Invite sent!",
                             Toast.LENGTH_SHORT).show();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(),
+                    if (getContext() != null) Toast.makeText(getContext(),
                             "Failed: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
                 });
@@ -243,7 +260,7 @@ public class InviteEntrantsFragment extends Fragment {
                     // 2. CREATE NOTIFICATION
                     Notification notification = new Notification(
                             "You’ve been assigned as a co-organizer",
-                            "Event",
+                            eventName,
                             "You are now a co-organizer",
                             Notification.TYPE_CO_ORGANIZER,
                             eventId
@@ -259,21 +276,22 @@ public class InviteEntrantsFragment extends Fragment {
                             .addOnSuccessListener(doc -> {
                                 // Mirror to top-level notifications collection for Admin review (US 03.08.01)
                                 db.collection("notifications").document(doc.getId()).set(notification);
-
-                                Toast.makeText(getContext(),
+                                
+                                if (getContext() != null) Toast.makeText(getContext(),
                                         profile.getFullName() + " is now a co-organizer!",
                                         Toast.LENGTH_SHORT).show();
                             })
                             .addOnFailureListener(e -> {
-                                Toast.makeText(getContext(),
+                                if (getContext() != null) Toast.makeText(getContext(),
                                         "Notification failed: " + e.getMessage(),
                                         Toast.LENGTH_SHORT).show();
                             });
 
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(getContext(),
+                .addOnFailureListener(e -> {
+                        if (getContext() != null) Toast.makeText(getContext(),
                                 "Failed to assign co-organizer: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show());
+                                Toast.LENGTH_SHORT).show();
+                });
     }
 }

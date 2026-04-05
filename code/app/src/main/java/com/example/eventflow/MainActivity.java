@@ -24,9 +24,14 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * MainActivity — Role Selection screen.
@@ -37,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
 
     private ImageView ivEntrant, ivOrganizer, ivAdmin;
     private String selectedRole = "";
+    private FirebaseFirestore db;
+    private FirebaseAuth mAuth;
 
     private final ActivityResultLauncher<ScanOptions> barcodeLauncher =
             registerForActivityResult(new ScanContract(), result -> {
@@ -57,6 +64,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
+        db = FirebaseFirestore.getInstance();
+        mAuth = FirebaseAuth.getInstance();
 
         askNotificationPermission();
 
@@ -155,11 +165,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveRoleAndNavigate() {
+        // Save local state
         SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         prefs.edit().putString("selectedRole", selectedRole).apply();
 
         SharedPreferences eventflowPrefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
         eventflowPrefs.edit().putString("userRole", selectedRole).apply();
+
+        // Sync role to Firestore for Admin Management compatibility
+        if (mAuth.getCurrentUser() != null) {
+            String uid = mAuth.getCurrentUser().getUid();
+            Map<String, Object> update = new HashMap<>();
+            update.put("role", selectedRole);
+
+            // Update profiles collection (Admin screen source)
+            db.collection("profiles").document(uid)
+                    .set(update, SetOptions.merge())
+                    .addOnFailureListener(e -> Log.e("MainActivity", "Failed to update role in profiles", e));
+
+            // Update users collection (General profile source)
+            db.collection("users").document(uid)
+                    .set(update, SetOptions.merge())
+                    .addOnFailureListener(e -> Log.e("MainActivity", "Failed to update role in users", e));
+        }
 
         navigateToRoleDashboard();
     }
