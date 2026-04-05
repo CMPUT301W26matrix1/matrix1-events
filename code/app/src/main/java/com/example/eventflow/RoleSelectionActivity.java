@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
@@ -12,17 +13,28 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.android.material.card.MaterialCardView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class RoleSelectionActivity extends AppCompatActivity {
 
     private MaterialCardView cardEntrant, cardOrganizer, cardAdmin;
     private Button btnContinue;
     private String selectedRole = "Entrant"; // Default as seen in Figma
+    private FirebaseFirestore db;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_role_selection);
+
+        db = FirebaseFirestore.getInstance();
+        mAuth = FirebaseAuth.getInstance();
 
         cardEntrant = findViewById(R.id.card_role_entrant);
         cardOrganizer = findViewById(R.id.card_role_organizer);
@@ -46,12 +58,29 @@ public class RoleSelectionActivity extends AppCompatActivity {
         }
 
         btnContinue.setOnClickListener(v -> {
-            prefs.edit().putString("userRole", selectedRole.toLowerCase()).apply();
+            String roleLower = selectedRole.toLowerCase();
+            prefs.edit().putString("userRole", roleLower).apply();
+
+            // Persist role to BOTH Firestore collections so Admin can see it correctly
+            if (mAuth.getCurrentUser() != null) {
+                String uid = mAuth.getCurrentUser().getUid();
+                Map<String, Object> update = new HashMap<>();
+                update.put("role", roleLower);
+
+                // Use set with merge to ensure the field is added/updated in both places
+                db.collection("profiles").document(uid)
+                        .set(update, SetOptions.merge())
+                        .addOnFailureListener(e -> Log.e("RoleSelection", "Failed to update profiles collection", e));
+
+                db.collection("users").document(uid)
+                        .set(update, SetOptions.merge())
+                        .addOnFailureListener(e -> Log.e("RoleSelection", "Failed to update users collection", e));
+            }
 
             if ("Entrant".equals(selectedRole)) {
                 startActivity(new Intent(RoleSelectionActivity.this, BrowseEventsActivity.class));
             } else if ("Organizer".equals(selectedRole)) {
-                // Navigate to the comprehensive EntrantDashboardActivity (Organizer Dashboard) instead of the simplified list
+                // Navigate to the comprehensive organizer dashboard
                 startActivity(new Intent(RoleSelectionActivity.this, EntrantDashboardActivity.class));
             } else if ("Admin".equals(selectedRole)) {
                 startActivity(new Intent(RoleSelectionActivity.this, AdminDashboardActivity.class));
@@ -65,13 +94,14 @@ public class RoleSelectionActivity extends AppCompatActivity {
         resetCard(cardOrganizer);
         resetCard(cardAdmin);
 
-        // Highlight selected card - Using stroke instead of background for original look
+        // Highlight selected card
         selectedCard.setStrokeColor(getResources().getColor(R.color.accent_green));
         selectedCard.setStrokeWidth(6);
         selectedRole = role;
     }
 
     private void resetCard(MaterialCardView card) {
+        if (card == null) return;
         card.setCardBackgroundColor(getResources().getColor(R.color.surface_dark));
         card.setStrokeColor(Color.parseColor("#1A1A1A"));
         card.setStrokeWidth(2);
