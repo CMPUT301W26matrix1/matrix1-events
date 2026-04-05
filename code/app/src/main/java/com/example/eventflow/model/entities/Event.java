@@ -31,6 +31,7 @@ public class Event {
     private List<String> interests;
     private List<String> daysOfWeek;
     private String timeOfDay;
+    private String userRole;  // ADDED: "organizer" or "co-organizer"
 
     // Geolocation fields (US 02.01.05)
     private boolean geolocationRequired;
@@ -54,6 +55,7 @@ public class Event {
         this.locationLatitude = 0;
         this.locationLongitude = 0;
         this.locationRadius = 500;
+        this.userRole = "entrant";  // Default role
     }
 
     public Event(String eventId, String name, String description, String location,
@@ -81,6 +83,7 @@ public class Event {
         this.locationLatitude = 0;
         this.locationLongitude = 0;
         this.locationRadius = 500;
+        this.userRole = "entrant";  // Default role
     }
 
     // Existing getters/setters
@@ -92,7 +95,7 @@ public class Event {
     public void setName(String name) { this.name = name; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    
+
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
 
@@ -148,6 +151,10 @@ public class Event {
     // US 02.09.01 — co-organizer getters/setters
     public List<String> getCoOrganizerIds() { return coOrganizerIds; }
     public void setCoOrganizerIds(List<String> coOrganizerIds) { this.coOrganizerIds = coOrganizerIds; }
+
+    // ADDED: userRole getter and setter
+    public String getUserRole() { return userRole; }
+    public void setUserRole(String userRole) { this.userRole = userRole; }
 
     // Geolocation getters (US 02.01.05)
     public boolean isGeolocationRequired() { return geolocationRequired; }

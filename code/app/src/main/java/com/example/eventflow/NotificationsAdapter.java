@@ -179,6 +179,9 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
                     Toast.makeText(holder.itemView.getContext(), "Accepted Invitation", Toast.LENGTH_SHORT).show();
                     n.setAccepted(true);
                     notifyItemChanged(holder.getAdapterPosition());
+
+                    // Send notification to organizer
+                    sendOrganizerNotificationForCoOrganizer(n.getEventId(), n.getEventName(), userId, "ACCEPTED");
                 });
     }
 
@@ -187,6 +190,9 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
         Toast.makeText(holder.itemView.getContext(), "Declined Invitation", Toast.LENGTH_SHORT).show();
         n.setDeclined(true);
         notifyItemChanged(holder.getAdapterPosition());
+
+        // Send notification to organizer
+        sendOrganizerNotificationForCoOrganizer(n.getEventId(), n.getEventName(), userId, "DECLINED");
     }
 
     private void handleDefaultAccept(Notification n, String userId, DefaultViewHolder holder) {
@@ -227,6 +233,8 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
                 .set(updates, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
                     Log.d("ACCEPT_DEBUG", "✅ Event participation updated to ACCEPTED");
+                    // Get user name and send organizer notification
+                    getUserNameAndSendNotification(n.getEventId(), n.getEventName(), userId, "ACCEPTED");
                 })
                 .addOnFailureListener(e -> {
                     Log.e("ACCEPT_DEBUG", "❌ Failed to update event participation: " + e.getMessage());
@@ -274,6 +282,8 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
                 )
                 .addOnSuccessListener(aVoid -> {
                     Log.d("DECLINE_DEBUG", "✅ User moved from selectedEntrants to rejectedEntrants");
+                    // Get user name and send organizer notification
+                    getUserNameAndSendNotification(n.getEventId(), n.getEventName(), userId, "DECLINED");
                 })
                 .addOnFailureListener(e -> {
                     Log.e("DECLINE_DEBUG", "❌ Failed to update event: " + e.getMessage());
@@ -282,7 +292,6 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
         Toast.makeText(holder.itemView.getContext(), "You've declined the invitation.", Toast.LENGTH_SHORT).show();
     }
 
-    // FIXED: Try Again button - moves user from rejectedEntrants to waitingList
     private void handleTryAgain(Notification n, String userId, DefaultViewHolder holder) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
@@ -303,6 +312,8 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
                                 Toast.makeText(holder.itemView.getContext(),
                                         "You've been added back to the waiting list!",
                                         Toast.LENGTH_LONG).show();
+                                // Get user name and send organizer notification
+                                getUserNameAndSendNotification(n.getEventId(), n.getEventName(), userId, "TRY_AGAIN");
                             });
 
                     n.setAccepted(true);
@@ -312,6 +323,125 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
                     Toast.makeText(holder.itemView.getContext(),
                             "Failed to add back to waiting list: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void getUserNameAndSendNotification(String eventId, String eventName, String userId, String action) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("users").document(userId).get()
+                .addOnSuccessListener(userDoc -> {
+                    String userName = userId;
+                    if (userDoc.exists()) {
+                        String firstName = userDoc.getString("firstName");
+                        String lastName = userDoc.getString("lastName");
+                        if (firstName != null && !firstName.isEmpty()) {
+                            userName = firstName;
+                            if (lastName != null && !lastName.isEmpty()) {
+                                userName = firstName + " " + lastName;
+                            }
+                        }
+                    }
+                    sendOrganizerNotification(eventId, eventName, userId, userName, action);
+                });
+    }
+
+    private void sendOrganizerNotification(String eventId, String eventName, String userId, String userName, String action) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("events").document(eventId).get()
+                .addOnSuccessListener(eventDoc -> {
+                    String organizerId = eventDoc.getString("organizerId");
+                    if (organizerId == null || organizerId.isEmpty()) return;
+
+                    Map<String, Object> notification = new HashMap<>();
+                    String title = "";
+                    String message = "";
+                    String type = "";
+
+                    switch (action) {
+                        case "ACCEPTED":
+                            title = "Invitation Accepted ✅";
+                            message = userName + " accepted the invitation and will be joining " + eventName;
+                            type = "ENTRANT_ACCEPTED";
+                            break;
+                        case "DECLINED":
+                            title = "Invitation Declined ❌";
+                            message = userName + " declined the invitation and will not be joining " + eventName;
+                            type = "ENTRANT_DECLINED";
+                            break;
+                        case "TRY_AGAIN":
+                            title = "Rejoined Waiting List 🔄";
+                            message = userName + " lost the lottery and rejoined the waiting list for " + eventName;
+                            type = "ENTRANT_TRY_AGAIN";
+                            break;
+                    }
+
+                    notification.put("title", title);
+                    notification.put("message", message);
+                    notification.put("type", type);
+                    notification.put("eventId", eventId);
+                    notification.put("eventName", eventName);
+                    notification.put("userId", userId);
+                    notification.put("userName", userName);
+                    notification.put("timestamp", Timestamp.now());
+                    notification.put("isRead", false);
+
+                    db.collection("users").document(organizerId)
+                            .collection("organizer_notifications")
+                            .add(notification);
+                });
+    }
+
+    private void sendOrganizerNotificationForCoOrganizer(String eventId, String eventName, String userId, String action) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("events").document(eventId).get()
+                .addOnSuccessListener(eventDoc -> {
+                    String organizerId = eventDoc.getString("organizerId");
+                    if (organizerId == null || organizerId.isEmpty()) return;
+
+                    db.collection("users").document(userId).get()
+                            .addOnSuccessListener(userDoc -> {
+                                String userName = userId;
+                                if (userDoc.exists()) {
+                                    String firstName = userDoc.getString("firstName");
+                                    String lastName = userDoc.getString("lastName");
+                                    if (firstName != null && !firstName.isEmpty()) {
+                                        userName = firstName;
+                                        if (lastName != null && !lastName.isEmpty()) {
+                                            userName = firstName + " " + lastName;
+                                        }
+                                    }
+                                }
+
+                                Map<String, Object> notification = new HashMap<>();
+                                String title = "";
+                                String message = "";
+                                String type = "";
+
+                                if ("ACCEPTED".equals(action)) {
+                                    title = "Co-organizer Accepted ✅";
+                                    message = userName + " accepted the co-organizer invitation and will help manage " + eventName;
+                                    type = "CO_ORGANIZER_ACCEPTED";
+                                } else {
+                                    title = "Co-organizer Declined ❌";
+                                    message = userName + " declined the co-organizer invitation for " + eventName;
+                                    type = "CO_ORGANIZER_DECLINED";
+                                }
+
+                                notification.put("title", title);
+                                notification.put("message", message);
+                                notification.put("type", type);
+                                notification.put("eventId", eventId);
+                                notification.put("eventName", eventName);
+                                notification.put("userId", userId);
+                                notification.put("userName", userName);
+                                notification.put("timestamp", Timestamp.now());
+                                notification.put("isRead", false);
+
+                                db.collection("users").document(organizerId)
+                                        .collection("organizer_notifications")
+                                        .add(notification);
+                            });
                 });
     }
 

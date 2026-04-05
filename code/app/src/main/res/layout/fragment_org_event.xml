@@ -129,7 +129,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="24dp"
-                android:layout_marginBottom="32dp"
+                android:layout_marginBottom="16dp"
                 android:background="@drawable/bg_profile_input"
                 android:padding="16dp">
 
@@ -172,6 +172,54 @@
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true" />
             </RelativeLayout>
+
+            <!-- ============================================ -->
+            <!-- CO-ORGANIZER EMAIL FIELD (ADD THIS) -->
+            <!-- ============================================ -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"
+                android:text="Co-organizer Email (Optional)"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginBottom="24dp"
+                app:cardBackgroundColor="#121212"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@android:drawable/ic_menu_add"
+                        app:tint="#666666" />
+
+                    <EditText
+                        android:id="@+id/et_co_organizer_email"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@null"
+                        android:hint="Enter co-organizer email..."
+                        android:layout_marginStart="12dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#666666"
+                        android:textSize="15sp"
+                        android:inputType="textEmailAddress" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
 
             <!-- Action Button -->
             <Button

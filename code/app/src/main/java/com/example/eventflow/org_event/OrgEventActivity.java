@@ -9,7 +9,6 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.provider.Settings;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -29,6 +28,7 @@ import com.example.eventflow.org_QR.QRDisplayActivity;
 import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 
@@ -46,7 +46,7 @@ public class OrgEventActivity extends AppCompatActivity {
     private static final int PICK_IMAGE_REQUEST    = 1;
     private static final int PICK_LOCATION_REQUEST = 2;
 
-    private EditText etName, etCategory, etLocation, etDate, etTime, etDescription, etLimit, etRegStart, etRegEnd;
+    private EditText etName, etLocation, etDate, etTime, etDescription, etLimit, etRegStart, etRegEnd, etCoOrganizerEmail;
     private SwitchCompat switchGeo, switchPrivate;
     private ImageView ivEventPoster;
     private View btnBack, cvUploadImage;
@@ -90,7 +90,6 @@ public class OrgEventActivity extends AppCompatActivity {
 
     private void initViews() {
         etName        = findViewById(R.id.et_event_name);
-        etCategory    = findViewById(R.id.et_event_category);
         etLocation    = findViewById(R.id.et_event_location);
         etDate        = findViewById(R.id.et_event_date);
         etTime        = findViewById(R.id.et_event_time);
@@ -98,6 +97,7 @@ public class OrgEventActivity extends AppCompatActivity {
         etLimit       = findViewById(R.id.et_max_attendees);
         etRegStart    = findViewById(R.id.et_reg_start);
         etRegEnd      = findViewById(R.id.et_reg_end);
+        etCoOrganizerEmail = findViewById(R.id.et_co_organizer_email);
         ivEventPoster = findViewById(R.id.iv_event_poster);
         cvUploadImage = findViewById(R.id.cv_upload_image);
         switchGeo     = findViewById(R.id.switchGeolocationRequired);
@@ -222,7 +222,7 @@ public class OrgEventActivity extends AppCompatActivity {
                 ivEventPoster.setVisibility(View.VISIBLE);
                 ivEventPoster.setImageURI(imageUri);
             }
-            
+
             // Convert to Base64 immediately
             posterBase64 = encodeImage(imageUri);
             Toast.makeText(this, "Poster selected", Toast.LENGTH_SHORT).show();
@@ -241,7 +241,7 @@ public class OrgEventActivity extends AppCompatActivity {
         try {
             InputStream inputStream = getContentResolver().openInputStream(imageUri);
             Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-            
+
             // Resize and compress to keep Base64 string small enough for Firestore
             int maxSize = 800;
             int width = bitmap.getWidth();
@@ -275,9 +275,11 @@ public class OrgEventActivity extends AppCompatActivity {
             return;
         }
 
-        String userId = "";
+        final String userId;
         if (FirebaseAuth.getInstance().getCurrentUser() != null) {
             userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        } else {
+            userId = "";
         }
 
         if (userId.isEmpty()) {
@@ -290,13 +292,62 @@ public class OrgEventActivity extends AppCompatActivity {
         progressDialog.setCancelable(false);
         progressDialog.show();
 
-        String eventId = (currentEventId != null && !currentEventId.isEmpty()) 
-                ? currentEventId 
+        final String eventId = (currentEventId != null && !currentEventId.isEmpty())
+                ? currentEventId
                 : db.collection("events").document().getId();
-        
-        String finalPoster = (posterBase64 != null) ? posterBase64 : existingPosterUrl;
-        
-        saveEventToFirestore(eventId, eventNameStr, finalPoster, userId);
+
+        final String finalPoster = (posterBase64 != null) ? posterBase64 : existingPosterUrl;
+
+        // Check if co-organizer email was entered
+        String coOrgEmail = etCoOrganizerEmail.getText().toString().trim();
+        if (!coOrgEmail.isEmpty()) {
+            // Look up user by email and send invitation
+            db.collection("credentials")
+                    .whereEqualTo("email", coOrgEmail)
+                    .get()
+                    .addOnSuccessListener(querySnapshot -> {
+                        if (!querySnapshot.isEmpty()) {
+                            String coOrgUid = querySnapshot.getDocuments().get(0).getString("uid");
+                            // Send invitation notification
+                            sendCoOrganizerInvitation(coOrgUid, eventNameStr, eventId);
+                            Toast.makeText(this, "Co-organizer invitation sent!", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(this, "Co-organizer email not found", Toast.LENGTH_SHORT).show();
+                        }
+                        // Save event without adding co-organizer (they need to accept first)
+                        saveEventToFirestore(eventId, eventNameStr, finalPoster, userId);
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Error finding co-organizer: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        saveEventToFirestore(eventId, eventNameStr, finalPoster, userId);
+                    });
+        } else {
+            saveEventToFirestore(eventId, eventNameStr, finalPoster, userId);
+        }
+    }
+
+    private void sendCoOrganizerInvitation(String coOrgUid, String eventName, String eventId) {
+        Map<String, Object> notification = new HashMap<>();
+        notification.put("title", "Co-organizer Invitation");
+        notification.put("message", "You have been invited to be a co-organizer for: " + eventName);
+        notification.put("type", "CO_ORGANIZER");
+        notification.put("eventId", eventId);
+        notification.put("eventName", eventName);
+        notification.put("timestamp", Timestamp.now());
+        notification.put("read", false);
+        notification.put("accepted", false);
+        notification.put("declined", false);
+
+        db.collection("users")
+                .document(coOrgUid)
+                .collection("notifications")
+                .add(notification)
+                .addOnSuccessListener(documentReference -> {
+                    Log.d("OrgEvent", "Co-organizer invitation sent to: " + coOrgUid);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("OrgEvent", "Failed to send invitation: " + e.getMessage());
+                });
     }
 
     private void saveEventToFirestore(String eventId, String eventNameStr, String posterData, String userId) {
@@ -304,7 +355,6 @@ public class OrgEventActivity extends AppCompatActivity {
         eventMap.put("eventId", eventId);
         eventMap.put("organizerId", userId);
         eventMap.put("name", eventNameStr);
-        eventMap.put("category", etCategory.getText().toString().trim());
         eventMap.put("location", etLocation.getText().toString());
         eventMap.put("description", etDescription.getText().toString());
 
@@ -384,7 +434,6 @@ public class OrgEventActivity extends AppCompatActivity {
         db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
             if (doc.exists()) {
                 etName.setText(doc.getString("name"));
-                etCategory.setText(doc.getString("category"));
                 etLocation.setText(doc.getString("location"));
                 etDate.setText(doc.getString("date"));
                 etTime.setText(doc.getString("time"));
@@ -393,7 +442,7 @@ public class OrgEventActivity extends AppCompatActivity {
                 etRegEnd.setText(doc.getString("registrationEndStr"));
                 Object cap = doc.get("capacity");
                 etLimit.setText(cap != null ? String.valueOf(cap) : "");
-                
+
                 existingPosterUrl = doc.getString("posterUrl");
                 if (existingPosterUrl != null && !existingPosterUrl.isEmpty()) {
                     ivEventPoster.setVisibility(View.VISIBLE);

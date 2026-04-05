@@ -97,6 +97,11 @@
 
         <activity android:name=".org_event.InviteEntrantsActivity" />
 
+        <!-- Co-organizer Invitation Activity -->
+        <activity
+            android:name=".org_event.manage_entrant.CoOrganizerInvitationActivity"
+            android:exported="false" />
+
         <!-- Manage Entrants - All activities in the same package -->
         <activity
             android:name=".org_event.manage_entrant.EntrantDashboardActivity"
@@ -121,6 +126,18 @@
         <activity
             android:name=".org_event.manage_entrant.NotificationsActivity"
             android:exported="false" />
+
+        <!-- Notification History Activity -->
+        <activity
+            android:name=".org_event.manage_entrant.NotificationHistoryActivity"
+            android:exported="false"
+            android:label="Notification History" />
+
+        <!-- Organizer Notification Center Activity -->
+        <activity
+            android:name=".org_event.manage_entrant.OrganizerNotificationCenterActivity"
+            android:exported="false"
+            android:label="Notifications" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

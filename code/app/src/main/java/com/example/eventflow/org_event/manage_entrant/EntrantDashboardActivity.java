@@ -25,7 +25,6 @@ import com.example.eventflow.ProfileActivity;
 import com.example.eventflow.R;
 import com.example.eventflow.RoleSelectionActivity;
 import com.example.eventflow.WaitingListActivity;
-import com.example.eventflow.NotificationsActivity;
 import com.example.eventflow.controller.LotteryController;
 import com.example.eventflow.model.entities.Event;
 import com.example.eventflow.org_event.OrgEventActivity;
@@ -102,6 +101,8 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         if (eventId != null && !eventId.isEmpty() && lotteryController != null) {
             lotteryController.checkAndAutoRejectExpiredSelections(eventId);
         }
+        // Refresh events list when returning to dashboard
+        loadMyEvents();
     }
 
     private void initViews() {
@@ -109,7 +110,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         tvEventDate = findViewById(R.id.tvEventDate);
         tvEventLocation = findViewById(R.id.tvEventLocation);
         ivEventBackground = findViewById(R.id.ivEventBackground);
-        
+
         tvRegisteredCount = findViewById(R.id.tvRegisteredCount);
         tvAvailableCount = findViewById(R.id.tvAvailableCount);
         tvCapacityCount = findViewById(R.id.tvCapacityCount);
@@ -207,6 +208,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
 
         Log.d("Dashboard", "fetchLatestEvent for userId: " + userId);
 
+        // First check events where user is organizer
         db.collection("events")
                 .whereEqualTo("organizerId", userId)
                 .limit(1)
@@ -221,11 +223,27 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                             fetchStatsFromEvent(event.getEventId());
                         }
                     } else {
-                        tvEventName.setText("No Events Available");
-                        tvEventDate.setText("Create an event to get started");
-                        tvEventLocation.setText("");
-                        if (ivEventBackground != null) ivEventBackground.setImageDrawable(null);
-                        resetStats();
+                        // If no organizer events, check co-organizer events
+                        db.collection("events")
+                                .whereArrayContains("coOrganizerIds", userId)
+                                .limit(1)
+                                .get()
+                                .addOnSuccessListener(coOrgSnapshot -> {
+                                    if (!coOrgSnapshot.isEmpty()) {
+                                        Event event = coOrgSnapshot.getDocuments().get(0).toObject(Event.class);
+                                        if (event != null) {
+                                            event.setEventId(coOrgSnapshot.getDocuments().get(0).getId());
+                                            updateUI(event);
+                                            fetchStatsFromEvent(event.getEventId());
+                                        }
+                                    } else {
+                                        tvEventName.setText("No Events Available");
+                                        tvEventDate.setText("Create an event to get started");
+                                        tvEventLocation.setText("");
+                                        if (ivEventBackground != null) ivEventBackground.setImageDrawable(null);
+                                        resetStats();
+                                    }
+                                });
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -379,26 +397,78 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             return;
         }
 
-        Log.d("Dashboard", "loadMyEvents querying organizerId == " + userId);
+        Log.d("Dashboard", "loadMyEvents querying for userId: " + userId);
 
+        // Clear existing events
+        myEvents.clear();
+
+        // First, load events where user is the organizer
         db.collection("events")
                 .whereEqualTo("organizerId", userId)
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    Log.d("Dashboard", "loadMyEvents found: " + queryDocumentSnapshots.size() + " events");
-                    myEvents.clear();
-                    for (var doc : queryDocumentSnapshots) {
+                .addOnSuccessListener(organizerEvents -> {
+                    for (var doc : organizerEvents) {
                         try {
                             Event event = doc.toObject(Event.class);
                             if (event != null) {
                                 event.setEventId(doc.getId());
+                                event.setUserRole("organizer");
                                 myEvents.add(event);
+                                Log.d("Dashboard", "Added organizer event: " + event.getName());
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
-                    if (organizerAdapter != null) organizerAdapter.notifyDataSetChanged();
+
+                    // Then, load events where user is a co-organizer
+                    db.collection("events")
+                            .whereArrayContains("coOrganizerIds", userId)
+                            .get()
+                            .addOnSuccessListener(coOrganizerEvents -> {
+                                for (var doc : coOrganizerEvents) {
+                                    // Check if already added
+                                    boolean exists = false;
+                                    for (Event e : myEvents) {
+                                        if (e.getEventId().equals(doc.getId())) {
+                                            exists = true;
+                                            break;
+                                        }
+                                    }
+
+                                    if (!exists) {
+                                        try {
+                                            Event event = doc.toObject(Event.class);
+                                            if (event != null) {
+                                                event.setEventId(doc.getId());
+                                                event.setUserRole("co-organizer");
+                                                myEvents.add(event);
+                                                Log.d("Dashboard", "Added co-organizer event: " + event.getName());
+                                            }
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+
+                                if (organizerAdapter != null) {
+                                    organizerAdapter.notifyDataSetChanged();
+                                }
+                                Log.d("Dashboard", "Total events (organizer + co-organizer): " + myEvents.size());
+
+                                // Also update the top stats if no event selected and we have co-organizer events
+                                if (eventId == null && !myEvents.isEmpty()) {
+                                    Event firstEvent = myEvents.get(0);
+                                    updateUI(firstEvent);
+                                    fetchStatsFromEvent(firstEvent.getEventId());
+                                }
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("Dashboard", "Failed to load co-organizer events: " + e.getMessage());
+                                if (organizerAdapter != null) {
+                                    organizerAdapter.notifyDataSetChanged();
+                                }
+                            });
                 })
                 .addOnFailureListener(e -> {
                     Log.e("Dashboard", "loadMyEvents failed: " + e.getMessage());
@@ -439,10 +509,16 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             });
         }
 
+        // FIXED: Notifications card - passes eventId and eventName
         if (cardNotifications != null) {
             cardNotifications.setOnClickListener(v -> {
-                Intent intent = new Intent(this, NotificationsActivity.class);
+                if (eventId == null) {
+                    Toast.makeText(this, "Please select an event first", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Intent intent = new Intent(this, OrganizerNotificationCenterActivity.class);
                 intent.putExtra("eventId", eventId);
+                intent.putExtra("eventName", eventName);
                 startActivity(intent);
             });
         }
@@ -470,11 +546,17 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             });
         }
 
+        // FIXED: Bell icon - passes eventId and eventName
         View bell = findViewById(R.id.ivNotificationBell);
         if (bell != null) {
             bell.setOnClickListener(v -> {
-                Intent intent = new Intent(this, NotificationsActivity.class);
+                if (eventId == null) {
+                    Toast.makeText(this, "Please select an event first", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Intent intent = new Intent(this, OrganizerNotificationCenterActivity.class);
                 intent.putExtra("eventId", eventId);
+                intent.putExtra("eventName", eventName);
                 startActivity(intent);
             });
         }
@@ -504,7 +586,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                     tvEventLocation.setText("Location");
                     if (ivEventBackground != null) ivEventBackground.setImageDrawable(null);
                     resetStats();
-                    
+
                     // Refresh the lists
                     loadMyEvents();
                     fetchLatestEvent();
@@ -649,6 +731,16 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             Event event = eventList.get(position);
             holder.tvName.setText(event.getName());
 
+            // Show role badge for co-organizers
+            if ("co-organizer".equals(event.getUserRole())) {
+                holder.tvRole.setVisibility(View.VISIBLE);
+                holder.tvRole.setText("Co-organizer");
+                holder.tvRole.setTextColor(android.graphics.Color.parseColor("#2196F3"));
+                holder.tvRole.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#332196F3")));
+            } else {
+                holder.tvRole.setVisibility(View.GONE);
+            }
+
             if (event.getEventDate() != null) {
                 holder.tvDate.setText(sdf.format(event.getEventDate().toDate()));
             }
@@ -688,7 +780,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                 holder.ivChevron.setOnClickListener(v -> {
                     Intent intent = new Intent(v.getContext(), EventDetailActivity.class);
                     intent.putExtra("eventId", event.getEventId());
-                    intent.putExtra("userRole", "organizer");
+                    intent.putExtra("userRole", event.getUserRole()); // Pass role: organizer or co-organizer
                     v.getContext().startActivity(intent);
                 });
             }
@@ -698,7 +790,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         public int getItemCount() { return eventList.size(); }
 
         class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvName, tvDate, tvWaitlist, tvStatus;
+            TextView tvName, tvDate, tvWaitlist, tvStatus, tvRole;
             ImageView ivImage, ivChevron;
 
             public ViewHolder(@NonNull View itemView) {
@@ -707,6 +799,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                 tvDate     = itemView.findViewById(R.id.tvEventDate);
                 tvWaitlist = itemView.findViewById(R.id.tvWaitlistCount);
                 tvStatus   = itemView.findViewById(R.id.tvEventStatus);
+                tvRole     = itemView.findViewById(R.id.tvEventRole);
                 ivImage    = itemView.findViewById(R.id.ivEventImage);
                 ivChevron  = itemView.findViewById(R.id.ivChevron);
             }

@@ -18,12 +18,15 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.eventflow.R;
 import com.example.eventflow.model.entities.EventHistoryItem;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class FullHistoryFragment extends Fragment {
 
@@ -144,16 +147,72 @@ public class FullHistoryFragment extends Fragment {
                         String status = doc.getString("status");
                         if (status == null) status = "Waiting";
                         item.setStatus(status);
+                        item.setUserRole("entrant");
 
                         Log.d("FullHistory", "Event from participations: " + item.getEventName() + ", Status: " + status);
                         allEvents.add(item);
                     }
 
-                    // SECOND: Load rejected events from main events collection
-                    loadRejectedEvents();
+                    // SECOND: Load co-organizer events
+                    loadCoOrganizerEvents();
                 })
                 .addOnFailureListener(e -> {
                     Log.e("FullHistory", "Error loading participations: " + e.getMessage());
+                    loadCoOrganizerEvents();
+                });
+    }
+
+    // Load events where user is a co-organizer
+    private void loadCoOrganizerEvents() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("events")
+                .whereArrayContains("coOrganizerIds", userId)
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    int addedCount = 0;
+
+                    for (QueryDocumentSnapshot doc : snapshots) {
+                        // Check if this event is already in allEvents
+                        boolean exists = false;
+                        for (EventHistoryItem item : allEvents) {
+                            if (item.getEventId().equals(doc.getId())) {
+                                exists = true;
+                                break;
+                            }
+                        }
+
+                        if (!exists) {
+                            EventHistoryItem item = new EventHistoryItem();
+                            item.setEventId(doc.getId());
+                            item.setEventName(doc.getString("name"));
+
+                            // Format date
+                            Timestamp eventDate = doc.getTimestamp("eventDate");
+                            if (eventDate != null) {
+                                SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
+                                item.setEventDate(sdf.format(eventDate.toDate()));
+                            } else {
+                                item.setEventDate("Date TBD");
+                            }
+
+                            item.setEventLocation(doc.getString("location"));
+                            item.setStatus("Co-organizer");
+                            item.setUserRole("co-organizer");
+
+                            allEvents.add(item);
+                            addedCount++;
+                            Log.d("FullHistory", "Added co-organizer event: " + item.getEventName());
+                        }
+                    }
+
+                    Log.d("FullHistory", "Added " + addedCount + " co-organizer events");
+
+                    // THIRD: Load rejected events
+                    loadRejectedEvents();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("FullHistory", "Error loading co-organizer events: " + e.getMessage());
                     loadRejectedEvents();
                 });
     }
@@ -184,7 +243,8 @@ public class FullHistoryFragment extends Fragment {
                             item.setEventName(doc.getString("eventName"));
                             item.setEventDate(doc.getString("eventDate"));
                             item.setEventLocation(doc.getString("eventLocation"));
-                            item.setStatus("Rejected");  // This will show RED
+                            item.setStatus("Rejected");
+                            item.setUserRole("entrant");
 
                             allEvents.add(item);
                             addedCount++;
@@ -209,7 +269,8 @@ public class FullHistoryFragment extends Fragment {
             if (currentTab.equals("Joined")) {
                 if (status.equalsIgnoreCase("Waiting") ||
                         status.equalsIgnoreCase("Pending") ||
-                        status.equalsIgnoreCase("ACCEPTED")) {
+                        status.equalsIgnoreCase("ACCEPTED") ||
+                        status.equalsIgnoreCase("Co-organizer")) {
                     filtered.add(item);
                 }
             } else if (currentTab.equals("Selected")) {
@@ -260,6 +321,16 @@ public class FullHistoryFragment extends Fragment {
             holder.tvDate.setText(item.getEventDate());
             holder.tvLocation.setText(item.getEventLocation());
 
+            // Show co-organizer badge if user is co-organizer
+            if ("co-organizer".equals(item.getUserRole())) {
+                holder.tvCoOrganizerBadge.setVisibility(View.VISIBLE);
+                holder.tvCoOrganizerBadge.setText("Co-organizer");
+                holder.tvCoOrganizerBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#2196F3"))); // BLUE
+                holder.tvCoOrganizerBadge.setTextColor(Color.WHITE);
+            } else {
+                holder.tvCoOrganizerBadge.setVisibility(View.GONE);
+            }
+
             // Set status text and color based on actual status
             if ("ACCEPTED".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Enrolled");
@@ -283,8 +354,12 @@ public class FullHistoryFragment extends Fragment {
                 holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33F44336")));
             } else if ("Rejected".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Rejected");
-                holder.tvStatus.setTextColor(Color.parseColor("#F44336"));      // Bright Red (changed to match Declined)
+                holder.tvStatus.setTextColor(Color.parseColor("#F44336"));      // Bright Red
                 holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#33F44336")));
+            } else if ("Co-organizer".equalsIgnoreCase(status)) {
+                holder.tvStatus.setText("Co-organizer");
+                holder.tvStatus.setTextColor(Color.parseColor("#2196F3"));      // Blue
+                holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#332196F3")));
             } else if ("EXPIRED".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Expired");
                 holder.tvStatus.setTextColor(Color.parseColor("#666666"));      // Gray
@@ -311,7 +386,7 @@ public class FullHistoryFragment extends Fragment {
         public int getItemCount() { return items.size(); }
 
         class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvTitle, tvDate, tvLocation, tvStatus;
+            TextView tvTitle, tvDate, tvLocation, tvStatus, tvCoOrganizerBadge;
             View llActions;
             ImageButton btnDelete;
 
@@ -321,6 +396,7 @@ public class FullHistoryFragment extends Fragment {
                 tvDate = v.findViewById(R.id.tvHistoryEventDate);
                 tvLocation = v.findViewById(R.id.tvHistoryEventLocation);
                 tvStatus = v.findViewById(R.id.tvHistoryEventStatus);
+                tvCoOrganizerBadge = v.findViewById(R.id.tvCoOrganizerBadge);
                 llActions = v.findViewById(R.id.ll_actions);
                 btnDelete = v.findViewById(R.id.btn_delete);
             }
