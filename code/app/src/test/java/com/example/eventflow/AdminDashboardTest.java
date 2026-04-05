@@ -6,11 +6,17 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-/**
- * Unit tests for Administrator Dashboard navigation logic.
+/*
+ * Purpose: This class tests the logic behind the Admin Dashboard.
+ * It makes sure the stats text looks right and the role checks work correctly.
+ * 
+ * Design Pattern: Standard JUnit 4 Unit Tests.
+ * 
+ * Issues: None currently known.
  */
 public class AdminDashboardTest {
 
+    // Checks if the stats text (like total events) is formatted correctly.
     @Test
     public void testDashboardStatsText() {
         int eventCount = 15;
@@ -23,6 +29,7 @@ public class AdminDashboardTest {
         assertEquals("50 registered users", userText);
     }
 
+    // Verifies that we have the right IDs for navigation.
     @Test
     public void testNavigationOptions() {
         // Mocking IDs that would be found in activity_admin_dashboard.xml
@@ -37,6 +44,7 @@ public class AdminDashboardTest {
         assertNotNull(systemLogsId);
     }
 
+    // Makes sure our "admin" role check is case-insensitive.
     @Test
     public void testRoleCheckLogic() {
         String role = "admin";

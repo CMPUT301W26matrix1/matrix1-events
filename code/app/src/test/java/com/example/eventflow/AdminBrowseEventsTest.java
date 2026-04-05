@@ -9,8 +9,17 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+ * Purpose: This class tests the search logic for the Admin's event browsing screen. 
+ * It makes sure that events can be filtered correctly by name.
+ * 
+ * Design Pattern: Unit tests using JUnit 4.
+ * 
+ * Issues: None.
+ */
 public class AdminBrowseEventsTest {
 
+    // Checks if searching for a specific word finds the right event.
     @Test
     public void searchEvents_returnsMatchingEvent() {
 
@@ -39,6 +48,8 @@ public class AdminBrowseEventsTest {
         assertEquals(1, result.size());
         assertEquals("Test Swimming Class", result.get(0).getName());
     }
+
+    // Checks that an empty list is returned if no events match the search.
     @Test
     public void searchEvents_nonMatchingQuery_returnsEmptyList() {
 
@@ -60,6 +71,8 @@ public class AdminBrowseEventsTest {
 
         assertEquals(0, result.size());
     }
+
+    // Checks that searching with nothing entered shows everything.
     @Test
     public void searchEvents_emptyQuery_returnsAllEvents() {
 
@@ -86,6 +99,8 @@ public class AdminBrowseEventsTest {
 
         assertEquals(2, result.size());
     }
+
+    // Makes sure capital letters don't break the search.
     @Test
     public void searchEvents_caseInsensitiveSearch() {
 
