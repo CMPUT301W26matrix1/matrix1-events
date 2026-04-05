@@ -9,7 +9,7 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="#6200EE"
+        android:background="#4CAF50"
         android:title="Pick Event Location"
         android:titleTextColor="#FFFFFF"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
@@ -29,7 +29,7 @@
         android:layout_margin="12dp"
         app:cardCornerRadius="8dp"
         app:cardElevation="8dp"
-        app:cardBackgroundColor="#FFFFFF">
+        app:cardBackgroundColor="#000000">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -47,8 +47,8 @@
                 android:imeOptions="actionSearch"
                 android:inputType="text"
                 android:paddingStart="12dp"
-                android:textColor="#000000"
-                android:textColorHint="#757575"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#AAAAAA"
                 android:textSize="14sp" />
 
             <ImageButton
@@ -57,7 +57,7 @@
                 android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@android:drawable/ic_menu_search"
-                app:tint="#6200EE" />
+                app:tint="#4CAF50" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 

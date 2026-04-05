@@ -118,6 +118,23 @@ public class MainActivity extends AppCompatActivity {
                 return insets;
             });
         }
+
+        // Handle incoming deep link
+        handleIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        if (intent != null && intent.getData() != null) {
+            String data = intent.getData().toString();
+            handleScanResult(data);
+        }
     }
 
     private void askNotificationPermission() {
@@ -218,6 +235,9 @@ public class MainActivity extends AppCompatActivity {
         } else if (contents.startsWith("eventflow://details?id=")) {
             Uri uri = Uri.parse(contents);
             eventId = uri.getQueryParameter("id");
+        } else {
+            // Check if it's just the ID
+            eventId = contents;
         }
 
         if (eventId != null && !eventId.isEmpty()) {
@@ -225,8 +245,10 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("eventId", eventId);
             
             String userId = "";
-            if (FirebaseAuth.getInstance().getCurrentUser() != null) {
-                userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            if (mAuth.getCurrentUser() != null) {
+                userId = mAuth.getCurrentUser().getUid();
+            } else {
+                userId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
             }
             intent.putExtra("userId", userId);
             intent.putExtra("userRole", "entrant");

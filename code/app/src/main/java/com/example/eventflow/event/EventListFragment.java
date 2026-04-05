@@ -397,12 +397,15 @@ public class EventListFragment extends Fragment {
         else if (contents.startsWith("eventflow://details?id=")) {
             Uri uri = Uri.parse(contents);
             eventId = uri.getQueryParameter("id");
+        } else {
+            // Assume the raw contents is the eventId
+            eventId = contents;
         }
 
         if (eventId != null && !eventId.isEmpty()) {
             Intent intent = new Intent(getActivity(), EventDetailActivity.class);
             intent.putExtra("eventId", eventId);
-            intent.putExtra("userId", uid); // Changed to uid for consistency
+            intent.putExtra("userId", uid);
             intent.putExtra("userRole", "entrant");
             startActivity(intent);
         } else {

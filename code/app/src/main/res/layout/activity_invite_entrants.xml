@@ -3,4 +3,4 @@
     android:id="@+id/invite_fragment_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#1E1E1E"/>
+    android:background="#000000"/>
