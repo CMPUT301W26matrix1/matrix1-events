@@ -1,5 +1,8 @@
 package com.example.eventflow;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -57,12 +60,24 @@ public class EventImageAdapter extends BaseAdapter {
         displayName.setText(item.displayName);
         typeLabel.setText(item.type.toUpperCase() + " IMAGE");
 
-        // Load image using Picasso
+        // Load image (Support both URL and Base64, same as Entrant section)
         if (item.imageUrl != null && !item.imageUrl.isEmpty()) {
-            Picasso.get().load(item.imageUrl)
-                    .placeholder(R.drawable.ic_placeholder)
-                    .error(R.drawable.ic_placeholder)
-                    .into(imageView);
+            if (item.imageUrl.startsWith("http")) {
+                // URL Support
+                Picasso.get().load(item.imageUrl)
+                        .placeholder(R.drawable.ic_placeholder)
+                        .error(R.drawable.ic_placeholder)
+                        .into(imageView);
+            } else {
+                // Base64 Support
+                try {
+                    byte[] decodedString = Base64.decode(item.imageUrl, Base64.DEFAULT);
+                    Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                    imageView.setImageBitmap(decodedByte);
+                } catch (Exception e) {
+                    imageView.setImageResource(R.drawable.ic_placeholder);
+                }
+            }
         } else {
             imageView.setImageResource(R.drawable.ic_placeholder);
         }
@@ -72,7 +87,7 @@ public class EventImageAdapter extends BaseAdapter {
             context.showDeleteConfirmation(item, position);
         });
 
-        // Click on the whole card to show delete confirmation (requested behavior)
+        // Click on the whole card to show delete confirmation
         convertView.setOnClickListener(v -> {
             context.showDeleteConfirmation(item, position);
         });
