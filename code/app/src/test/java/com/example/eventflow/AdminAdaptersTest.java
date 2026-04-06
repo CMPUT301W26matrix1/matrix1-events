@@ -53,11 +53,11 @@ public class AdminAdaptersTest {
         String eventName = "Art Show";
         String posterUrl = "http://image.com/1.jpg";
 
-        AdminImageManagementActivity.EventImage eventImage = 
-                new AdminImageManagementActivity.EventImage(eventId, eventName, posterUrl);
+        AdminImageManagementActivity.ImageItem eventImage = 
+                new AdminImageManagementActivity.ImageItem(eventId, eventName, posterUrl, "event", "events", "posterUrl");
 
-        assertEquals("ev1", eventImage.eventId);
-        assertEquals("Art Show", eventImage.eventName);
-        assertEquals("http://image.com/1.jpg", eventImage.posterUrl);
+        assertEquals("ev1", eventImage.id);
+        assertEquals("Art Show", eventImage.displayName);
+        assertEquals("http://image.com/1.jpg", eventImage.imageUrl);
     }
 }
