@@ -4,6 +4,7 @@ import android.app.DatePickerDialog;
 import android.app.ProgressDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -281,11 +282,19 @@ public class OrgEventActivity extends AppCompatActivity {
         }
 
         String userId = "";
-        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+        SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
+        boolean isAdmin = prefs.getBoolean("isAdmin", false);
+
+        if (isAdmin) {
+            userId = prefs.getString("userUid", "admin_global_id");
+            Log.d("OrgEvent", "Admin creating event, using userId: " + userId);
+        } else if (FirebaseAuth.getInstance().getCurrentUser() != null) {
             userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         } else {
-            // Use Device ID as fallback if no Firebase user is logged in
-            userId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+            userId = prefs.getString("userUid", "");
+            if (userId == null || userId.isEmpty()) {
+                userId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+            }
         }
 
         if (userId == null || userId.isEmpty()) {
