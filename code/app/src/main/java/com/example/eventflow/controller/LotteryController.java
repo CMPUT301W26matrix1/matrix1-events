@@ -90,8 +90,9 @@ public class LotteryController {
      * @param userId The winner's user ID.
      * @param eventId The event ID.
      * @param eventName The name of the event.
+     * @param organizerId The ID of the organizer.
      */
-    private void sendSelectionNotification(String userId, String eventId, String eventName) {
+    private void sendSelectionNotification(String userId, String eventId, String eventName, String organizerId) {
         Log.d(TAG, "=== SENDING SELECTION NOTIFICATION ===");
         Log.d(TAG, "UserId: " + userId);
         Log.d(TAG, "EventId: " + eventId);
@@ -106,6 +107,7 @@ public class LotteryController {
                 "SELECTED",
                 eventId
         );
+        notification.setOrganizerId(organizerId);
         saveNotificationToBoth(notification, userId);
 
         Log.d(TAG, "Selection notification sent to: " + userId);
@@ -116,8 +118,9 @@ public class LotteryController {
      * @param userId The user ID.
      * @param eventId The event ID.
      * @param eventName The name of the event.
+     * @param organizerId The ID of the organizer.
      */
-    private void sendLostLotteryNotification(String userId, String eventId, String eventName) {
+    private void sendLostLotteryNotification(String userId, String eventId, String eventName, String organizerId) {
         Log.d(TAG, "Sending LOST LOTTERY notification to: " + userId);
 
         updateUserEventStatus(userId, eventId, "REJECTED");
@@ -129,6 +132,7 @@ public class LotteryController {
                 "LOST_LOTTERY",
                 eventId
         );
+        notification.setOrganizerId(organizerId);
         saveNotificationToBoth(notification, userId);
     }
 
@@ -171,6 +175,7 @@ public class LotteryController {
             List<String> existingSelected = (List<String>) doc.get("selectedEntrants");
             Long capacity = doc.getLong("capacity");
             String eventName = doc.getString("name");
+            String organizerId = doc.getString("organizerId");
 
             Log.d(TAG, "Waiting list: " + (waitingList != null ? waitingList.toString() : "null"));
             Log.d(TAG, "Existing selected: " + (existingSelected != null ? existingSelected.size() : 0));
@@ -212,10 +217,10 @@ public class LotteryController {
                     .addOnSuccessListener(unused -> {
                         Log.d(TAG, "✅ Firestore updated successfully");
                         for (String winnerId : selectedBatch) {
-                            sendSelectionNotification(winnerId, eventId, eventName);
+                            sendSelectionNotification(winnerId, eventId, eventName, organizerId);
                         }
                         for (String loserId : lostBatch) {
-                            sendLostLotteryNotification(loserId, eventId, eventName);
+                            sendLostLotteryNotification(loserId, eventId, eventName, organizerId);
                         }
                         Log.d(TAG, "✅ Lottery draw completed. Selected: " + selectedBatch.size() + ", Rejected: " + lostBatch.size());
                     })
@@ -236,6 +241,7 @@ public class LotteryController {
         db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
             if (doc.exists()) {
                 String eventName = doc.getString("name");
+                String organizerId = doc.getString("organizerId");
 
                 Map<String, Object> participation = new HashMap<>();
                 participation.put("eventId", eventId);
@@ -257,6 +263,7 @@ public class LotteryController {
                         "PRIVATE_INVITE",
                         eventId
                 );
+                notification.setOrganizerId(organizerId);
                 saveNotificationToBoth(notification, userId);
             }
         });
@@ -277,6 +284,7 @@ public class LotteryController {
                     if (selectedEntrants == null || selectedEntrants.isEmpty()) return;
 
                     String eventName = eventDoc.getString("name");
+                    String organizerId = eventDoc.getString("organizerId");
 
                     for (String userId : selectedEntrants) {
                         db.collection("users").document(userId)
@@ -296,7 +304,7 @@ public class LotteryController {
                                             db.collection("events").document(eventId)
                                                     .update("selectedEntrants", FieldValue.arrayRemove(userId))
                                                     .addOnSuccessListener(aVoid -> {
-                                                        sendExpiryNotification(userId, eventId, eventName);
+                                                        sendExpiryNotification(userId, eventId, eventName, organizerId);
                                                     });
                                         }
                                     }
@@ -310,8 +318,9 @@ public class LotteryController {
      * @param userId The ID of the user.
      * @param eventId The ID of the event.
      * @param eventName The name of the event.
+     * @param organizerId The ID of the organizer.
      */
-    private void sendExpiryNotification(String userId, String eventId, String eventName) {
+    private void sendExpiryNotification(String userId, String eventId, String eventName, String organizerId) {
         Notification notification = new Notification(
                 "Invitation Expired",
                 eventName,
@@ -319,6 +328,7 @@ public class LotteryController {
                 "EXPIRED",
                 eventId
         );
+        notification.setOrganizerId(organizerId);
         saveNotificationToBoth(notification, userId);
     }
 }

@@ -15,6 +15,7 @@ public class Notification {
     private String userId;
     private String type;
     private String eventId;
+    private String organizerId; // ADDED: To track who sent/triggered the notification
     private Timestamp timestamp;
     private Timestamp expiryTimestamp;  // ADDED: For 2-day expiry
     private boolean isRead;
@@ -126,6 +127,11 @@ public class Notification {
     public String getEventId() { return eventId; }
     /** @param eventId The event ID to set. */
     public void setEventId(String eventId) { this.eventId = eventId; }
+
+    /** @return The ID of the organizer who sent this. */
+    public String getOrganizerId() { return organizerId; }
+    /** @param organizerId The organizer ID to set. */
+    public void setOrganizerId(String organizerId) { this.organizerId = organizerId; }
 
     /** @return Creation timestamp. */
     public Timestamp getTimestamp() { return timestamp; }

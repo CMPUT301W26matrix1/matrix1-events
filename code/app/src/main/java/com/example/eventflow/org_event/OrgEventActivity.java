@@ -386,12 +386,12 @@ public class OrgEventActivity extends AppCompatActivity {
             eventMap.put("coOrganizerIds", new ArrayList<String>()); // US 02.09.01 — Start empty until accepted
             
             if (coOrgUid != null) {
-                sendCoOrganizerNotification(eventId, eventNameStr, coOrgUid);
+                sendCoOrganizerNotification(eventId, eventNameStr, coOrgUid, userId);
             }
         } else {
             // US 02.09.01 — Invitation logic for existing event
             if (coOrgUid != null) {
-                sendCoOrganizerNotification(eventId, eventNameStr, coOrgUid);
+                sendCoOrganizerNotification(eventId, eventNameStr, coOrgUid, userId);
             }
         }
 
@@ -400,9 +400,6 @@ public class OrgEventActivity extends AppCompatActivity {
                 .addOnSuccessListener(aVoid -> {
                     if (progressDialog != null) progressDialog.dismiss();
                     Toast.makeText(this, "Event saved successfully!", Toast.LENGTH_SHORT).show();
-
-                    // Log event creation/update for Admin system logs
-                    logEventAction(eventId, eventNameStr, userId, isNewEvent ? "EVENT_CREATED" : "EVENT_UPDATED");
 
                     if (switchPrivate.isChecked()) {
                         Intent inviteIntent = new Intent(this, InviteEntrantsActivity.class);
@@ -422,23 +419,13 @@ public class OrgEventActivity extends AppCompatActivity {
                 });
     }
 
-    private void logEventAction(String eventId, String eventName, String userId, String type) {
-        String message = type.equals("EVENT_CREATED") ? "New event created" : "Event details updated";
-        String details = "Organizer " + userId + " " + (type.equals("EVENT_CREATED") ? "created" : "updated") + " the event: " + eventName;
-        
-        Notification logEntry = new Notification(message, eventName, details, type, eventId);
-        logEntry.setUserId(userId);
-        logEntry.setId(UUID.randomUUID().toString());
-        
-        db.collection("notifications").document(logEntry.getId()).set(logEntry);
-    }
-
-    private void sendCoOrganizerNotification(String eventId, String eventName, String coOrgUid) {
+    private void sendCoOrganizerNotification(String eventId, String eventName, String coOrgUid, String organizerId) {
         String title = "Co-Organizer Invitation";
         String message = "You have been invited to co-organize the event: " + eventName;
         
         Notification notification = new Notification(title, eventName, message, Notification.TYPE_CO_ORGANIZER, eventId);
         notification.setUserId(coOrgUid);
+        notification.setOrganizerId(organizerId);
         notification.setId(UUID.randomUUID().toString());
 
         // Save to user's notifications subcollection

@@ -35,6 +35,16 @@
             android:textStyle="bold"
             android:textColor="#FFFFFF"
             android:layout_centerInParent="true"/>
+
+        <ImageButton
+            android:id="@+id/btn_clear_system_logs"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_trash"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:tint="#FFFFFF"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"/>
     </RelativeLayout>
 
     <!-- Search Bar -->

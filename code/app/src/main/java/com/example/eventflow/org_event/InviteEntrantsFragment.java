@@ -25,6 +25,7 @@ import com.example.eventflow.R;
 import com.example.eventflow.model.entities.Profile;
 import com.example.eventflow.model.repositories.EventRepository;
 import com.example.eventflow.model.repositories.ProfileRepository;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -60,6 +61,7 @@ public class InviteEntrantsFragment extends Fragment {
     private FirebaseFirestore db;
     private String eventId;
     private String eventName = "Private Event";
+    private String organizerId;
 
 
     public static InviteEntrantsFragment newInstance(String eventId) {
@@ -86,6 +88,7 @@ public class InviteEntrantsFragment extends Fragment {
         profileRepository = new ProfileRepository();
         eventRepository   = new EventRepository();
         db                = FirebaseFirestore.getInstance();
+        organizerId       = FirebaseAuth.getInstance().getCurrentUser() != null ? FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
 
 
         etSearch    = view.findViewById(R.id.et_search_entrant);
@@ -137,6 +140,10 @@ public class InviteEntrantsFragment extends Fragment {
                 String fetchedName = doc.getString("name");
                 if (fetchedName != null) {
                     eventName = fetchedName;
+                }
+                String fetchedOrgId = doc.getString("organizerId");
+                if (fetchedOrgId != null) {
+                    organizerId = fetchedOrgId;
                 }
             }
         });
@@ -214,6 +221,7 @@ public class InviteEntrantsFragment extends Fragment {
         // USE DEVICE ID
         String userId = profile.getDeviceId();
         notification.setUserId(userId);
+        notification.setOrganizerId(organizerId);
 
         notification.setRead(false);
         notification.setAccepted(false);
@@ -267,6 +275,7 @@ public class InviteEntrantsFragment extends Fragment {
                     );
 
                     notification.setUserId(userId);
+                    notification.setOrganizerId(organizerId);
                     notification.setAccepted(false);
                     notification.setDeclined(false);
                     notification.setRead(false);
