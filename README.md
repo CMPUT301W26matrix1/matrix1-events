@@ -29,7 +29,14 @@ Optional Geolocation Verification: When enabled by organizers, entrants’ join 
 
 Dedicated Organizer Map Console: A specialized map interface available exclusively to event creators. Organizers can set, validate, and manage precise event coordinates using an integrated place-picker, ensuring accurate location data for geolocation rules and event logistics.
 
-See the project [Wiki](https://github.com/CMPUT301W26matrix1/matrix1-events/wiki) for more information.
+Visit the Project 
+[Wiki](https://github.com/CMPUT301W26matrix1/matrix1-events/wiki) and for
+[Javadocs](https://github.com/CMPUT301W26matrix1/matrix1-events/tree/main/code/javadoc), open the `code` folder in the terminal and run:
+```bash
+open javadoc/index.html
+```
+
+
 
 ## Technologies
 
