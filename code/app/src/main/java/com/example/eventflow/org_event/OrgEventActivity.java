@@ -23,6 +23,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 
 import com.example.eventflow.LocationPickerActivity;
+import com.example.eventflow.Notification;
 import com.example.eventflow.ProfileActivity;
 import com.example.eventflow.R;
 import com.example.eventflow.org_QR.QRDisplayActivity;
@@ -42,9 +43,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 public class OrgEventActivity extends AppCompatActivity {
 
+    private static final String TAG = "OrgEventActivity";
     private static final int PICK_IMAGE_REQUEST    = 1;
     private static final int PICK_LOCATION_REQUEST = 2;
 
@@ -280,9 +283,12 @@ public class OrgEventActivity extends AppCompatActivity {
         String userId = "";
         if (FirebaseAuth.getInstance().getCurrentUser() != null) {
             userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        } else {
+            // Use Device ID as fallback if no Firebase user is logged in
+            userId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
         }
 
-        if (userId.isEmpty()) {
+        if (userId == null || userId.isEmpty()) {
             Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -370,7 +376,9 @@ public class OrgEventActivity extends AppCompatActivity {
             eventMap.put("locationRadius", pickedRadius);
         }
 
-        if (currentEventId == null || currentEventId.isEmpty()) {
+        boolean isNewEvent = currentEventId == null || currentEventId.isEmpty();
+
+        if (isNewEvent) {
             eventMap.put("createdAt", Timestamp.now());
             eventMap.put("waitingList", new ArrayList<String>());
             eventMap.put("selectedEntrants", new ArrayList<String>());
@@ -393,6 +401,9 @@ public class OrgEventActivity extends AppCompatActivity {
                     if (progressDialog != null) progressDialog.dismiss();
                     Toast.makeText(this, "Event saved successfully!", Toast.LENGTH_SHORT).show();
 
+                    // Log event creation/update for Admin system logs
+                    logEventAction(eventId, eventNameStr, userId, isNewEvent ? "EVENT_CREATED" : "EVENT_UPDATED");
+
                     if (switchPrivate.isChecked()) {
                         Intent inviteIntent = new Intent(this, InviteEntrantsActivity.class);
                         inviteIntent.putExtra("EVENT_ID", eventId);
@@ -411,19 +422,35 @@ public class OrgEventActivity extends AppCompatActivity {
                 });
     }
 
-    private void sendCoOrganizerNotification(String eventId, String eventName, String coOrgUid) {
-        Map<String, Object> notification = new HashMap<>();
-        notification.put("eventId", eventId);
-        notification.put("eventName", eventName);
-        notification.put("type", "CO_ORGANIZER");
-        notification.put("timestamp", Timestamp.now());
-        notification.put("accepted", false);
-        notification.put("declined", false);
-        notification.put("read", false);
+    private void logEventAction(String eventId, String eventName, String userId, String type) {
+        String message = type.equals("EVENT_CREATED") ? "New event created" : "Event details updated";
+        String details = "Organizer " + userId + " " + (type.equals("EVENT_CREATED") ? "created" : "updated") + " the event: " + eventName;
+        
+        Notification logEntry = new Notification(message, eventName, details, type, eventId);
+        logEntry.setUserId(userId);
+        logEntry.setId(UUID.randomUUID().toString());
+        
+        db.collection("notifications").document(logEntry.getId()).set(logEntry);
+    }
 
+    private void sendCoOrganizerNotification(String eventId, String eventName, String coOrgUid) {
+        String title = "Co-Organizer Invitation";
+        String message = "You have been invited to co-organize the event: " + eventName;
+        
+        Notification notification = new Notification(title, eventName, message, Notification.TYPE_CO_ORGANIZER, eventId);
+        notification.setUserId(coOrgUid);
+        notification.setId(UUID.randomUUID().toString());
+
+        // Save to user's notifications subcollection
         db.collection("users").document(coOrgUid)
                 .collection("notifications")
-                .add(notification);
+                .document(notification.getId())
+                .set(notification);
+                
+        // Save to global notifications collection for Admin logs
+        db.collection("notifications")
+                .document(notification.getId())
+                .set(notification);
     }
 
     private void loadEventData(String eventId) {
