@@ -1,3 +1,8 @@
+/**
+ * Dashboard activity for administrators to access various management functions.
+ * Provides navigation to event management, user management, image moderation, and system logs.
+ * Displays high-level statistics about the system.
+ */
 package com.example.eventflow;
 
 import android.content.Intent;

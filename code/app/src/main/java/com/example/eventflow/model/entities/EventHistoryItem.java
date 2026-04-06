@@ -1,3 +1,7 @@
+/**
+ * Represents an item in a user's Event History.
+ * Summarizes event details, user role, and status for historical tracking.
+ */
 package com.example.eventflow.model.entities;
 
 /**

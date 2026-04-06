@@ -1,3 +1,8 @@
+/**
+ * Service class for handling Firebase Cloud Messaging (FCM) tokens and incoming messages.
+ * Manages the storage of FCM tokens in Firestore associated with the user's profile.
+ * Displays local notifications when a push notification is received while the app is in the background or foreground.
+ */
 package com.example.eventflow;
 
 import android.app.NotificationChannel;

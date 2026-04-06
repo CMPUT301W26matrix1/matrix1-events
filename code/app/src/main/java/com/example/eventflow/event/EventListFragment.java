@@ -1,3 +1,8 @@
+/**
+ * Fragment responsible for displaying a searchable and filterable list of joinable events.
+ * Provides categorization chips, search functionality, and integrated QR code scanning for event discovery.
+ * Manages real-time event updates and user participation status display.
+ */
 package com.example.eventflow.event;
 
 import android.content.Context;

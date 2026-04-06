@@ -1,0 +1,5 @@
+com.example.eventflow
+com.example.eventflow.controller
+com.example.eventflow.event
+com.example.eventflow.model.entities
+com.example.eventflow.model.repositories

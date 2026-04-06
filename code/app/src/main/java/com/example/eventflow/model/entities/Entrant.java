@@ -1,3 +1,8 @@
+/**
+ * Represents an Entrant in the system.
+ * Handles entrant metadata and status for a specific event.
+ * Used in conjunction with Event and various entrant-related activities.
+ */
 package com.example.eventflow.model.entities;
 
 import com.google.firebase.firestore.PropertyName;

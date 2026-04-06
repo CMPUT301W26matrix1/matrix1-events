@@ -1,3 +1,7 @@
+/**
+ * Adapter for the Cancelled Entrants list.
+ * Displays users who have either cancelled their registration or declined an invitation.
+ */
 package com.example.eventflow.org_event.manage_entrant;
 
 import android.view.LayoutInflater;

@@ -1,3 +1,8 @@
+/**
+ * Adapter for the Admin Image Moderation grid.
+ * Displays images from events (posters) and user profiles.
+ * Supports loading images from URLs or Base64 strings.
+ */
 package com.example.eventflow;
 
 import android.graphics.Bitmap;

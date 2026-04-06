@@ -1,3 +1,8 @@
+/**
+ * Custom QR code scanner activity with integrated manual code entry.
+ * Displays a list of recent scans for quick access to previously viewed events.
+ * Handles different QR code formats and navigates to event details upon successful scan.
+ */
 package com.example.eventflow;
 
 import android.content.Intent;

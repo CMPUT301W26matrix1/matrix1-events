@@ -1,3 +1,7 @@
+/**
+ * Repository for managing user Profile data in Firestore.
+ * Handles profile saving, loading, and deletion across multiple collections.
+ */
 package com.example.eventflow.model.repositories;
 
 import androidx.annotation.NonNull;

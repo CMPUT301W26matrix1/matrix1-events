@@ -1,3 +1,8 @@
+/**
+ * Activity for browsing available events.
+ * Provides a fragment container that switches between a list of all events and the user's event history.
+ * Manages bottom navigation for easy access to profile and event discovery.
+ */
 package com.example.eventflow;
 
 import android.content.Intent;

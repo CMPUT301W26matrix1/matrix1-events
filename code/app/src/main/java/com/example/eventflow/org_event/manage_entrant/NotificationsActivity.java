@@ -1,3 +1,8 @@
+/**
+ * Activity for sending notifications to entrants.
+ * Supports broadcasting to all entrants, selected ones, or cancelled ones.
+ * Tracks notification history for the event.
+ */
 package com.example.eventflow.org_event.manage_entrant;
 
 import android.os.Bundle;

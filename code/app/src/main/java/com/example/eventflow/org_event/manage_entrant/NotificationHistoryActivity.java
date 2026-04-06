@@ -1,3 +1,7 @@
+/**
+ * Activity for viewing the complete notification history of an event.
+ * Displays actions like selection, acceptance, declination, and waiting list status.
+ */
 package com.example.eventflow.org_event.manage_entrant;
 
 import android.os.Bundle;

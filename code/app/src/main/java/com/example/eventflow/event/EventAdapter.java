@@ -1,3 +1,8 @@
+/**
+ * Adapter for displaying events in the discovery/browsing list.
+ * Manages event cards, category tags, and participation status badges.
+ * Provides callbacks for joining and leaving event waiting lists.
+ */
 package com.example.eventflow.event;
 
 import android.content.Intent;

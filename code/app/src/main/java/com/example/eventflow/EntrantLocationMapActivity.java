@@ -1,3 +1,8 @@
+/**
+ * Activity for displaying event and entrant locations on a Google Map.
+ * Shows the event's location and, for organizers, the locations from which entrants joined the waiting list.
+ * Facilitates spatial visualization of event participation.
+ */
 package com.example.eventflow;
 
 import android.Manifest;

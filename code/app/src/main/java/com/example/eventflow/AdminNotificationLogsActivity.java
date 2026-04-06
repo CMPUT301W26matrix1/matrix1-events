@@ -1,3 +1,8 @@
+/**
+ * Activity for administrators to view and manage notification logs in the system.
+ * Provides a history of all notifications sent, including lottery results and organizer announcements.
+ * Allows searching through logs and clearing system-generated event logs.
+ */
 package com.example.eventflow;
 
 import android.os.Bundle;

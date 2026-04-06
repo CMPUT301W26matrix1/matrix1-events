@@ -1,3 +1,7 @@
+/**
+ * Adapter for selecting specific users to receive notifications.
+ * Features checkboxes for multiple selection and displays user status badges.
+ */
 package com.example.eventflow.org_event.manage_entrant;
 
 import android.view.LayoutInflater;

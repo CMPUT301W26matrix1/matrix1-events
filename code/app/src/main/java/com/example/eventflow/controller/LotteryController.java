@@ -1,3 +1,8 @@
+/**
+ * Controller class responsible for managing the lottery system for event entrants.
+ * It handles the selection process, notification of winners and losers, and management of expired invitations.
+ * Manages transitions between waiting list, selected entrants, and rejected entrants in Firestore.
+ */
 package com.example.eventflow.controller;
 
 import android.util.Log;

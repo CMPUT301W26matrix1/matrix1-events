@@ -1,3 +1,8 @@
+/**
+ * Activity for displaying an image in full screen.
+ * Used for viewing event posters or profile pictures in detail.
+ * Closes when the image is clicked.
+ */
 package com.example.eventflow;
 
 import android.os.Bundle;

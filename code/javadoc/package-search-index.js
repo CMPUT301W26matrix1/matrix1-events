@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.example.eventflow"},{"l":"com.example.eventflow.controller"},{"l":"com.example.eventflow.event"},{"l":"com.example.eventflow.model.entities"},{"l":"com.example.eventflow.model.repositories"}];updateSearchResults();

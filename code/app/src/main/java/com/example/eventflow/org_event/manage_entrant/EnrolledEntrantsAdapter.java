@@ -1,3 +1,7 @@
+/**
+ * Adapter for the Final Enrolled Entrants list.
+ * Displays participants who have accepted their invitations.
+ */
 package com.example.eventflow.org_event.manage_entrant;
 
 import android.view.LayoutInflater;

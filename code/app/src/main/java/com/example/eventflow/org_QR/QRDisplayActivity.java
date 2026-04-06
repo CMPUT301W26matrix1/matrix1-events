@@ -1,3 +1,7 @@
+/**
+ * Activity for displaying and sharing QR Codes.
+ * Provides functionality to download the QR code or share it with others.
+ */
 package com.example.eventflow.org_QR;
 
 import android.content.ClipData;

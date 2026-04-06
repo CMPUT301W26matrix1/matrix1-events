@@ -1,3 +1,7 @@
+/**
+ * Adapter for the Waitlist RecyclerView.
+ * Displays entrants on the waiting list and provides visual status badges.
+ */
 package com.example.eventflow.org_event.manage_entrant;
 
 import android.graphics.Color;

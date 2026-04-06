@@ -1,3 +1,8 @@
+/**
+ * Adapter for displaying notification logs in the Admin section.
+ * Handles dynamic coloring based on the notification type to visually distinguish between different system events.
+ * Connects the list of notification logs to the UI for administrative review.
+ */
 package com.example.eventflow;
 
 import android.graphics.Color;

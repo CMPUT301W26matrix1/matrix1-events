@@ -1,3 +1,8 @@
+/**
+ * Activity for administrators to manage and moderate images in the system.
+ * Allows viewing and deleting event posters and user profile pictures.
+ * Synchronizes deletions with both Firebase Storage and Firestore.
+ */
 package com.example.eventflow;
 
 import android.os.Bundle;

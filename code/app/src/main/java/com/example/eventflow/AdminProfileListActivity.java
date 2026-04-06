@@ -1,3 +1,11 @@
+/**
+ * Activity for administrators to browse and manage all user profiles in the system.
+ * Allows filtering users by role (Entrant, Organizer, Admin) and searching by name.
+ * Provides functionality to delete user profiles from the system.
+ *
+ * Known issues:
+ * - Deleting a profile does not automatically sign out the user if they are currently active.
+ */
 package com.example.eventflow;
 
 import android.graphics.Color;

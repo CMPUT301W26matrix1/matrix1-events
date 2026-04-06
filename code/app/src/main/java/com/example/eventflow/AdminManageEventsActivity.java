@@ -1,3 +1,10 @@
+/**
+ * Activity for administrators to manage and moderate all events in the system.
+ * Provides features for searching events, scanning event QR codes, and deleting events.
+ * 
+ * Known issues:
+ * - QR scanner only handles specific URL formats (eventflow://event/ or eventflow://details?id=).
+ */
 package com.example.eventflow;
 
 import android.content.Intent;

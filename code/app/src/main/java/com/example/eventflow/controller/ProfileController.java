@@ -1,3 +1,8 @@
+/**
+ * Controller class managing the business logic for user profiles.
+ * It handles profile validation, creation, and updates.
+ * Used to ensure profile data consistency and validity before persisting to the repository.
+ */
 package com.example.eventflow.controller;
 
 import com.example.eventflow.model.entities.Profile;

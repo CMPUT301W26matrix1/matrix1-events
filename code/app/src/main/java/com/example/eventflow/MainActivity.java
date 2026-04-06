@@ -1,3 +1,8 @@
+/**
+ * Main landing activity for the EventFlow application.
+ * Manages role selection (Entrant, Organizer, Admin) and initial navigation.
+ * Handles deep links for event QR code scanning and notification permissions.
+ */
 package com.example.eventflow;
 
 import android.content.Intent;

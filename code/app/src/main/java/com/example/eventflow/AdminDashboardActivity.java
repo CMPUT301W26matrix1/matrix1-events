@@ -1,3 +1,8 @@
+/**
+ * Central dashboard for administrators.
+ * Provides access to event management, user profile moderation, image moderation, and system logs.
+ * Displays total counts for events and registered users.
+ */
 package com.example.eventflow;
 
 import android.content.Intent;

@@ -1,3 +1,8 @@
+/**
+ * Parent fragment that manages the profile-related UI flow.
+ * Handles user authentication checks and switches between profile view, edit profile, and event history fragments.
+ * Supports loading profiles for both standard users (via Firebase Auth) and a local "admin" account.
+ */
 package com.example.eventflow.view.profile;
 
 import android.annotation.SuppressLint;

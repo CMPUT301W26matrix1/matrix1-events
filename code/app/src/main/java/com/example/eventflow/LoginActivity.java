@@ -1,3 +1,8 @@
+/**
+ * Activity handling user authentication via email and password.
+ * Connects to Firebase Authentication for login and registration.
+ * Provides a specialized admin login for administrative tasks.
+ */
 package com.example.eventflow;
 
 import android.content.Intent;

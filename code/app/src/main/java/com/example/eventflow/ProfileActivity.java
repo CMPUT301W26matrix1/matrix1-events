@@ -1,3 +1,8 @@
+/**
+ * Activity hosting the profile management user interface.
+ * Uses a fragment container to display profile details, editing, and history.
+ * Dynamically adjusts the bottom navigation menu based on the user's current role.
+ */
 package com.example.eventflow;
 
 import android.content.Context;

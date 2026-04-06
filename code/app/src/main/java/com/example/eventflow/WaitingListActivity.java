@@ -1,3 +1,11 @@
+/**
+ * Activity that displays the waiting list for a specific event.
+ * Allows organizers to view and filter users who have joined the waiting list.
+ * Fetches user profiles from Firestore based on IDs stored in the event document.
+ *
+ * Known issues:
+ * - User profile resolution may fail if data is inconsistent across collections.
+ */
 package com.example.eventflow;
 
 import android.content.SharedPreferences;

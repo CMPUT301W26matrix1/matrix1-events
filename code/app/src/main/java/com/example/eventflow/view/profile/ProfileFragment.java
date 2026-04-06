@@ -1,3 +1,7 @@
+/**
+ * A simple fragment that displays the user's profile.
+ * Provides navigation back to the role selection screen.
+ */
 package com.example.eventflow.view.profile;
 
 import android.content.Intent;

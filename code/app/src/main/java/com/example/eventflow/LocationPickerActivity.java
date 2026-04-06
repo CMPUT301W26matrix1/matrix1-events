@@ -1,3 +1,8 @@
+/**
+ * Activity for selecting a geographical location on a Google Map.
+ * Provides search functionality, geolocation of current position, and point-of-interest selection.
+ * Returns the selected latitude, longitude, address, and a specified radius to the calling activity.
+ */
 package com.example.eventflow;
 
 import android.Manifest;
