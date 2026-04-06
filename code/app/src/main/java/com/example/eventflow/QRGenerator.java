@@ -1,3 +1,7 @@
+/**
+ * Utility class for generating QR codes.
+ * Uses the ZXing library to encode text into a BitMatrix and convert it to a Bitmap.
+ */
 package com.example.eventflow;
 
 import android.graphics.Bitmap;

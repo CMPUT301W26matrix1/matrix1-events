@@ -1,3 +1,7 @@
+/**
+ * Activity for managing Cancelled Entrants.
+ * Displays entrants who were rejected or cancelled, and allows drawing new entrants from the waitlist.
+ */
 package com.example.eventflow.org_event.manage_entrant;
 
 import android.os.Bundle;

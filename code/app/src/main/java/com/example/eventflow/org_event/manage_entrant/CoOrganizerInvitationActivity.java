@@ -1,3 +1,8 @@
+/**
+ * Activity for handling Co-Organizer invitations.
+ * Allows users to accept or decline an invitation to co-manage an event.
+ * Updates event and user status upon response.
+ */
 package com.example.eventflow.org_event.manage_entrant;
 import android.os.Bundle;
 import android.util.Log;

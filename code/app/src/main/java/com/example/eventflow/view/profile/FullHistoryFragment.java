@@ -1,3 +1,8 @@
+/**
+ * Fragment that displays the full event history for a user.
+ * Organizes events into categories: Joined, Selected, and Not Selected.
+ * Fetches data from Firestore, including participations, co-organizer roles, and waiting lists.
+ */
 package com.example.eventflow.view.profile;
 
 import android.content.Context;

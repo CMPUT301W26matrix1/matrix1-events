@@ -1,3 +1,8 @@
+/**
+ * Represents an Entrant in the management context.
+ * Used for organizer-facing lists (Waitlist, Enrolled, Cancelled).
+ * Handles UI-specific status and date formatting.
+ */
 package com.example.eventflow.org_event.manage_entrant;
 
 /**

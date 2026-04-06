@@ -1,3 +1,7 @@
+/**
+ * Repository for managing Event data in Firestore.
+ * Handles CRUD operations, waiting list updates, and real-time event listeners.
+ */
 package com.example.eventflow.model.repositories;
 
 import com.example.eventflow.model.entities.Event;

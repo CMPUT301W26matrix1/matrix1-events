@@ -1,3 +1,7 @@
+/**
+ * Adapter for displaying user profiles in the Admin management list.
+ * Purpose: Connects the list of users from Firestore to the UI, providing role-based color coding.
+ */
 package com.example.eventflow;
 
 import android.content.Intent;
@@ -15,10 +19,6 @@ import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
-/**
- * Adapter for displaying user profiles in the Admin management list.
- * Purpose: Connects the list of users from Firestore to the UI, providing role-based color coding.
- */
 public class AdminProfileAdapter extends BaseAdapter {
 
     private List<String> profileNames;

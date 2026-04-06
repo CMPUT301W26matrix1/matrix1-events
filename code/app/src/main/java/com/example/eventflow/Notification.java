@@ -1,12 +1,12 @@
-package com.example.eventflow;
-
-import com.google.firebase.Timestamp;
-
 /**
  * Model class representing a notification within the EventFlow system.
  * Notifications inform users about lottery results, event invitations,
  * and administrative updates.
  */
+package com.example.eventflow;
+
+import com.google.firebase.Timestamp;
+
 public class Notification {
     private String id;
     private String message;

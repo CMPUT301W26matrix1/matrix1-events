@@ -1,3 +1,9 @@
+/**
+ * Fragment that displays a read-only view of the user's profile.
+ * Supports different layouts for standard users and admins.
+ * Shows personal details, profile picture, and recent event history for entrants.
+ * Provides options to edit profile, sign out, and delete the account.
+ */
 package com.example.eventflow.view.profile;
 
 import android.content.Context;

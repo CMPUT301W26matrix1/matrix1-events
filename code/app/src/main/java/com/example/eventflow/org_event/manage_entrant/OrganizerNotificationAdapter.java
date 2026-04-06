@@ -1,3 +1,8 @@
+/**
+ * Adapter for the Organizer Notification Center.
+ * Displays notifications for organizers, such as entrant responses or co-organizer actions.
+ * Features dynamic icons and colors based on notification type.
+ */
 package com.example.eventflow.org_event.manage_entrant;
 
 import android.content.res.ColorStateList;

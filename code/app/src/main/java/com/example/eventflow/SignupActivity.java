@@ -1,3 +1,8 @@
+/**
+ * Activity for user registration in the EventFlow system.
+ * Handles account creation via Firebase Authentication and initial profile setup in Firestore.
+ * Ensures user credentials and profiles are correctly linked using Firebase UIDs.
+ */
 package com.example.eventflow;
 
 import android.content.Intent;

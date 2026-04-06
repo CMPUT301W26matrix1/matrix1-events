@@ -1,3 +1,8 @@
+/**
+ * Represents a Comment in the system.
+ * Handles threaded discussions, reactions, and user identification.
+ * Used for communication between entrants and organizers.
+ */
 package com.example.eventflow.model.entities;
 
 import com.google.firebase.Timestamp;

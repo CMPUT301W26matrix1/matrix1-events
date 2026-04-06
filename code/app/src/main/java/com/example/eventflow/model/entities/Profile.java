@@ -1,3 +1,8 @@
+/**
+ * Represents a user Profile in the system.
+ * Handles personal information, interests, and notification settings.
+ * Linked to Firebase Auth UID.
+ */
 package com.example.eventflow.model.entities;
 
 import java.util.ArrayList;

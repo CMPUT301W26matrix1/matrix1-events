@@ -1,3 +1,8 @@
+/**
+ * Central dashboard for event organizers and co-organizers.
+ * Displays event statistics (waitlist, enrolled, cancelled) and provides management tools.
+ * Handles event selection and real-time data updates.
+ */
 package com.example.eventflow.org_event.manage_entrant;
 
 import android.content.Intent;

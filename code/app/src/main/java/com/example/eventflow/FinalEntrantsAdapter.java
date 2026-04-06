@@ -1,3 +1,8 @@
+/**
+ * Adapter for displaying a list of final entrants in a RecyclerView.
+ * Allows organizers to select specific entrants via checkboxes for sending notifications.
+ * Manages the selection state and provides the list of selected entrants to the activity.
+ */
 package com.example.eventflow;
 
 import android.view.LayoutInflater;

@@ -1,3 +1,9 @@
+/**
+ * Adapter class for displaying a list of events in a RecyclerView.
+ * This adapter supports different user roles (Entrant, Organizer, Admin) and 
+ * adjusts the UI (Join/Leave/Delete buttons) accordingly.
+ * It handles image loading from both URLs and Base64 encoded strings.
+ */
 package com.example.eventflow;
 
 import android.app.AlertDialog;
@@ -26,12 +32,6 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Adapter class for displaying a list of events in a RecyclerView.
- * This adapter supports different user roles (Entrant, Organizer, Admin) and 
- * adjusts the UI (Join/Leave/Delete buttons) accordingly.
- * It handles image loading from both URLs and Base64 encoded strings.
- */
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
 
     private final List<Event> events;

@@ -1,3 +1,7 @@
+/**
+ * Adapter for displaying a list of recently scanned events in a RecyclerView.
+ * Used in the CustomScannerActivity to provide quick access to previously scanned QR codes.
+ */
 package com.example.eventflow;
 
 import android.view.LayoutInflater;

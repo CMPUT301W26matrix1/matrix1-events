@@ -1,3 +1,9 @@
+/**
+ * Activity for displaying detailed information about a specific event.
+ * Allows users to view event metadata, join/leave the waiting list, and interact via comments.
+ * Displays nearby events and provides navigation to event location on a map.
+ * Supports specialized views and actions for organizers and administrators.
+ */
 package com.example.eventflow;
 
 import android.content.Intent;

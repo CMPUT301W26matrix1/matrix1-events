@@ -1,3 +1,7 @@
+/**
+ * Adapter for displaying event history items in a RecyclerView.
+ * Shows event title, date, and status for each item.
+ */
 package com.example.eventflow.view.profile;
 
 import android.view.LayoutInflater;

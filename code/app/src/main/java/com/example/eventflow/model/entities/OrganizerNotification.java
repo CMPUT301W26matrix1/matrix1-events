@@ -1,3 +1,7 @@
+/**
+ * Represents a Notification for an Organizer.
+ * Tracks actions taken by entrants that require organizer attention.
+ */
 package com.example.eventflow.model.entities;
 
 import com.google.firebase.Timestamp;

@@ -1,3 +1,8 @@
+/**
+ * Utility for generating QR Codes.
+ * Converts event-related data into scannable Bitmaps.
+ * Used for event sharing and check-ins.
+ */
 package com.example.eventflow.org_QR;
 
 import android.graphics.Bitmap;

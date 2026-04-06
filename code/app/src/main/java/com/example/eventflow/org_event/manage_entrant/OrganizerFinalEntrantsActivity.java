@@ -1,3 +1,8 @@
+/**
+ * Activity for organizers to view the final list of confirmed entrants.
+ * Supports searching, exporting to CSV (locally or to Cloud/Drive), and bulk emailing.
+ * Handles fetching confirmed participants from Firestore.
+ */
 package com.example.eventflow.org_event.manage_entrant;
 
 import android.content.Intent;

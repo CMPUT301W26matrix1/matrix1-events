@@ -1,3 +1,8 @@
+/**
+ * Activity that displays a list of entrants who have confirmed their participation in a specific event.
+ * Fetches the list of selected entrants for an event and verifies their 'ACCEPTED' status from their profile.
+ * Shows the full names of confirmed participants in a ListView.
+ */
 package com.example.eventflow.view.profile;
 
 import android.os.Bundle;

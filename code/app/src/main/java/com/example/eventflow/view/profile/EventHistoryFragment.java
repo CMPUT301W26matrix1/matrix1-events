@@ -1,3 +1,7 @@
+/**
+ * Fragment that displays the event history for the current device.
+ * Retrieves history items based on the Android device ID and displays them in a RecyclerView.
+ */
 package com.example.eventflow.view.profile;
 
 import android.annotation.SuppressLint;

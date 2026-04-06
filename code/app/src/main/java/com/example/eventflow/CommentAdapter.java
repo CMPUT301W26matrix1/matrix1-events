@@ -1,3 +1,8 @@
+/**
+ * Adapter class for displaying comments and their replies in a nested RecyclerView.
+ * Handles comment actions such as replying, reacting, and deleting (for organizers and admins).
+ * Supports hierarchical display of comments with toggleable reply visibility.
+ */
 package com.example.eventflow;
 
 import android.view.LayoutInflater;

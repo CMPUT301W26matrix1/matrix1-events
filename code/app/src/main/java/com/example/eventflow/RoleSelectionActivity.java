@@ -1,3 +1,8 @@
+/**
+ * Activity for users to select their active role (Entrant, Organizer, or Admin).
+ * Persists the selected role locally and in Firestore for role-based access control.
+ * Navigates to the appropriate dashboard based on the selected role.
+ */
 package com.example.eventflow;
 
 import android.content.Context;

@@ -1,3 +1,8 @@
+/**
+ * Initial activity shown when the application is launched.
+ * Displays a splash screen and handles initial navigation logic based on the user's login state.
+ * Directs users to the admin dashboard, role selection, login, or signup screen as appropriate.
+ */
 package com.example.eventflow;
 
 import android.annotation.SuppressLint;

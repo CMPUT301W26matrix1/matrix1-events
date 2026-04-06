@@ -1,3 +1,7 @@
+/**
+ * Activity for viewing the list of Enrolled Entrants.
+ * Displays participants who have accepted invitations and provides CSV export functionality.
+ */
 package com.example.eventflow.org_event.manage_entrant;
 
 import android.content.Intent;

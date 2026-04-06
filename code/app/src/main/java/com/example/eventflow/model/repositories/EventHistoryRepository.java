@@ -1,3 +1,7 @@
+/**
+ * Repository for managing Event History data in Firestore.
+ * Provides methods to retrieve historical event interactions for a specific user.
+ */
 package com.example.eventflow.model.repositories;
 
 import androidx.annotation.NonNull;

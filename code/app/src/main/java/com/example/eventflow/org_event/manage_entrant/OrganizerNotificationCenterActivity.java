@@ -1,3 +1,8 @@
+/**
+ * Activity for the Organizer Notification Center.
+ * Displays notifications related to a specific event for the organizer or co-organizers.
+ * Supports marking notifications as read and navigating to event details.
+ */
 package com.example.eventflow.org_event.manage_entrant;
 
 import android.content.Intent;

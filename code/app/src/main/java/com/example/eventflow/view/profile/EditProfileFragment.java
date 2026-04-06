@@ -1,3 +1,9 @@
+/**
+ * Fragment for editing user profile information.
+ * Allows users to update their name, email, date of birth, and notification preferences.
+ * Supports both Firebase-authenticated users and a local "admin" account.
+ * Includes functionality for changing passwords and deleting accounts.
+ */
 package com.example.eventflow.view.profile;
 
 import android.app.AlertDialog;

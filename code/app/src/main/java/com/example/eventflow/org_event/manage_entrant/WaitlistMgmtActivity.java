@@ -1,3 +1,7 @@
+/**
+ * Activity for managing the event Waiting List.
+ * Allows organizers to view and interact with entrants who are waiting for selection.
+ */
 package com.example.eventflow.org_event.manage_entrant;
 
 import android.os.Bundle;

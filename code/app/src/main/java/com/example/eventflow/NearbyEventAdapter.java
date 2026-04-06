@@ -1,3 +1,8 @@
+/**
+ * Adapter for displaying a horizontal list of nearby events in a RecyclerView.
+ * This adapter is typically used within the EventDetailActivity to show suggested events.
+ * Handles image loading from URLs and Base64 strings.
+ */
 package com.example.eventflow;
 
 import android.content.Intent;

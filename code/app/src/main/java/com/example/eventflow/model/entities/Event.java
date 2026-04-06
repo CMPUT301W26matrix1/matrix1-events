@@ -1,3 +1,8 @@
+/**
+ * Represents an Event in the system.
+ * Handles event metadata, registration, and lottery-related data.
+ * Used in conjunction with EventRepository and EventController.
+ */
 package com.example.eventflow.model.entities;
 
 import com.google.firebase.Timestamp;
