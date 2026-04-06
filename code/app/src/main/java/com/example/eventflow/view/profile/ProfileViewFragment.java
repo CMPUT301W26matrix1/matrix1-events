@@ -3,8 +3,11 @@ package com.example.eventflow.view.profile;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -30,6 +33,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -279,6 +283,7 @@ public class ProfileViewFragment extends Fragment {
                                         item.setEventId(eid);
                                         item.setEventName(eventDoc.getString("name"));
                                         item.setEventDate(eventDoc.getString("date"));
+                                        item.setPosterUrl(eventDoc.getString("posterUrl"));
                                         item.setStatus("Co-organizer");
                                         item.setUserRole("co-organizer");
                                         allItems.add(item);
@@ -325,10 +330,29 @@ public class ProfileViewFragment extends Fragment {
             TextView tvTitle = itemView.findViewById(R.id.tvHistoryEventTitle);
             TextView tvDate = itemView.findViewById(R.id.tvHistoryEventDate);
             TextView tvStatus = itemView.findViewById(R.id.tvHistoryEventStatus);
+            ImageView ivPoster = itemView.findViewById(R.id.ivEventIcon);
             
             tvTitle.setText(event.getEventName());
             tvDate.setText(event.getEventDate());
             
+            // --- IMAGE LOADING FIX ---
+            String posterData = event.getPosterUrl();
+            if (posterData != null && !posterData.isEmpty()) {
+                if (posterData.startsWith("http")) {
+                    Picasso.get().load(posterData).placeholder(R.drawable.ic_placeholder).into(ivPoster);
+                } else {
+                    try {
+                        byte[] decodedString = Base64.decode(posterData, Base64.DEFAULT);
+                        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                        ivPoster.setImageBitmap(decodedByte);
+                    } catch (Exception e) {
+                        ivPoster.setImageResource(R.drawable.ic_placeholder);
+                    }
+                }
+            } else {
+                ivPoster.setImageResource(R.drawable.ic_placeholder);
+            }
+
             String status = event.getStatus() != null ? event.getStatus() : "";
             String role = event.getUserRole();
 
