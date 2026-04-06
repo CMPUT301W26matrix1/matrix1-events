@@ -1,8 +1,12 @@
 package com.example.eventflow.org_QR;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,17 +29,30 @@ public class QRDisplayActivity extends AppCompatActivity {
         // 1. Retrieve data passed from EventDetailsActivity
         String eventName = getIntent().getStringExtra("EVENT_NAME");
         String qrData = getIntent().getStringExtra("QR_DATA");
+        
+        // Use the eventId as the manual code
+        // We extract it from the QR data if not passed directly
+        String eventId = null;
+        if (qrData != null && qrData.startsWith("eventflow://event/")) {
+            eventId = qrData.substring("eventflow://event/".length());
+        }
 
         // 2. Initialize UI Elements
         ImageView ivLargeQR = findViewById(R.id.iv_large_qr);
         TextView tvEventTitle = findViewById(R.id.tv_qr_event_title);
+        TextView tvEventCode = findViewById(R.id.tv_event_code);
+        ImageButton btnCopyCode = findViewById(R.id.btn_copy_code);
 
-        // 3. Populate the Title
+        // 3. Populate Data
         if (eventName != null) {
             tvEventTitle.setText(eventName);
         }
 
-        // 4. Generate and display the QR Code using your QRGenerator
+        if (eventId != null) {
+            tvEventCode.setText(eventId);
+        }
+
+        // 4. Generate and display the QR Code
         if (qrData != null) {
             try {
                 Bitmap bitmap = QRGenerator.generateQRCode(qrData);
@@ -54,11 +71,20 @@ public class QRDisplayActivity extends AppCompatActivity {
             btnBack.setOnClickListener(v -> finish());
         }
 
+        if (btnCopyCode != null && eventId != null) {
+            String finalEventId = eventId;
+            btnCopyCode.setOnClickListener(v -> {
+                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipData clip = ClipData.newPlainText("Event Code", finalEventId);
+                clipboard.setPrimaryClip(clip);
+                Toast.makeText(this, "Code copied to clipboard", Toast.LENGTH_SHORT).show();
+            });
+        }
+
         View btnDownload = findViewById(R.id.btn_download);
         if (btnDownload != null) {
             btnDownload.setOnClickListener(v -> {
                 Toast.makeText(this, "Downloading QR Code...", Toast.LENGTH_SHORT).show();
-                // Logic for saving bitmap to gallery would go here
             });
         }
 
@@ -68,20 +94,10 @@ public class QRDisplayActivity extends AppCompatActivity {
                 showShareMenu();
             });
         }
-
-        // 6. Navigation Mockup
-        View navDashboard = findViewById(R.id.nav_dashboard);
-        if (navDashboard != null) navDashboard.setOnClickListener(v -> finish());
-        
-        View navCreate = findViewById(R.id.nav_create);
-        if (navCreate != null) navCreate.setOnClickListener(v -> finish());
-        
-        View navProfile = findViewById(R.id.nav_profile);
-        if (navProfile != null) navProfile.setOnClickListener(v -> finish());
     }
 
     /**
-     * Creates "Share with friends" menu as per your mockup
+     * Creates "Share with friends" menu
      */
     private void showShareMenu() {
         BottomSheetDialog bottomSheet = new BottomSheetDialog(this);
