@@ -29,6 +29,7 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PointOfInterest;
 
 import java.io.IOException;
 import java.util.List;
@@ -65,7 +66,8 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
 
         btnConfirm.setOnClickListener(v -> {
             if (selectedLocation != null) {
-                String addressName = getAddressFromLatLng(selectedLocation);
+                // Use the marker title as the address if it's set, otherwise fallback to geocoding
+                String addressName = (selectedMarker != null) ? selectedMarker.getTitle() : getAddressFromLatLng(selectedLocation);
                 
                 Intent resultIntent = new Intent();
                 resultIntent.putExtra("latitude", selectedLocation.latitude);
@@ -102,7 +104,14 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
                 LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
 
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
-                updateMarkerAtLocation(latLng);
+                
+                // Prefer the feature name or searched name if it's descriptive
+                String title = address.getFeatureName();
+                if (title == null || Character.isDigit(title.charAt(0))) {
+                    title = address.getAddressLine(0);
+                }
+                
+                updateMarkerAtLocationWithTitle(latLng, title);
             } else {
                 Toast.makeText(this, "Location not found", Toast.LENGTH_SHORT).show();
             }
@@ -113,12 +122,15 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
     }
 
     private void updateMarkerAtLocation(LatLng latLng) {
+        updateMarkerAtLocationWithTitle(latLng, getAddressFromLatLng(latLng));
+    }
+
+    private void updateMarkerAtLocationWithTitle(LatLng latLng, String title) {
         selectedLocation = latLng;
         if (selectedMarker != null) {
             selectedMarker.remove();
         }
 
-        String title = getAddressFromLatLng(latLng);
         selectedMarker = mMap.addMarker(new MarkerOptions()
                 .position(latLng)
                 .title(title)
@@ -163,6 +175,11 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 12));
 
         mMap.setOnMapClickListener(latLng -> updateMarkerAtLocation(latLng));
+
+        // US 02.02.02 Enhancement: Click on Place of Interest to get exact name from map
+        mMap.setOnPoiClickListener(poi -> {
+            updateMarkerAtLocationWithTitle(poi.latLng, poi.name);
+        });
 
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
