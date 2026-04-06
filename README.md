@@ -64,10 +64,3 @@ git clone https://github.com/CMPUT301W26matrix1/matrix1-events.git
 
 - Download or receive the `google-services.json` in order to enable Firebase
 - Place it at the directory `code/app/google-services.json`
-
-4. Setup the Google Maps for Android SDK API Key
-
-- Create the a file in `code` called `secrets.properties` which contains the API key as follows:
-```bash
-MAPS_API_KEY=<API KEY HERE>
-```
