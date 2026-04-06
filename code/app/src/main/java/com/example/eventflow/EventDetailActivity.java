@@ -118,6 +118,8 @@ public class EventDetailActivity extends AppCompatActivity {
         eventController = new EventController(uid);
         startListeningForEventDetails();
         loadComments();
+        
+        updateButtonState();
 
         // Only load nearby events if NOT an organizer
         if (!isOrganizer) {
@@ -350,22 +352,24 @@ public class EventDetailActivity extends AppCompatActivity {
 
         btnJoinNow.setVisibility(View.VISIBLE);
 
-        if (eventController.isSelected(currentEvent)) {
-            btnJoinNow.setText("Selected");
-            btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
-            btnJoinNow.setEnabled(false);
-        } else if (eventController.isRejected(currentEvent)) {
-            btnJoinNow.setText("Not Selected");
-            btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF9E9E9E));
-            btnJoinNow.setEnabled(false);
-        } else if (eventController.isOnWaitingList(currentEvent)) {
-            btnJoinNow.setText("On Waiting List");
-            btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4285F4));
-            btnJoinNow.setEnabled(true);
-        } else {
-            btnJoinNow.setText("Join");
-            btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
-            btnJoinNow.setEnabled(true);
+        if (eventController != null && currentEvent != null) {
+            if (eventController.isSelected(currentEvent)) {
+                btnJoinNow.setText("Selected");
+                btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
+                btnJoinNow.setEnabled(false);
+            } else if (eventController.isRejected(currentEvent)) {
+                btnJoinNow.setText("Not Selected");
+                btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF9E9E9E));
+                btnJoinNow.setEnabled(false);
+            } else if (eventController.isOnWaitingList(currentEvent)) {
+                btnJoinNow.setText("On Waiting List");
+                btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4285F4));
+                btnJoinNow.setEnabled(true);
+            } else {
+                btnJoinNow.setText("Join");
+                btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
+                btnJoinNow.setEnabled(true);
+            }
         }
     }
 

@@ -20,11 +20,20 @@ public class EventHistoryRepository {
     private final CollectionReference eventHistoryCollection;
 
     /**
-     * Initializes the repository with a Firestore instance and the eventHistory collection.
+     * Initializes the repository with the default Firestore instance.
      */
     public EventHistoryRepository() {
-        db = FirebaseFirestore.getInstance();
-        eventHistoryCollection = db.collection("eventHistory");
+        this(FirebaseFirestore.getInstance());
+    }
+
+    /**
+     * Initializes the repository with a specific Firestore instance.
+     * Useful for testing with mocks.
+     * @param db The Firestore instance to use.
+     */
+    public EventHistoryRepository(FirebaseFirestore db) {
+        this.db = db;
+        this.eventHistoryCollection = db.collection("eventHistory");
     }
 
     /**

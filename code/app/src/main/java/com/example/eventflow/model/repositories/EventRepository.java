@@ -23,7 +23,16 @@ public class EventRepository {
      * Initializes the repository with the default FirebaseFirestore instance.
      */
     public EventRepository() {
-        db = FirebaseFirestore.getInstance();
+        this(FirebaseFirestore.getInstance());
+    }
+
+    /**
+     * Initializes the repository with a specific Firestore instance.
+     * Useful for testing with mocks.
+     * @param db The Firestore instance to use.
+     */
+    public EventRepository(FirebaseFirestore db) {
+        this.db = db;
     }
 
     /**

@@ -57,14 +57,14 @@ public class ProfileControllerTest {
     @Test
     public void createProfile_returnsCorrectProfileObject() {
         Profile profile = profileController.createProfile(
-                "device123",
+                "user123",
                 "Taufeeq",
                 "Raji",
                 "taufeeq@example.com",
                 "7801234567"
         );
 
-        assertEquals("device123", profile.getDeviceId());
+        assertEquals("user123", profile.getUserId());
         assertEquals("Taufeeq", profile.getFirstName());
         assertEquals("Raji", profile.getLastName());
         assertEquals("taufeeq@example.com", profile.getEmail());
@@ -74,7 +74,7 @@ public class ProfileControllerTest {
     @Test
     public void updateProfile_updatesExistingProfileFields() {
         Profile profile = new Profile(
-                "device123",
+                "user123",
                 "Old",
                 "Name",
                 "old@example.com",
@@ -96,7 +96,7 @@ public class ProfileControllerTest {
                 availableTime
         );
 
-        assertEquals("device123", updated.getDeviceId());
+        assertEquals("user123", updated.getUserId());
         assertEquals("New", updated.getFirstName());
         assertEquals("Name", updated.getLastName());
         assertEquals("new@example.com", updated.getEmail());
@@ -108,23 +108,23 @@ public class ProfileControllerTest {
     // DELETE FEATURE TESTS
 
     @Test
-    public void deleteProfile_validDeviceId_allowsDeletion() {
-        String deviceId = "device123";
-        boolean canDelete = deviceId != null && !deviceId.equals("");
+    public void deleteProfile_validUserId_allowsDeletion() {
+        String userId = "user123";
+        boolean canDelete = userId != null && !userId.equals("");
         assertTrue(canDelete);
     }
 
     @Test
-    public void deleteProfile_emptyDeviceId_preventsDeletion() {
-        String deviceId = "";
-        boolean canDelete = deviceId != null && !deviceId.equals("");
+    public void deleteProfile_emptyUserId_preventsDeletion() {
+        String userId = "";
+        boolean canDelete = userId != null && !userId.equals("");
         assertFalse(canDelete);
     }
 
     @Test
-    public void deleteProfile_nullDeviceId_preventsDeletion() {
-        String deviceId = null;
-        boolean canDelete = deviceId != null && !deviceId.equals("");
+    public void deleteProfile_nullUserId_preventsDeletion() {
+        String userId = null;
+        boolean canDelete = userId != null && !userId.equals("");
         assertFalse(canDelete);
     }
 

@@ -2,6 +2,7 @@ package com.example.eventflow;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.example.eventflow.model.entities.Comment;
 import com.google.firebase.Timestamp;
@@ -39,12 +40,14 @@ public class CommentTest {
         comment.setUserName("Mahi");
         comment.setText("Test comment");
         comment.setTimestamp(timestamp);
+        comment.setRole("organizer");
 
         assertEquals("c2", comment.getCommentId());
         assertEquals("u2", comment.getUserId());
         assertEquals("Mahi", comment.getUserName());
         assertEquals("Test comment", comment.getText());
         assertEquals(timestamp, comment.getTimestamp());
+        assertEquals("organizer", comment.getRole());
     }
 
 
@@ -60,26 +63,8 @@ public class CommentTest {
     }
 
     @Test
-    public void testOrganizerAndEntrantComments() {
-        Timestamp timestamp = Timestamp.now();
-
-        Comment entrantComment = new Comment(
-                "c3",
-                "u3",
-                "Entrant",
-                "Excited!",
-                timestamp
-        );
-
-        Comment organizerComment = new Comment(
-                "c4",
-                "u4",
-                "Organizer",
-                "Please arrive early",
-                timestamp
-        );
-
-        assertEquals("Entrant", entrantComment.getUserName());
-        assertEquals("Organizer", organizerComment.getUserName());
+    public void testTopLevelComment() {
+        Comment comment = new Comment();
+        assertTrue(comment.isTopLevel());
     }
 }

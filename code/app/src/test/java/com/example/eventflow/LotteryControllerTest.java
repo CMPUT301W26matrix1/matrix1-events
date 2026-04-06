@@ -16,8 +16,8 @@ public class LotteryControllerTest {
 
     @Test
     public void testReplacementSelectedCorrectly() {
-
-        LotteryController controller = new LotteryController();
+        // Pass null for FirebaseFirestore since it's not needed for drawReplacement
+        LotteryController controller = new LotteryController(null);
 
         List<String> waiting = new ArrayList<>();
         waiting.add("Alice");
@@ -29,13 +29,17 @@ public class LotteryControllerTest {
 
         String replacement = controller.drawReplacement(waiting, selected);
 
-        assertEquals("Bob", replacement);
+        // Since it shuffles, we just check if it's one of the remaining ones
+        assertNotNull(replacement);
+        assertTrue("Replacement should be Bob or Charlie", 
+                replacement.equals("Bob") || replacement.equals("Charlie"));
+        assertTrue("Selected should now contain the replacement", selected.contains(replacement));
     }
 
     @Test
     public void testReplacementAddedToSelected() {
-
-        LotteryController controller = new LotteryController();
+        // Pass null for FirebaseFirestore since it's not needed for drawReplacement
+        LotteryController controller = new LotteryController(null);
 
         List<String> waiting = new ArrayList<>();
         waiting.add("Alice");
@@ -51,8 +55,8 @@ public class LotteryControllerTest {
 
     @Test
     public void testNoReplacementAvailable() {
-
-        LotteryController controller = new LotteryController();
+        // Pass null for FirebaseFirestore since it's not needed for drawReplacement
+        LotteryController controller = new LotteryController(null);
 
         List<String> waiting = new ArrayList<>();
         waiting.add("Alice");
