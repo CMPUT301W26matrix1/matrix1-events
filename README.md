@@ -3,7 +3,8 @@
 <p align="center">
   <video src="https://github.com/user-attachments/assets/05247ed0-b100-4eff-b377-3bfa01a641fb" width="700px" controls autoplay loop muted>
 </p>
-    
+
+full demo video link - https://drive.google.com/drive/folders/19VsZlUG890pAXhSYkqBpkPsShjqNSp2s?usp=sharing
 ## Description
 
 This is the repository for the group project for team `matrix1` in CMPUT 301 at the University of Alberta.
