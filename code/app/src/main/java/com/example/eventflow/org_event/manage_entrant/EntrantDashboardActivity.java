@@ -20,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.eventflow.AdminDashboardActivity;
 import com.example.eventflow.EventDetailActivity;
 import com.example.eventflow.ProfileActivity;
 import com.example.eventflow.R;
@@ -142,9 +143,16 @@ public class EntrantDashboardActivity extends AppCompatActivity {
     private void setupNavigation() {
         if (navHome != null) {
             navHome.setOnClickListener(v -> {
-                Intent intent = new Intent(this, RoleSelectionActivity.class);
+                boolean fromAdmin = getIntent().getBooleanExtra("FROM_ADMIN", false);
+                Intent intent;
+                if (fromAdmin) {
+                    intent = new Intent(this, AdminDashboardActivity.class);
+                } else {
+                    intent = new Intent(this, RoleSelectionActivity.class);
+                }
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(intent);
+                finish();
             });
         }
 

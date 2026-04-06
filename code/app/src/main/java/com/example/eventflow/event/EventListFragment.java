@@ -147,6 +147,15 @@ public class EventListFragment extends Fragment {
     }
 
     private void setupUI(View view) {
+        // Back button (visible only when navigating from Admin)
+        ImageButton btnBack = view.findViewById(R.id.btn_back);
+        if (getActivity() != null && getActivity().getIntent().getBooleanExtra("FROM_ADMIN", false)) {
+            if (btnBack != null) {
+                btnBack.setVisibility(View.VISIBLE);
+                btnBack.setOnClickListener(v -> getActivity().onBackPressed());
+            }
+        }
+
         // Notification button
         view.findViewById(R.id.btn_notifications).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), NotificationsActivity.class);

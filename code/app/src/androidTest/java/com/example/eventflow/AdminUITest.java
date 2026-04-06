@@ -3,7 +3,6 @@ package com.example.eventflow;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.scrollTo;
-import static androidx.test.espresso.action.ViewActions.typeText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
@@ -53,7 +52,8 @@ public class AdminUITest {
     @Test
     public void testNavigationToManageUsers() {
         onView(withId(R.id.card_manage_users)).perform(click());
-        onView(withText("Admin Management")).check(matches(isDisplayed()));
+        // Updated to match the actual title in AdminProfileListActivity
+        onView(withText("User Management")).check(matches(isDisplayed()));
         onView(withId(R.id.searchBar)).check(matches(isDisplayed()));
         onView(withId(R.id.tv_filter_all)).check(matches(isDisplayed()));
         onView(withId(R.id.tv_filter_entrant)).check(matches(isDisplayed()));
