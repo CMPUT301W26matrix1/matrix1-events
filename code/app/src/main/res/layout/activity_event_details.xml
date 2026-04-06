@@ -360,6 +360,46 @@
                     android:layout_marginTop="16dp"
                     android:nestedScrollingEnabled="false" />
 
+                <!-- Reply Indicator -->
+                <LinearLayout
+                    android:id="@+id/llReplyIndicator"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="#1A4CAF50"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:visibility="gone">
+
+                    <View
+                        android:layout_width="3dp"
+                        android:layout_height="match_parent"
+                        android:background="#4CAF50" />
+
+                    <TextView
+                        android:id="@+id/tvReplyingTo"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:text="Replying to ..."
+                        android:textColor="#AAAAAA"
+                        android:textSize="13sp" />
+
+                    <ImageButton
+                        android:id="@+id/btnCancelReply"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@android:drawable/ic_menu_close_clear_cancel"
+                        app:tint="#888888"
+                        android:contentDescription="Cancel reply" />
+                </LinearLayout>
+
                 <!-- Add Comment Input -->
                 <RelativeLayout
                     android:layout_width="match_parent"
