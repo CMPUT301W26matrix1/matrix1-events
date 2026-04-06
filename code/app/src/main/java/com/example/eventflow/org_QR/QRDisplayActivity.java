@@ -2,9 +2,14 @@ package com.example.eventflow.org_QR;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.ContentValues;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -15,11 +20,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.eventflow.R;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 
+import java.io.OutputStream;
+
 /**
  * This activity displays the generated QR code in full screen
  * after the organizer selects "QR Scan" from the share menu.
  */
 public class QRDisplayActivity extends AppCompatActivity {
+
+    private Bitmap qrBitmap;
+    private String eventName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,11 +37,10 @@ public class QRDisplayActivity extends AppCompatActivity {
         setContentView(R.layout.fragment_qrdisplay);
 
         // 1. Retrieve data passed from EventDetailsActivity
-        String eventName = getIntent().getStringExtra("EVENT_NAME");
+        eventName = getIntent().getStringExtra("EVENT_NAME");
         String qrData = getIntent().getStringExtra("QR_DATA");
         
         // Use the eventId as the manual code
-        // We extract it from the QR data if not passed directly
         String eventId = null;
         if (qrData != null && qrData.startsWith("eventflow://event/")) {
             eventId = qrData.substring("eventflow://event/".length());
@@ -55,8 +64,8 @@ public class QRDisplayActivity extends AppCompatActivity {
         // 4. Generate and display the QR Code
         if (qrData != null) {
             try {
-                Bitmap bitmap = QRGenerator.generateQRCode(qrData);
-                ivLargeQR.setImageBitmap(bitmap);
+                qrBitmap = QRGenerator.generateQRCode(qrData);
+                ivLargeQR.setImageBitmap(qrBitmap);
             } catch (Exception e) {
                 e.printStackTrace();
                 Toast.makeText(this, "Error generating QR Code", Toast.LENGTH_SHORT).show();
@@ -84,7 +93,11 @@ public class QRDisplayActivity extends AppCompatActivity {
         View btnDownload = findViewById(R.id.btn_download);
         if (btnDownload != null) {
             btnDownload.setOnClickListener(v -> {
-                Toast.makeText(this, "Downloading QR Code...", Toast.LENGTH_SHORT).show();
+                if (qrBitmap != null) {
+                    saveImageToGallery(qrBitmap, "QR_" + (eventName != null ? eventName.replaceAll("\\s+", "_") : "Event"));
+                } else {
+                    Toast.makeText(this, "QR Code not ready", Toast.LENGTH_SHORT).show();
+                }
             });
         }
 
@@ -93,6 +106,34 @@ public class QRDisplayActivity extends AppCompatActivity {
             btnShare.setOnClickListener(v -> {
                 showShareMenu();
             });
+        }
+    }
+
+    private void saveImageToGallery(Bitmap bitmap, String filename) {
+        OutputStream fos;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename + ".jpg");
+                contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
+                contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/EventFlow");
+
+                Uri imageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
+                fos = getContentResolver().openOutputStream(imageUri);
+            } else {
+                String imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString();
+                java.io.File image = new java.io.File(imagesDir, filename + ".jpg");
+                fos = new java.io.FileOutputStream(image);
+            }
+
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+            if (fos != null) {
+                fos.close();
+            }
+            Toast.makeText(this, "QR Code saved to Gallery", Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Failed to save image", Toast.LENGTH_SHORT).show();
         }
     }
 
