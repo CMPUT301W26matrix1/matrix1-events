@@ -47,7 +47,7 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- Category -->
+    <!-- Category (Add missing field) -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -72,14 +72,14 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_directions"
+                android:src="@android:drawable/ic_menu_agenda"
                 app:tint="#666666" />
             <EditText
                 android:id="@+id/et_event_category"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@null"
-                android:hint="e.g. Food, Music, Tech..."
+                android:hint="e.g. Sports, Music, Tech..."
                 android:layout_marginStart="12dp"
                 android:textColor="#FFFFFF"
                 android:textColorHint="#666666"
@@ -271,46 +271,101 @@
         </androidx.cardview.widget.CardView>
     </LinearLayout>
 
-    <!-- Capacity -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Capacity"
-        android:textColor="#FFFFFF"
-        android:textSize="14sp"
-        android:layout_marginBottom="8dp" />
-
-    <androidx.cardview.widget.CardView
+    <!-- Capacity Row -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="52dp"
-        app:cardBackgroundColor="#121212"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
         android:layout_marginBottom="20dp">
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="16dp">
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_myplaces"
-                app:tint="#666666" />
-            <EditText
-                android:id="@+id/et_max_attendees"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@null"
-                android:hint="Maximum attendees"
-                android:layout_marginStart="12dp"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginEnd="8dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Capacity"
                 android:textColor="#FFFFFF"
-                android:textColorHint="#666666"
-                android:textSize="15sp"
-                android:inputType="number" />
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp" />
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                app:cardBackgroundColor="#121212"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@android:drawable/ic_menu_myplaces"
+                        app:tint="#666666" />
+                    <EditText
+                        android:id="@+id/et_max_attendees"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@null"
+                        android:hint="Total spots"
+                        android:layout_marginStart="12dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#666666"
+                        android:textSize="15sp"
+                        android:inputType="number" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="8dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Waitlist Limit"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp" />
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                app:cardBackgroundColor="#121212"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@android:drawable/ic_menu_sort_by_size"
+                        app:tint="#666666" />
+                    <EditText
+                        android:id="@+id/et_waitlist_limit"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@null"
+                        android:hint="Optional"
+                        android:layout_marginStart="12dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#666666"
+                        android:textSize="15sp"
+                        android:inputType="number" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+    </LinearLayout>
 
     <!-- Location -->
     <TextView
@@ -327,7 +382,7 @@
         app:cardBackgroundColor="#121212"
         app:cardCornerRadius="12dp"
         app:cardElevation="0dp"
-        android:layout_marginBottom="24dp">
+        android:layout_marginBottom="20dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -349,6 +404,47 @@
                 android:textColor="#FFFFFF"
                 android:textColorHint="#666666"
                 android:textSize="15sp" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Co-organizer -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Co-organizer Email"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp" />
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        app:cardBackgroundColor="#121212"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        android:layout_marginBottom="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_add"
+                app:tint="#666666" />
+            <EditText
+                android:id="@+id/et_co_organizer_email"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@null"
+                android:hint="Enter co-organizer email..."
+                android:layout_marginStart="12dp"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#666666"
+                android:textSize="15sp"
+                android:inputType="textEmailAddress" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 

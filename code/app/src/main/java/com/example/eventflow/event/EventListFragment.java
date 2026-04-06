@@ -35,6 +35,7 @@ import com.example.eventflow.model.repositories.ProfileRepository;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
@@ -127,7 +128,16 @@ public class EventListFragment extends Fragment {
                 eventController.joinWaitingList(event, new EventRepository.ActionCallback() {
                     @Override
                     public void onSuccess() {
-                        Toast.makeText(getContext(), "Joined waiting list", Toast.LENGTH_SHORT).show();
+                        // US 02.01.01 — Inform user of queue position consistently
+                        FirebaseFirestore.getInstance().collection("events").document(event.getEventId()).get()
+                                .addOnSuccessListener(doc -> {
+                                    List<String> list = (List<String>) doc.get("waitingList");
+                                    int count = (list != null) ? list.size() : 1;
+                                    
+                                    Toast.makeText(getContext(), 
+                                            "✅ Joined waiting list! You are entrant #" + count + " in line.", 
+                                            Toast.LENGTH_LONG).show();
+                                });
                     }
                     @Override
                     public void onFailure(Exception e) {
@@ -195,14 +205,11 @@ public class EventListFragment extends Fragment {
 
         // Search listener
         etSearchEvents.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                 applyFiltersAndSearch();
             }
-            @Override
-            public void afterTextChanged(Editable s) {}
+            @Override public void afterTextChanged(Editable s) {}
         });
 
         // Availability ChipGroup
@@ -215,8 +222,6 @@ public class EventListFragment extends Fragment {
                 }
             }
         });
-        
-        // Category listener is handled dynamically in updateCategoryChips
     }
 
     private void updateCategoryChips() {
@@ -329,52 +334,31 @@ public class EventListFragment extends Fragment {
 
         List<Event> filtered = allEvents.stream()
                 .filter(e -> {
-                    // 1. Visibility Check (US 02.02.03)
-                    // Admins see everything
-                    if (currentProfile != null && "admin".equalsIgnoreCase(currentProfile.getRole())) {
-                        return true;
-                    }
-                    
-                    // Organizers and Co-Organizers see their own private events
-                    if (uid.equals(e.getOrganizerId()) || (e.getCoOrganizerIds() != null && e.getCoOrganizerIds().contains(uid))) {
-                        return true;
-                    }
-
-                    // If not private, everyone sees it
-                    if (!e.isPrivate()) {
-                        return true;
-                    }
-                    
-                    // If private, only show to entrants if they are already part of the waiting list 
-                    // (invited and accepted or manually added)
+                    // Visibility check
+                    if (currentProfile != null && "admin".equalsIgnoreCase(currentProfile.getRole())) return true;
+                    if (uid.equals(e.getOrganizerId()) || (e.getCoOrganizerIds() != null && e.getCoOrganizerIds().contains(uid))) return true;
+                    if (!e.isPrivate()) return true;
                     boolean isParticipant = (e.getWaitingList() != null && e.getWaitingList().contains(uid)) ||
                                             (e.getSelectedEntrants() != null && e.getSelectedEntrants().contains(uid)) ||
                                             (e.getRejectedEntrants() != null && e.getRejectedEntrants().contains(uid));
-                    
                     return isParticipant;
                 })
                 .filter(e -> {
                     if (catFilter.equalsIgnoreCase("All")) return true;
-                    
                     String eventCat = e.getCategory() != null ? e.getCategory().trim() : "";
-                    
                     if (eventCat.equalsIgnoreCase(catFilter)) return true;
-                    
                     if (e.getInterests() != null) {
-                        return e.getInterests().stream()
-                                .anyMatch(i -> i != null && i.trim().equalsIgnoreCase(catFilter));
+                        return e.getInterests().stream().anyMatch(i -> i != null && i.trim().equalsIgnoreCase(catFilter));
                     }
                     return false;
                 })
                 .filter(e -> {
                     if (availFilter.equalsIgnoreCase("All")) return true;
                     if (availFilter.equalsIgnoreCase("Available")) {
-                        // Registration open and not full and I'm not already in it
                         boolean notJoined = e.getWaitingList() == null || !e.getWaitingList().contains(uid);
                         return !e.isWaitingListFull() && notJoined;
                     }
                     if (availFilter.equalsIgnoreCase("Waitlist Only")) {
-                        // Shows events where I'm currently on the waiting list
                         return e.getWaitingList() != null && e.getWaitingList().contains(uid);
                     }
                     return true;
@@ -410,17 +394,12 @@ public class EventListFragment extends Fragment {
 
     private void handleScanResult(String contents) {
         String eventId = null;
-
-        // Support new format: eventflow://event/[eventId]
         if (contents.startsWith("eventflow://event/")) {
             eventId = contents.replace("eventflow://event/", "");
-        } 
-        // Support legacy format: eventflow://details?id=[eventId]
-        else if (contents.startsWith("eventflow://details?id=")) {
+        } else if (contents.startsWith("eventflow://details?id=")) {
             Uri uri = Uri.parse(contents);
             eventId = uri.getQueryParameter("id");
         } else {
-            // Assume the raw contents is the eventId
             eventId = contents;
         }
 

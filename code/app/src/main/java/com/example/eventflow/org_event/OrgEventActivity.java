@@ -52,7 +52,7 @@ public class OrgEventActivity extends AppCompatActivity {
     private static final int PICK_IMAGE_REQUEST    = 1;
     private static final int PICK_LOCATION_REQUEST = 2;
 
-    private EditText etName, etLocation, etDate, etTime, etDescription, etLimit, etRegStart, etRegEnd, etCoOrganizerEmail;
+    private EditText etName, etLocation, etDate, etTime, etDescription, etLimit, etWaitlistLimit, etRegStart, etRegEnd, etCoOrganizerEmail;
     private SwitchCompat switchGeo, switchPrivate;
     private ImageView ivEventPoster;
     private View btnBack, cvUploadImage;
@@ -101,6 +101,7 @@ public class OrgEventActivity extends AppCompatActivity {
         etTime        = findViewById(R.id.et_event_time);
         etDescription = findViewById(R.id.et_event_description);
         etLimit       = findViewById(R.id.et_max_attendees);
+        etWaitlistLimit = findViewById(R.id.et_waitlist_limit);
         etRegStart    = findViewById(R.id.et_reg_start);
         etRegEnd      = findViewById(R.id.et_reg_end);
         etCoOrganizerEmail = findViewById(R.id.et_co_organizer_email);
@@ -367,6 +368,14 @@ public class OrgEventActivity extends AppCompatActivity {
             eventMap.put("capacity", 0);
         }
 
+        // Waitlist Limit Logic
+        try {
+            int wLimit = Integer.parseInt(etWaitlistLimit.getText().toString().trim());
+            eventMap.put("waitingListLimit", wLimit);
+        } catch (Exception e) {
+            eventMap.put("waitingListLimit", 0); // Default to unlimited
+        }
+
         eventMap.put("geolocationRequired", switchGeo.isChecked());
         eventMap.put("private", switchPrivate.isChecked());
         eventMap.put("posterUrl", posterData);
@@ -463,6 +472,9 @@ public class OrgEventActivity extends AppCompatActivity {
                 
                 Object cap = doc.get("capacity");
                 etLimit.setText(cap != null ? String.valueOf(cap) : "");
+
+                Object wLimit = doc.get("waitingListLimit");
+                etWaitlistLimit.setText(wLimit != null ? String.valueOf(wLimit) : "");
                 
                 existingPosterUrl = doc.getString("posterUrl");
                 if (existingPosterUrl != null && !existingPosterUrl.isEmpty()) {
