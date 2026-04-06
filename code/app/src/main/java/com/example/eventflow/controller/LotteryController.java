@@ -21,7 +21,22 @@ import java.util.UUID;
 public class LotteryController {
 
     private static final String TAG = "LotteryController";
-    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final FirebaseFirestore db;
+
+    /**
+     * Default constructor using the default FirebaseFirestore instance.
+     */
+    public LotteryController() {
+        this(FirebaseFirestore.getInstance());
+    }
+
+    /**
+     * Constructor allowing dependency injection of FirebaseFirestore.
+     * @param db The FirebaseFirestore instance to use.
+     */
+    public LotteryController(FirebaseFirestore db) {
+        this.db = db;
+    }
 
     /**
      * Saves a notification both to the user's specific notification sub-collection and to a global notifications collection.

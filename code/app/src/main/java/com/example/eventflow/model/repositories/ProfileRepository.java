@@ -20,12 +20,21 @@ public class ProfileRepository {
     private final CollectionReference usersCollection;
 
     /**
-     * Initializes the repository with Firestore instances and collection references.
+     * Initializes the repository with default Firestore instance.
      */
     public ProfileRepository() {
-        db = FirebaseFirestore.getInstance();
-        profilesCollection = db.collection("profiles");
-        usersCollection = db.collection("users");
+        this(FirebaseFirestore.getInstance());
+    }
+
+    /**
+     * Initializes the repository with a specific Firestore instance.
+     * Useful for testing with mocks.
+     * @param db The Firestore instance to use.
+     */
+    public ProfileRepository(FirebaseFirestore db) {
+        this.db = db;
+        this.profilesCollection = db.collection("profiles");
+        this.usersCollection = db.collection("users");
     }
 
     /** Callback interface for profile saving operations. */

@@ -82,6 +82,11 @@ public class EventDetailActivity extends AppCompatActivity {
     private String userName = "";
     private String uid = "";  // Firebase Auth UID
 
+    private Comment replyingToComment = null;
+    private TextView tvReplyingTo;
+    private View llReplyIndicator;
+    private ImageButton btnCancelReply;
+
     private FusedLocationProviderClient fusedLocationClient;
     private ListenerRegistration eventListener;
     private FirebaseAuth mAuth;
@@ -118,6 +123,8 @@ public class EventDetailActivity extends AppCompatActivity {
         eventController = new EventController(uid);
         startListeningForEventDetails();
         loadComments();
+        
+        updateButtonState();
 
         // Only load nearby events if NOT an organizer
         if (!isOrganizer) {
@@ -150,9 +157,13 @@ public class EventDetailActivity extends AppCompatActivity {
 
         rvComments = findViewById(R.id.rvComments);
         rvComments.setLayoutManager(new LinearLayoutManager(this));
+        llReplyIndicator = findViewById(R.id.llReplyIndicator);
+        tvReplyingTo = findViewById(R.id.tvReplyingTo);
+        btnCancelReply = findViewById(R.id.btnCancelReply);
+
         commentAdapter = new CommentAdapter(commentList, new CommentAdapter.CommentActionListener() {
             @Override public void onDeleteClick(Comment comment) { showDeleteConfirmation(comment); }
-            @Override public void onReplyClick(Comment comment) { etCommentInput.setHint("Reply to " + comment.getUserName()); }
+            @Override public void onReplyClick(Comment comment) { startReplyTo(comment); }
             @Override public void onReactClick(Comment comment) { showReactionDialog(comment); }
         }, isOrganizer, isAdmin);
         rvComments.setAdapter(commentAdapter);
@@ -226,6 +237,7 @@ public class EventDetailActivity extends AppCompatActivity {
         });
 
         btnPostComment.setOnClickListener(v -> postComment());
+        btnCancelReply.setOnClickListener(v -> cancelReply());
 
         btnJoinNow.setOnClickListener(v -> {
             if (currentEvent == null) return;
@@ -249,14 +261,14 @@ public class EventDetailActivity extends AppCompatActivity {
                         currentEvent = snapshot.toObject(Event.class);
                         if (currentEvent != null) {
                             currentEvent.setEventId(snapshot.getId());
-                            
+
                             // US 02.02.03 — Visibility check for Entrants
                             if (!isAdmin && !isOrganizer) {
                                 boolean isCoOrganizer = currentEvent.getCoOrganizerIds() != null && currentEvent.getCoOrganizerIds().contains(uid);
                                 boolean isParticipant = (currentEvent.getWaitingList() != null && currentEvent.getWaitingList().contains(uid)) ||
-                                                        (currentEvent.getSelectedEntrants() != null && currentEvent.getSelectedEntrants().contains(uid)) ||
-                                                        (currentEvent.getRejectedEntrants() != null && currentEvent.getRejectedEntrants().contains(uid));
-                                
+                                        (currentEvent.getSelectedEntrants() != null && currentEvent.getSelectedEntrants().contains(uid)) ||
+                                        (currentEvent.getRejectedEntrants() != null && currentEvent.getRejectedEntrants().contains(uid));
+
                                 if (currentEvent.isPrivate() && !isCoOrganizer && !isParticipant) {
                                     Toast.makeText(this, "This is a private event. You must be invited to view details.", Toast.LENGTH_LONG).show();
                                     finish();
@@ -350,22 +362,24 @@ public class EventDetailActivity extends AppCompatActivity {
 
         btnJoinNow.setVisibility(View.VISIBLE);
 
-        if (eventController.isSelected(currentEvent)) {
-            btnJoinNow.setText("Selected");
-            btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
-            btnJoinNow.setEnabled(false);
-        } else if (eventController.isRejected(currentEvent)) {
-            btnJoinNow.setText("Not Selected");
-            btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF9E9E9E));
-            btnJoinNow.setEnabled(false);
-        } else if (eventController.isOnWaitingList(currentEvent)) {
-            btnJoinNow.setText("On Waiting List");
-            btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4285F4));
-            btnJoinNow.setEnabled(true);
-        } else {
-            btnJoinNow.setText("Join");
-            btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
-            btnJoinNow.setEnabled(true);
+        if (eventController != null && currentEvent != null) {
+            if (eventController.isSelected(currentEvent)) {
+                btnJoinNow.setText("Selected");
+                btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
+                btnJoinNow.setEnabled(false);
+            } else if (eventController.isRejected(currentEvent)) {
+                btnJoinNow.setText("Not Selected");
+                btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF9E9E9E));
+                btnJoinNow.setEnabled(false);
+            } else if (eventController.isOnWaitingList(currentEvent)) {
+                btnJoinNow.setText("On Waiting List");
+                btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4285F4));
+                btnJoinNow.setEnabled(true);
+            } else {
+                btnJoinNow.setText("Join");
+                btnJoinNow.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
+                btnJoinNow.setEnabled(true);
+            }
         }
     }
 
@@ -428,9 +442,9 @@ public class EventDetailActivity extends AppCompatActivity {
                 db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
                     List<String> list = (List<String>) doc.get("waitingList");
                     int count = (list != null) ? list.size() : 1;
-                    
+
                     saveToUserJoinedEvents(currentEvent, "Waiting");
-                    
+
                     Toast.makeText(EventDetailActivity.this,
                             "✅ Joined waiting list! You are entrant #" + count + " in line.",
                             Toast.LENGTH_LONG).show();
@@ -461,6 +475,20 @@ public class EventDetailActivity extends AppCompatActivity {
         });
     }
 
+    private void startReplyTo(Comment comment) {
+        replyingToComment = comment;
+        tvReplyingTo.setText("Replying to " + comment.getUserName());
+        llReplyIndicator.setVisibility(View.VISIBLE);
+        etCommentInput.setHint("Reply to " + comment.getUserName() + "...");
+        etCommentInput.requestFocus();
+    }
+
+    private void cancelReply() {
+        replyingToComment = null;
+        llReplyIndicator.setVisibility(View.GONE);
+        etCommentInput.setHint("Add a comment...");
+    }
+
     private void postComment() {
         String text = etCommentInput.getText().toString().trim();
         if (text.isEmpty()) return;
@@ -473,9 +501,13 @@ public class EventDetailActivity extends AppCompatActivity {
         data.put("text", text);
         data.put("timestamp", Timestamp.now());
 
+        if (replyingToComment != null) {
+            data.put("parentCommentId", replyingToComment.getCommentId());
+        }
+
         db.collection("events").document(eventId).collection("comments").document(cid).set(data).addOnSuccessListener(a -> {
             etCommentInput.setText("");
-            etCommentInput.setHint("Add a comment...");
+            cancelReply();
         });
     }
 

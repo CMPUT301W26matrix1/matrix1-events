@@ -10,13 +10,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
- * Unit tests for device-based identification logic.
- * These tests focus on the logic of linking profiles to device IDs.
+ * Unit tests for user-based identification logic.
+ * These tests focus on the logic of linking profiles to user IDs.
  */
 public class DeviceIdentificationTest {
 
     private ProfileController profileController;
-    private final String TEST_DEVICE_ID = "test-device-id-12345";
+    private final String TEST_USER_ID = "test-user-id-12345";
 
     @Before
     public void setUp() {
@@ -24,10 +24,10 @@ public class DeviceIdentificationTest {
     }
 
     @Test
-    public void createProfile_linksToDeviceId() {
-        // Test that when a profile is created, it is correctly linked to the provided device ID
+    public void createProfile_linksToUserId() {
+        // Test that when a profile is created, it is correctly linked to the provided user ID
         Profile profile = profileController.createProfile(
-                TEST_DEVICE_ID,
+                TEST_USER_ID,
                 "Test",
                 "User",
                 "test@example.com",
@@ -35,23 +35,23 @@ public class DeviceIdentificationTest {
         );
 
         assertNotNull(profile);
-        assertEquals("Profile should be linked to the device ID", TEST_DEVICE_ID, profile.getDeviceId());
+        assertEquals("Profile should be linked to the user ID", TEST_USER_ID, profile.getUserId());
     }
 
     @Test
-    public void defaultProfileCreation_usesDeviceId() {
-        // Simulating the logic in SplashActivity where a default profile is created
-        Profile defaultProfile = new Profile(TEST_DEVICE_ID, "New", "User", "", "");
+    public void defaultProfileCreation_usesUserId() {
+        // Simulating the logic where a default profile is created
+        Profile defaultProfile = new Profile(TEST_USER_ID, "New", "User", "", "");
         
-        assertEquals("Default profile must store the device ID", TEST_DEVICE_ID, defaultProfile.getDeviceId());
+        assertEquals("Default profile must store the user ID", TEST_USER_ID, defaultProfile.getUserId());
         assertEquals("Default first name should be 'New'", "New", defaultProfile.getFirstName());
         assertEquals("Default last name should be 'User'", "User", defaultProfile.getLastName());
     }
 
     @Test
-    public void updateProfile_maintainsDeviceId() {
-        // Ensure that updating a profile doesn't lose the device ID linkage
-        Profile existingProfile = new Profile(TEST_DEVICE_ID, "Old", "User", "old@example.com", "000");
+    public void updateProfile_maintainsUserId() {
+        // Ensure that updating a profile doesn't lose the user ID linkage
+        Profile existingProfile = new Profile(TEST_USER_ID, "Old", "User", "old@example.com", "000");
         
         Profile updatedProfile = profileController.updateProfile(
                 existingProfile,
@@ -64,7 +64,7 @@ public class DeviceIdentificationTest {
                 null  // availableTimeOfDay
         );
 
-        assertEquals("Device ID must remain the same after update", TEST_DEVICE_ID, updatedProfile.getDeviceId());
+        assertEquals("User ID must remain the same after update", TEST_USER_ID, updatedProfile.getUserId());
         assertEquals("First name should be updated", "New", updatedProfile.getFirstName());
         assertEquals("Email should be updated", "new@example.com", updatedProfile.getEmail());
     }

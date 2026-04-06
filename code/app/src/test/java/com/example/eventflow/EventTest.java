@@ -6,11 +6,11 @@ import com.google.firebase.Timestamp;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class EventTest {
@@ -21,6 +21,32 @@ public class EventTest {
 
         assertEquals(0, event.getWaitingListCount());
         assertFalse(event.isWaitingListFull());
+        assertNotNull(event.getWaitingList());
+        assertNotNull(event.getSelectedEntrants());
+        assertNotNull(event.getRejectedEntrants());
+    }
+
+    @Test
+    public void gettersAndSetters_workCorrectly() {
+        Event event = new Event();
+        
+        event.setEventId("ev123");
+        event.setName("Gala");
+        event.setDescription("Dinner party");
+        event.setLocation("Banff");
+        event.setCapacity(100);
+        event.setOrganizerId("org1");
+        event.setPosterUrl("http://img.com");
+        event.setWaitingListLimit(50);
+        
+        assertEquals("ev123", event.getEventId());
+        assertEquals("Gala", event.getName());
+        assertEquals("Dinner party", event.getDescription());
+        assertEquals("Banff", event.getLocation());
+        assertEquals(100, event.getCapacity());
+        assertEquals("org1", event.getOrganizerId());
+        assertEquals("http://img.com", event.getPosterUrl());
+        assertEquals(50, event.getWaitingListLimit());
     }
 
     @Test
@@ -79,8 +105,9 @@ public class EventTest {
     public void isRegistrationOpen_returnsTrueWhenCurrentTimeWithinRange() {
         Event event = new Event();
 
-        Timestamp start = new Timestamp(new Date(System.currentTimeMillis() - 60_000));
-        Timestamp end = new Timestamp(new Date(System.currentTimeMillis() + 60_000));
+        long now = System.currentTimeMillis();
+        Timestamp start = new Timestamp(now / 1000 - 60, 0);
+        Timestamp end = new Timestamp(now / 1000 + 60, 0);
 
         event.setRegistrationStart(start);
         event.setRegistrationEnd(end);
@@ -92,8 +119,9 @@ public class EventTest {
     public void isRegistrationOpen_returnsFalseWhenCurrentTimeBeforeStart() {
         Event event = new Event();
 
-        Timestamp start = new Timestamp(new Date(System.currentTimeMillis() + 60_000));
-        Timestamp end = new Timestamp(new Date(System.currentTimeMillis() + 120_000));
+        long now = System.currentTimeMillis();
+        Timestamp start = new Timestamp(now / 1000 + 60, 0);
+        Timestamp end = new Timestamp(now / 1000 + 120, 0);
 
         event.setRegistrationStart(start);
         event.setRegistrationEnd(end);
@@ -105,8 +133,9 @@ public class EventTest {
     public void isRegistrationOpen_returnsFalseWhenCurrentTimeAfterEnd() {
         Event event = new Event();
 
-        Timestamp start = new Timestamp(new Date(System.currentTimeMillis() - 120_000));
-        Timestamp end = new Timestamp(new Date(System.currentTimeMillis() - 60_000));
+        long now = System.currentTimeMillis();
+        Timestamp start = new Timestamp(now / 1000 - 120, 0);
+        Timestamp end = new Timestamp(now / 1000 - 60, 0);
 
         event.setRegistrationStart(start);
         event.setRegistrationEnd(end);
