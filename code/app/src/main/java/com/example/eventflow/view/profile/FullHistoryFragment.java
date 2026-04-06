@@ -165,7 +165,7 @@ public class FullHistoryFragment extends Fragment {
                         String status = doc.getString("status");
                         if (status == null) status = "Waiting";
                         item.setStatus(status);
-                        
+
                         // Check if role is co-organizer
                         String role = doc.getString("role");
                         if ("co-organizer".equalsIgnoreCase(role)) {
@@ -419,15 +419,21 @@ public class FullHistoryFragment extends Fragment {
                 holder.ivPoster.setImageResource(R.drawable.ic_placeholder);
             }
 
+            // Hide the separate co-organizer badge (we'll use tvStatus instead)
             holder.tvCoOrganizerBadge.setVisibility(View.GONE);
 
-            // PRIORITY: If role is co-organizer, show the blue badge
+            // ALWAYS hide delete button - REMOVED
+            holder.btnDelete.setVisibility(View.GONE);
+
+            // Keep action buttons hidden as before
+            holder.llActions.setVisibility(View.GONE);
+
+            // Show all badges in tvStatus (middle) - keeping ALL original styles
             if ("co-organizer".equalsIgnoreCase(role)) {
                 holder.tvStatus.setText("Co-organizer");
                 holder.tvStatus.setTextColor(Color.parseColor("#2196F3"));
                 holder.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#332196F3")));
-            } 
-            // Otherwise, show standard status badges
+            }
             else if ("ACCEPTED".equalsIgnoreCase(status)) {
                 holder.tvStatus.setText("Enrolled");
                 holder.tvStatus.setTextColor(Color.parseColor("#4CAF50"));
@@ -463,17 +469,6 @@ public class FullHistoryFragment extends Fragment {
             } else {
                 holder.tvStatus.setText(status);
                 holder.tvStatus.setTextColor(Color.parseColor("#888888"));
-            }
-
-            holder.llActions.setVisibility(View.GONE);
-            holder.btnDelete.setVisibility(View.GONE);
-
-            if (tab.equals("Joined")) {
-                holder.btnDelete.setVisibility(View.VISIBLE);
-            } else if (tab.equals("Selected")) {
-                if (item.getStatus().equalsIgnoreCase("Selected")) {
-                    holder.llActions.setVisibility(View.VISIBLE);
-                }
             }
         }
 

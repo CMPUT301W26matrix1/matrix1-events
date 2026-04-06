@@ -4,12 +4,9 @@ import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.eventflow.R;
@@ -67,20 +64,6 @@ public class WaitlistAdapter extends RecyclerView.Adapter<WaitlistAdapter.Waitli
             holder.tvStatusBadge.setTextColor(Color.parseColor("#666666"));
             holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1A666666")));
         }
-
-        holder.ivActionIcon.setOnClickListener(v -> {
-            int currentPosition = holder.getAdapterPosition();
-            if (currentPosition != RecyclerView.NO_POSITION) {
-                String removedName = entrantList.get(currentPosition).getName();
-                entrantList.remove(currentPosition);
-                notifyItemRemoved(currentPosition);
-                notifyItemRangeChanged(currentPosition, entrantList.size());
-                if (deleteListener != null) {
-                    deleteListener.onItemDeleted();
-                }
-                Toast.makeText(v.getContext(), "Removed " + removedName, Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 
     @Override
@@ -90,7 +73,6 @@ public class WaitlistAdapter extends RecyclerView.Adapter<WaitlistAdapter.Waitli
 
     public static class WaitlistViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvEmail, tvAvatarLetter, tvStatusBadge;
-        ImageView ivActionIcon;
 
         public WaitlistViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -98,7 +80,6 @@ public class WaitlistAdapter extends RecyclerView.Adapter<WaitlistAdapter.Waitli
             tvEmail = itemView.findViewById(R.id.tvEntrantEmail);
             tvAvatarLetter = itemView.findViewById(R.id.tvAvatarLetter);
             tvStatusBadge = itemView.findViewById(R.id.tvStatusBadge);
-            ivActionIcon = itemView.findViewById(R.id.ivActionIcon);
         }
     }
 }
