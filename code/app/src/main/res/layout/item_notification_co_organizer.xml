@@ -5,53 +5,29 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
-    app:cardBackgroundColor="#0F0F0F"
+    android:layout_marginHorizontal="12dp"
+    app:cardBackgroundColor="#111111"
     app:cardCornerRadius="16dp"
     app:cardElevation="0dp"
-    app:strokeColor="#1A1A1A"
-    app:strokeWidth="1dp">
+    app:strokeWidth="0dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/iv_event_image"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:scaleType="centerCrop"
-            android:src="@drawable/ic_placeholder"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:shapeAppearanceOverlay="@style/RoundedCornerImage" />
-
         <TextView
             android:id="@+id/tv_event_name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
             android:text="Tech Summit 2026"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@id/tv_status_badge"
-            app:layout_constraintStart_toEndOf="@id/iv_event_image"
-            app:layout_constraintTop_toTopOf="@id/iv_event_image" />
-
-        <TextView
-            android:id="@+id/tv_status_badge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/badge_status_selected"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="4dp"
-            android:text="Selected"
-            android:textColor="#4CAF50"
-            android:textSize="12sp"
-            android:textStyle="bold"
+            android:gravity="center"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/iv_event_image" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/tv_invitation_text"
@@ -59,14 +35,14 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:gravity="center"
-            android:text="YOU'VE BEEN INVITED\nAS CO_ORGANIZER!"
+            android:text="YOU'VE BEEN INVITED\nAS CO-ORGANIZER!"
             android:textColor="#FFFFFF"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:textStyle="bold"
             android:letterSpacing="0.05"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/iv_event_image" />
+            app:layout_constraintTop_toBottomOf="@id/tv_event_name" />
 
         <LinearLayout
             android:id="@+id/ll_actions"
@@ -80,31 +56,37 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_accept"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="44dp"
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:text="Accept"
                 android:textAllCaps="false"
                 android:textColor="#4CAF50"
+                android:textSize="13sp"
                 app:backgroundTint="#1B4321"
-                app:cornerRadius="24dp"
+                app:cornerRadius="22dp"
                 app:icon="@drawable/ic_check"
                 app:iconGravity="textStart"
+                app:iconPadding="4dp"
+                app:iconSize="16dp"
                 app:iconTint="#4CAF50" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_decline"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="44dp"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:text="Decline"
                 android:textAllCaps="false"
                 android:textColor="#F44336"
+                android:textSize="13sp"
                 app:backgroundTint="#3D1C1C"
-                app:cornerRadius="24dp"
+                app:cornerRadius="22dp"
                 app:icon="@drawable/ic_close"
                 app:iconGravity="textStart"
+                app:iconPadding="4dp"
+                app:iconSize="16dp"
                 app:iconTint="#F44336" />
 
         </LinearLayout>

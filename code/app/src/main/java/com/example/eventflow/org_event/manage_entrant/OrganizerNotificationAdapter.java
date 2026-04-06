@@ -1,5 +1,6 @@
 package com.example.eventflow.org_event.manage_entrant;
 
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -57,44 +58,50 @@ public class OrganizerNotificationAdapter extends RecyclerView.Adapter<Organizer
             holder.tvTime.setText(sdf.format(n.getTimestamp().toDate()));
         }
 
-        // Set icon and color based on type
+        // Set icon, color, and background circle based on type
+        int iconColor;
+        int bgColor;
+        int iconRes;
+
         switch (n.getType()) {
             case "ENTRANT_ACCEPTED":
-                holder.ivIcon.setImageResource(R.drawable.ic_check);
-                holder.ivIcon.setColorFilter(Color.parseColor("#4CAF50"));
-                holder.tvTitle.setTextColor(Color.parseColor("#4CAF50"));
+                iconRes = R.drawable.ic_check;
+                iconColor = Color.parseColor("#4CAF50"); // Green
+                bgColor = Color.parseColor("#1B2E1C"); // Dark Green Muted
                 break;
 
             case "ENTRANT_DECLINED":
-                holder.ivIcon.setImageResource(R.drawable.ic_cross);
-                holder.ivIcon.setColorFilter(Color.parseColor("#F44336"));
-                holder.tvTitle.setTextColor(Color.parseColor("#F44336"));
+            case "CO_ORGANIZER_DECLINED":
+                iconRes = R.drawable.ic_cross;
+                iconColor = Color.parseColor("#F44336"); // Red
+                bgColor = Color.parseColor("#2D1919"); // Dark Red Muted
                 break;
 
             case "ENTRANT_TRY_AGAIN":
-                holder.ivIcon.setImageResource(R.drawable.ic_people);
-                holder.ivIcon.setColorFilter(Color.parseColor("#FFC107"));
-                holder.tvTitle.setTextColor(Color.parseColor("#FFC107"));
+                iconRes = R.drawable.ic_people;
+                iconColor = Color.parseColor("#FFC107"); // Yellow
+                bgColor = Color.parseColor("#2D2615"); // Dark Yellow Muted
                 break;
 
             case "CO_ORGANIZER_ACCEPTED":
-                holder.ivIcon.setImageResource(R.drawable.ic_person);
-                holder.ivIcon.setColorFilter(Color.parseColor("#2196F3"));
-                holder.tvTitle.setTextColor(Color.parseColor("#2196F3"));
-                break;
-
-            case "CO_ORGANIZER_DECLINED":
-                holder.ivIcon.setImageResource(R.drawable.ic_cross);
-                holder.ivIcon.setColorFilter(Color.parseColor("#F44336"));
-                holder.tvTitle.setTextColor(Color.parseColor("#F44336"));
+                iconRes = R.drawable.ic_person;
+                iconColor = Color.parseColor("#2196F3"); // Blue
+                bgColor = Color.parseColor("#15232D"); // Dark Blue Muted
                 break;
 
             default:
-                holder.ivIcon.setImageResource(R.drawable.ic_notification);
-                holder.ivIcon.setColorFilter(Color.parseColor("#888888"));
-                holder.tvTitle.setTextColor(Color.parseColor("#888888"));
+                iconRes = R.drawable.ic_notification;
+                iconColor = Color.parseColor("#FFFFFF");
+                bgColor = Color.parseColor("#222222");
                 break;
         }
+
+        holder.ivIcon.setImageResource(iconRes);
+        holder.ivIcon.setImageTintList(ColorStateList.valueOf(iconColor));
+        holder.vIconBg.setBackgroundTintList(ColorStateList.valueOf(bgColor));
+        
+        // Match title color to icon color for consistency
+        holder.tvTitle.setTextColor(iconColor);
 
         // Unread indicator
         if (!n.isRead()) {
@@ -117,17 +124,18 @@ public class OrganizerNotificationAdapter extends RecyclerView.Adapter<Organizer
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivIcon;
+        View vIconBg, vUnread;
         TextView tvTitle, tvMessage, tvEventName, tvTime;
-        View vUnread;
 
         ViewHolder(View v) {
             super(v);
             ivIcon = v.findViewById(R.id.ivIcon);
+            vIconBg = v.findViewById(R.id.vIconBg);
+            vUnread = v.findViewById(R.id.vUnread);
             tvTitle = v.findViewById(R.id.tvTitle);
             tvMessage = v.findViewById(R.id.tvMessage);
             tvEventName = v.findViewById(R.id.tvEventName);
             tvTime = v.findViewById(R.id.tvTime);
-            vUnread = v.findViewById(R.id.vUnread);
         }
     }
 }

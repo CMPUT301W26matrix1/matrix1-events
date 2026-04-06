@@ -78,8 +78,6 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
             CoOrganizerViewHolder h = (CoOrganizerViewHolder) holder;
             h.eventName.setText(n.getEventName() != null ? n.getEventName() : "Event Invitation");
 
-            Picasso.get().load(R.drawable.ic_placeholder).into(h.eventImage);
-
             h.btnAccept.setOnClickListener(v -> handleCoOrganizerAccept(n, userId, h));
             h.btnDecline.setOnClickListener(v -> handleCoOrganizerDecline(n, userId, h));
 
@@ -88,7 +86,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
                 h.invitationText.setText(n.isAccepted() ? "Invitation Accepted" : "Invitation Declined");
             } else {
                 h.actionsContainer.setVisibility(View.VISIBLE);
-                h.invitationText.setText("YOU'VE BEEN INVITED\nAS CO_ORGANIZER!");
+                h.invitationText.setText("YOU'VE BEEN INVITED\nAS CO-ORGANIZER!");
             }
 
         } else if (holder instanceof DefaultViewHolder) {
@@ -416,15 +414,12 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
     }
 
     static class CoOrganizerViewHolder extends RecyclerView.ViewHolder {
-        ImageView eventImage;
-        TextView eventName, statusBadge, invitationText;
+        TextView eventName, invitationText;
         MaterialButton btnAccept, btnDecline;
         View actionsContainer;
         CoOrganizerViewHolder(View v) {
             super(v);
-            eventImage = v.findViewById(R.id.iv_event_image);
             eventName = v.findViewById(R.id.tv_event_name);
-            statusBadge = v.findViewById(R.id.tv_status_badge);
             invitationText = v.findViewById(R.id.tv_invitation_text);
             btnAccept = v.findViewById(R.id.btn_accept);
             btnDecline = v.findViewById(R.id.btn_decline);

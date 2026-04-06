@@ -2,7 +2,7 @@ package com.example.eventflow;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.provider.Settings;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,17 +22,19 @@ import com.example.eventflow.org_event.manage_entrant.EntrantDashboardActivity;
 import com.example.eventflow.org_event.manage_entrant.NotificationsActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Organizer Dashboard Activity matching the provided UI design.
+ * Features strict deduplication to prevent events from appearing twice.
  */
 public class OrganizerEventsActivity extends AppCompatActivity {
 
@@ -52,8 +54,13 @@ public class OrganizerEventsActivity extends AppCompatActivity {
 
         initViews();
         setupDashboardUI();
-        loadMyEvents();
         setupNavigation();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadMyEvents();
     }
 
     private void initViews() {
@@ -165,28 +172,40 @@ public class OrganizerEventsActivity extends AppCompatActivity {
 
     private void loadMyEvents() {
         String uid = FirebaseAuth.getInstance().getCurrentUser() != null ? FirebaseAuth.getInstance().getCurrentUser().getUid() : "";
-        
-        // Load events where user is organizer OR co-organizer
+        if (uid.isEmpty()) return;
+
         db.collection("events")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    myEvents.clear();
+                    // Use a LinkedHashMap with DocumentID as key to strictly prevent duplicates
+                    Map<String, Event> uniqueEventsMap = new LinkedHashMap<>();
+                    
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         try {
                             Event event = doc.toObject(Event.class);
                             if (event != null) {
-                                event.setEventId(doc.getId());
+                                String eid = doc.getId();
+                                event.setEventId(eid);
                                 
                                 String organizerId = doc.getString("organizerId");
                                 List<String> coOrgIds = (List<String>) doc.get("coOrganizerIds");
                                 
-                                if ((organizerId != null && organizerId.equals(uid)) || 
-                                    (coOrgIds != null && coOrgIds.contains(uid))) {
-                                    myEvents.add(event);
+                                // Check if current user is either the owner or a co-organizer
+                                boolean isOwner = (organizerId != null && organizerId.equals(uid));
+                                boolean isCoOrg = (coOrgIds != null && coOrgIds.contains(uid));
+                                
+                                if (isOwner || isCoOrg) {
+                                    uniqueEventsMap.put(eid, event);
                                 }
                             }
-                        } catch (Exception e) { e.printStackTrace(); }
+                        } catch (Exception e) {
+                            Log.e("Dashboard", "Error parsing event: " + e.getMessage());
+                        }
                     }
+                    
+                    myEvents.clear();
+                    myEvents.addAll(uniqueEventsMap.values());
+                    
                     if (!myEvents.isEmpty()) latestEventId = myEvents.get(0).getEventId();
                     if (adapter != null) adapter.notifyDataSetChanged();
                 })
@@ -210,11 +229,37 @@ public class OrganizerEventsActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             Event event = eventList.get(position);
             holder.tvName.setText(event.getName());
-            if (event.getEventDate() != null) holder.tvDate.setText(sdf.format(event.getEventDate().toDate()));
-            holder.tvWaitlist.setText(event.getWaitingListCount() + " waitlisted");
-            if (event.getPosterUrl() != null && !event.getPosterUrl().isEmpty()) {
-                Picasso.get().load(event.getPosterUrl()).placeholder(R.drawable.ic_placeholder).into(holder.ivImage);
+            if (event.getEventDate() != null) {
+                holder.tvDate.setText(sdf.format(event.getEventDate().toDate()));
             }
+            holder.tvWaitlist.setText(event.getWaitingListCount() + " waitlisted");
+            
+            // Role Badge Logic
+            String uid = FirebaseAuth.getInstance().getCurrentUser() != null ? FirebaseAuth.getInstance().getCurrentUser().getUid() : "";
+            if (event.getCoOrganizerIds() != null && event.getCoOrganizerIds().contains(uid)) {
+                holder.tvRoleBadge.setVisibility(View.VISIBLE);
+                holder.tvRoleBadge.setText("Co-organizer");
+            } else {
+                holder.tvRoleBadge.setVisibility(View.GONE);
+            }
+
+            // Image Loading (Base64 + URL)
+            if (event.getPosterUrl() != null && !event.getPosterUrl().isEmpty()) {
+                if (event.getPosterUrl().startsWith("http")) {
+                    Picasso.get().load(event.getPosterUrl()).placeholder(R.drawable.ic_placeholder).into(holder.ivImage);
+                } else {
+                    try {
+                        byte[] decodedString = android.util.Base64.decode(event.getPosterUrl(), android.util.Base64.DEFAULT);
+                        android.graphics.Bitmap decodedByte = android.graphics.BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                        holder.ivImage.setImageBitmap(decodedByte);
+                    } catch (Exception e) {
+                        holder.ivImage.setImageResource(R.drawable.ic_placeholder);
+                    }
+                }
+            } else {
+                holder.ivImage.setImageResource(R.drawable.ic_placeholder);
+            }
+
             holder.itemView.setOnClickListener(v -> {
                 latestEventId = event.getEventId();
                 Intent intent = new Intent(v.getContext(), EntrantDashboardActivity.class);
@@ -228,7 +273,7 @@ public class OrganizerEventsActivity extends AppCompatActivity {
         public int getItemCount() { return eventList.size(); }
 
         class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvName, tvDate, tvWaitlist;
+            TextView tvName, tvDate, tvWaitlist, tvRoleBadge;
             ImageView ivImage;
             public ViewHolder(@NonNull View itemView) {
                 super(itemView);
@@ -236,6 +281,7 @@ public class OrganizerEventsActivity extends AppCompatActivity {
                 tvDate = itemView.findViewById(R.id.tvEventDate);
                 tvWaitlist = itemView.findViewById(R.id.tvWaitlistCount);
                 ivImage = itemView.findViewById(R.id.ivEventImage);
+                tvRoleBadge = itemView.findViewById(R.id.tvEventRole);
             }
         }
     }
