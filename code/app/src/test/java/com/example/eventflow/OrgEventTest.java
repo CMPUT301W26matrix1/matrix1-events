@@ -58,4 +58,10 @@ public class OrgEventTest {
         boolean invalidName = EventFormManager.isDataValid("", "Seoul", "2026-11-01");
         assertFalse("Form should be invalid if Name is empty", invalidName);
     }
+
+    @Test
+    public void testPrivateEventQRDataIsNull() {
+        Event event = new Event("id", "Name", "Loc", "Date", "Desc", 100, true);
+        assertNull("Private events should return null QR data string", event.getQRDataString());
+    }
 }

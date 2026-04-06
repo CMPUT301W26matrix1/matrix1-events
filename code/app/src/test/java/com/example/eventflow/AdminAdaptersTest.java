@@ -32,19 +32,28 @@ public class AdminAdaptersTest {
 
     @Test
     public void testNotificationLogDataModel() {
-        String title = "Selection Result";
-        String message = "You have been selected!";
+        String userId = "user123";
         String userName = "Test User";
         String eventName = "Winter Gala";
-        String timestamp = "2023-11-01 10:00";
+        String message = "You have been selected!";
+        String title = "Selection Result";
         String type = "SELECTED";
+        String timestamp = "2023-11-01 10:00";
+        String organizerId = "org456";
 
-        // AdminNotificationLogsActivity.NotificationLog log = new AdminNotificationLogsActivity.NotificationLog(title, message, userName, eventName, timestamp, type);
+        AdminNotificationLogsActivity.NotificationLog log = new AdminNotificationLogsActivity.NotificationLog(
+                userId, userName, eventName, message, title, type, timestamp, organizerId);
         
-        // Since it's an inner class, we test the logic it handles
-        assertNotNull(title);
-        assertEquals("SELECTED", type);
-        assertTrue(timestamp.contains("2023"));
+        assertNotNull(log);
+        assertEquals(userId, log.userId);
+        assertEquals(userName, log.userName);
+        assertEquals(eventName, log.eventName);
+        assertEquals(message, log.message);
+        assertEquals(title, log.title);
+        assertEquals(type, log.type);
+        assertEquals(timestamp, log.timestamp);
+        assertEquals(organizerId, log.organizerId);
+        assertTrue(log.timestamp.contains("2023"));
     }
 
     @Test

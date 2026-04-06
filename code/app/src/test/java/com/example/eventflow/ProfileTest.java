@@ -13,14 +13,14 @@ public class ProfileTest {
     @Test
     public void constructorAndGetters_workCorrectly() {
         Profile profile = new Profile(
-                "device123",
+                "user123",
                 "Taufeeq",
                 "Raji",
                 "taufeeq@example.com",
                 "7801234567"
         );
 
-        assertEquals("device123", profile.getDeviceId());
+        assertEquals("user123", profile.getUserId());
         assertEquals("Taufeeq", profile.getFirstName());
         assertEquals("Raji", profile.getLastName());
         assertEquals("taufeeq@example.com", profile.getEmail());
@@ -31,13 +31,13 @@ public class ProfileTest {
     public void setters_updateFieldsCorrectly() {
         Profile profile = new Profile();
 
-        profile.setDeviceId("device999");
+        profile.setUserId("user999");
         profile.setFirstName("John");
         profile.setLastName("Doe");
         profile.setEmail("john@example.com");
         profile.setPhoneNumber("1234567890");
 
-        assertEquals("device999", profile.getDeviceId());
+        assertEquals("user999", profile.getUserId());
         assertEquals("John", profile.getFirstName());
         assertEquals("Doe", profile.getLastName());
         assertEquals("john@example.com", profile.getEmail());
@@ -47,7 +47,7 @@ public class ProfileTest {
     @Test
     public void getFullName_returnsConcatenatedName() {
         Profile profile = new Profile(
-                "device123",
+                "user123",
                 "Taufeeq",
                 "Raji",
                 "taufeeq@example.com",

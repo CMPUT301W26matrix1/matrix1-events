@@ -22,13 +22,13 @@ public class AdminProfileManagementTest {
 
     private Profile testProfile;
     private List<Profile> profileList;
-    private String testDeviceId;
+    private String testUserId;
 
     @Before
     public void setUp() {
-        testDeviceId = "device_" + UUID.randomUUID().toString().substring(0, 8);
+        testUserId = "user_" + UUID.randomUUID().toString().substring(0, 8);
         testProfile = new Profile();
-        testProfile.setDeviceId(testDeviceId);
+        testProfile.setUserId(testUserId);
         testProfile.setFirstName("Test");
         testProfile.setLastName("User");
         testProfile.setEmail("test@example.com");
@@ -42,7 +42,7 @@ public class AdminProfileManagementTest {
     @Test
     public void testProfileHasRequiredFields() {
         assertNotNull("Profile should not be null", testProfile);
-        assertNotNull("Device ID should not be null", testProfile.getDeviceId());
+        assertNotNull("User ID should not be null", testProfile.getUserId());
         assertNotNull("First name should not be null", testProfile.getFirstName());
         assertNotNull("Last name should not be null", testProfile.getLastName());
         assertNotNull("Email should not be null", testProfile.getEmail());
@@ -113,17 +113,17 @@ public class AdminProfileManagementTest {
         int initialSize = profileList.size();
         assertTrue("Initial profile count should be > 0", initialSize > 0);
 
-        String deviceIdToRemove = testDeviceId;
-        profileList.removeIf(profile -> profile.getDeviceId().equals(deviceIdToRemove));
+        String userIdToRemove = testUserId;
+        profileList.removeIf(profile -> profile.getUserId().equals(userIdToRemove));
 
         assertEquals("Profile count should decrease by 1", initialSize - 1, profileList.size());
         assertFalse("Removed profile should not be in list",
-                profileList.stream().anyMatch(p -> p.getDeviceId().equals(deviceIdToRemove)));
+                profileList.stream().anyMatch(p -> p.getUserId().equals(userIdToRemove)));
     }
 
     @Test
     public void testProfileDeletionRemovesAllData() {
-        profileList.removeIf(profile -> profile.getDeviceId().equals(testDeviceId));
+        profileList.removeIf(profile -> profile.getUserId().equals(testUserId));
 
         assertTrue("Profile list should be empty", profileList.isEmpty());
         assertEquals("Profile list size should be 0", 0, profileList.size());
@@ -178,7 +178,7 @@ public class AdminProfileManagementTest {
     @Test
     public void testMultipleProfilesCanBeBrowsed() {
         Profile profile2 = new Profile();
-        profile2.setDeviceId("device_002");
+        profile2.setUserId("user_002");
         profile2.setFirstName("Jane");
         profile2.setLastName("Doe");
         profile2.setEmail("jane@example.com");
