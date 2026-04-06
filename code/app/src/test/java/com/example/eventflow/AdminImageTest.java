@@ -1,7 +1,6 @@
 package com.example.eventflow;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -56,12 +55,13 @@ public class AdminImageTest {
         String eventName = "Piano Concert";
         String posterUrl = "http://concert.jpg";
         
-        AdminImageManagementActivity.EventImage gridItem = 
-                new AdminImageManagementActivity.EventImage(eventId, eventName, posterUrl);
+        // Using ImageItem which replaced EventImage
+        AdminImageManagementActivity.ImageItem gridItem = 
+                new AdminImageManagementActivity.ImageItem(eventId, eventName, posterUrl, "event", "events", "posterUrl");
         
-        assertEquals(eventId, gridItem.eventId);
-        assertEquals(eventName, gridItem.eventName);
-        assertEquals(posterUrl, gridItem.posterUrl);
+        assertEquals(eventId, gridItem.id);
+        assertEquals(eventName, gridItem.displayName);
+        assertEquals(posterUrl, gridItem.imageUrl);
     }
 
     @Test

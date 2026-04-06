@@ -31,6 +31,7 @@ public class AdminNotificationLogsTest {
     private String testTitle;
     private String testType;
     private String testTimestamp;
+    private String testOrganizerId;
 
     @Before
     public void setUp() {
@@ -42,6 +43,7 @@ public class AdminNotificationLogsTest {
         testTitle = testEventName;  // Set title to eventName
         testType = Math.random() > 0.5 ? "SELECTED" : "LOST_LOTTERY";
         testTimestamp = getCurrentTimestamp();
+        testOrganizerId = "org_" + UUID.randomUUID().toString().substring(0, 8);
 
         testLog = new NotificationLog(
                 testUserId,
@@ -50,7 +52,8 @@ public class AdminNotificationLogsTest {
                 testMessage,
                 testTitle,
                 testType,
-                testTimestamp
+                testTimestamp,
+                testOrganizerId
         );
     }
 
@@ -77,6 +80,7 @@ public class AdminNotificationLogsTest {
         assertNotNull("Title should not be null", testLog.title);
         assertNotNull("Type should not be null", testLog.type);
         assertNotNull("Timestamp should not be null", testLog.timestamp);
+        assertNotNull("Organizer ID should not be null", testLog.organizerId);
     }
 
     @Test
@@ -187,7 +191,8 @@ public class AdminNotificationLogsTest {
                     "Test message for " + dynamicEventName,
                     dynamicEventName,
                     type,
-                    getCurrentTimestamp()
+                    getCurrentTimestamp(),
+                    "org123"
             );
             assertEquals("Type should be " + type, type, log.type);
             assertTrue("Event name should contain type reference", log.eventName.contains(type));
@@ -207,7 +212,8 @@ public class AdminNotificationLogsTest {
                     "Message for event " + i,
                     "Event_" + i,
                     i % 2 == 0 ? "SELECTED" : "LOST_LOTTERY",
-                    getCurrentTimestamp()
+                    getCurrentTimestamp(),
+                    "org_" + i
             );
             logs.add(log);
         }
@@ -226,7 +232,7 @@ public class AdminNotificationLogsTest {
     @Test
     public void testNotificationLogConstructorSetsAllFields() {
         NotificationLog log = new NotificationLog(
-                "user123", "John Doe", "Test Event", "Test Message", "Test Title", "SELECTED", "Mar 27, 2026 14:30"
+                "user123", "John Doe", "Test Event", "Test Message", "Test Title", "SELECTED", "Mar 27, 2026 14:30", "org123"
         );
 
         assertEquals("User ID should match", "user123", log.userId);
@@ -236,5 +242,6 @@ public class AdminNotificationLogsTest {
         assertEquals("Title should match", "Test Title", log.title);
         assertEquals("Type should match", "SELECTED", log.type);
         assertEquals("Timestamp should match", "Mar 27, 2026 14:30", log.timestamp);
+        assertEquals("Organizer ID should match", "org123", log.organizerId);
     }
 }

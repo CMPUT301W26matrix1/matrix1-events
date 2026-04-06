@@ -1,5 +1,7 @@
 package com.example.eventflow.view.profile;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -71,13 +73,18 @@ public class FullHistoryFragment extends Fragment {
         tabSelected = view.findViewById(R.id.tab_selected);
         tabNotSelected = view.findViewById(R.id.tab_not_selected);
 
+        // Get userId from multiple potential sources
         if (FirebaseAuth.getInstance().getCurrentUser() != null) {
             userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        } else if (getArguments() != null) {
+        } else if (getArguments() != null && getArguments().getString(ARG_USER_ID) != null) {
             userId = getArguments().getString(ARG_USER_ID);
+        } else if (getContext() != null) {
+            // Fallback for Admin Login which doesn't use Firebase Auth
+            SharedPreferences prefs = getContext().getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
+            userId = prefs.getString("userUid", "");
         }
 
-        Log.d("FullHistory", "Using userId (Firebase Auth): " + userId);
+        Log.d("FullHistory", "Using userId: " + userId);
 
         if (userId == null || userId.isEmpty()) {
             Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
@@ -133,7 +140,7 @@ public class FullHistoryFragment extends Fragment {
     }
 
     private void loadAllEvents() {
-        if (userId == null) return;
+        if (userId == null || userId.isEmpty()) return;
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 

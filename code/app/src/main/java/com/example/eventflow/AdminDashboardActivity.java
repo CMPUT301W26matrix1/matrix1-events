@@ -70,12 +70,18 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     startActivity(new Intent(this, AdminNotificationLogsActivity.class)));
 
         if (entrantView != null)
-            entrantView.setOnClickListener(v ->
-                    startActivity(new Intent(this, BrowseEventsActivity.class)));
+            entrantView.setOnClickListener(v -> {
+                Intent intent = new Intent(this, BrowseEventsActivity.class);
+                intent.putExtra("FROM_ADMIN", true);
+                startActivity(intent);
+            });
 
         if (organizerView != null)
-            organizerView.setOnClickListener(v ->
-                    startActivity(new Intent(this, EntrantDashboardActivity.class)));
+            organizerView.setOnClickListener(v -> {
+                Intent intent = new Intent(this, EntrantDashboardActivity.class);
+                intent.putExtra("FROM_ADMIN", true);
+                startActivity(intent);
+            });
     }
 
     /**

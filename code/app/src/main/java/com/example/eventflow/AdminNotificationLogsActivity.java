@@ -4,33 +4,37 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Purpose: This activity lets admins look at the history of all notifications 
  * sent through the system. It's a "paper trail" for tracking lottery results 
  * and organizer announcements.
- * 
- * Design Pattern: Standard List-View pattern with a search/filter bar for logs.
- * 
- * Issues: The logs are fetched from a global "notifications" collection; 
- * if this collection gets very large, loading might become slow.
  */
 public class AdminNotificationLogsActivity extends AppCompatActivity {
 
@@ -39,24 +43,24 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
     private List<NotificationLog> allLogs = new ArrayList<>();
     private List<NotificationLog> filteredLogs = new ArrayList<>();
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private Map<String, String> userNamesCache = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin_notification_logs);
 
-        // Back button
         ImageButton btnBack = findViewById(R.id.btn_back);
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> finish());
-        }
+        if (btnBack != null) btnBack.setOnClickListener(v -> finish());
 
         TextView title = findViewById(R.id.tv_title);
-        if (title != null) {
-            title.setText("Notification Logs");
+        if (title != null) title.setText("Notification Logs");
+
+        ImageButton btnClear = findViewById(R.id.btn_clear_system_logs);
+        if (btnClear != null) {
+            btnClear.setOnClickListener(v -> showClearLogsConfirmation());
         }
 
-        // Search bar
         EditText searchBar = findViewById(R.id.searchBar);
         listView = findViewById(R.id.listView);
 
@@ -65,30 +69,57 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
 
         loadNotificationLogs();
 
-        // Search functionality
         if (searchBar != null) {
             searchBar.addTextChangedListener(new TextWatcher() {
                 @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                     filterLogs(s.toString());
                 }
-
-                @Override
-                public void afterTextChanged(Editable s) {}
+                @Override public void afterTextChanged(Editable s) {}
             });
         }
     }
 
+    private void showClearLogsConfirmation() {
+        new AlertDialog.Builder(this)
+                .setTitle("Clear System Logs")
+                .setMessage("This will remove all 'Event Created' and 'Event Updated' logs. User notifications will NOT be affected. Proceed?")
+                .setPositiveButton("Clear", (dialog, which) -> clearSystemLogs())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void clearSystemLogs() {
+        // Find logs that are system events (Created/Updated)
+        db.collection("notifications")
+                .whereIn("type", Arrays.asList("EVENT_CREATED", "EVENT_UPDATED"))
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (queryDocumentSnapshots.isEmpty()) {
+                        Toast.makeText(this, "No system logs to clear", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    WriteBatch batch = db.batch();
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        batch.delete(doc.getReference());
+                    }
+
+                    batch.commit().addOnSuccessListener(aVoid -> {
+                        Toast.makeText(this, "System logs cleared successfully", Toast.LENGTH_SHORT).show();
+                        loadNotificationLogs(); // Reload list
+                    }).addOnFailureListener(e -> {
+                        Toast.makeText(this, "Failed to clear logs", Toast.LENGTH_SHORT).show();
+                    });
+                });
+    }
+
     private void loadNotificationLogs() {
-        // Use the top-level notifications collection for global review
         db.collection("notifications")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     allLogs.clear();
-
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         try {
                             String userId = doc.getString("userId");
@@ -97,6 +128,7 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
                             String details = doc.getString("details");
                             String title = doc.getString("title");
                             String type = doc.getString("type");
+                            String organizerId = doc.getString("organizerId");
                             Object timestampObj = doc.get("timestamp");
                             String timestamp = formatTimestamp(timestampObj);
 
@@ -104,7 +136,6 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
                             String displayMessage = message;
 
                             if (displayTitle == null || displayTitle.isEmpty()) {
-                                // Fallback for system notifications
                                 displayTitle = message;
                                 displayMessage = details;
                             }
@@ -115,10 +146,23 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
                             
                             if (displayTitle == null) displayTitle = "Notification";
 
-                            NotificationLog log = new NotificationLog(
-                                    userId, userId, eventName, displayMessage, displayTitle, type, timestamp
+                            final NotificationLog log = new NotificationLog(
+                                    userId, userId, eventName, displayMessage, displayTitle, type, timestamp, organizerId
                             );
                             allLogs.add(log);
+                            
+                            // Fetch recipient user name
+                            if (userId != null && !userId.isEmpty() && !userId.startsWith("ORGANIZER_")) {
+                                fetchProfileName(userId, log, true);
+                            } else if (userId != null && userId.startsWith("ORGANIZER_")) {
+                                log.userName = "Multiple Recipients (" + userId.replace("ORGANIZER_", "") + ")";
+                            }
+
+                            // Fetch organizer name if present
+                            if (organizerId != null && !organizerId.isEmpty()) {
+                                fetchProfileName(organizerId, log, false);
+                            }
+
                         } catch (Exception e) {
                             Log.e("AdminLogs", "Error parsing log", e);
                         }
@@ -127,36 +171,83 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
                     filteredLogs.clear();
                     filteredLogs.addAll(allLogs);
                     adapter.notifyDataSetChanged();
-
-                    if (allLogs.isEmpty()) {
-                        Toast.makeText(this, "No notification logs found", Toast.LENGTH_SHORT).show();
-                    }
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Failed to load logs: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
+    private void fetchProfileName(String id, NotificationLog log, boolean isRecipient) {
+        if (userNamesCache.containsKey(id)) {
+            String name = userNamesCache.get(id);
+            if (isRecipient) {
+                log.userName = name;
+                updateLogContentWithNames(log, id, name);
+            } else {
+                log.organizerName = name;
+            }
+            adapter.notifyDataSetChanged();
+            return;
+        }
+
+        db.collection("profiles").document(id).get().addOnSuccessListener(doc -> {
+            if (doc.exists()) {
+                String fName = doc.getString("firstName");
+                String lName = doc.getString("lastName");
+                String fullName = (fName != null ? fName : "") + " " + (lName != null ? lName : "");
+                fullName = fullName.trim();
+                if (fullName.isEmpty()) fullName = "Unknown Profile";
+                
+                userNamesCache.put(id, fullName);
+                if (isRecipient) {
+                    log.userName = fullName;
+                    updateLogContentWithNames(log, id, fullName);
+                } else {
+                    log.organizerName = fullName;
+                }
+                adapter.notifyDataSetChanged();
+            }
+        });
+    }
+
+    private void updateLogContentWithNames(NotificationLog log, String userId, String name) {
+        if (log.title != null) {
+            log.title = log.title.replace("You've", name + " has");
+            log.title = log.title.replace("You’ve", name + " has");
+            log.title = log.title.replace("You were", name + " was");
+            log.title = log.title.replace("You weren't", name + " wasn't");
+            log.title = log.title.replace("You ", name + " ");
+            log.title = log.title.replace("your", name + "'s");
+        }
+        
+        if (log.message != null) {
+            log.message = log.message.replace("You've", name + " has");
+            log.message = log.message.replace("You’ve", name + " has");
+            log.message = log.message.replace("You were", name + " was");
+            log.message = log.message.replace("You weren't", name + " wasn't");
+            log.message = log.message.replace("You ", name + " ");
+            log.message = log.message.replace("your", name + "'s");
+        }
+    }
+
     private void filterLogs(String query) {
         filteredLogs.clear();
-
         if (query == null || query.trim().isEmpty()) {
             filteredLogs.addAll(allLogs);
         } else {
             String lowerQuery = query.toLowerCase().trim();
             for (NotificationLog log : allLogs) {
-                // Null-safe checks for filtering
                 boolean matchesUser = log.userName != null && log.userName.toLowerCase().contains(lowerQuery);
                 boolean matchesEvent = log.eventName != null && log.eventName.toLowerCase().contains(lowerQuery);
                 boolean matchesMessage = log.message != null && log.message.toLowerCase().contains(lowerQuery);
                 boolean matchesTitle = log.title != null && log.title.toLowerCase().contains(lowerQuery);
+                boolean matchesOrg = log.organizerName != null && log.organizerName.toLowerCase().contains(lowerQuery);
 
-                if (matchesUser || matchesEvent || matchesMessage || matchesTitle) {
+                if (matchesUser || matchesEvent || matchesMessage || matchesTitle || matchesOrg) {
                     filteredLogs.add(log);
                 }
             }
         }
-
         adapter.notifyDataSetChanged();
     }
 
@@ -170,10 +261,6 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
         return "Unknown date";
     }
 
-    /**
-     * Purpose: A simple data structure to hold notification log details 
-     * so they can be easily displayed in a list.
-     */
     public static class NotificationLog {
         public String userId;
         public String userName;
@@ -182,12 +269,11 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
         public String title;
         public String type;
         public String timestamp;
+        public String organizerId;
+        public String organizerName;
 
-        /**
-         * Constructor to create a new log entry.
-         */
         public NotificationLog(String userId, String userName, String eventName,
-                               String message, String title, String type, String timestamp) {
+                               String message, String title, String type, String timestamp, String organizerId) {
             this.userId = userId;
             this.userName = userName;
             this.eventName = eventName;
@@ -195,6 +281,7 @@ public class AdminNotificationLogsActivity extends AppCompatActivity {
             this.title = title;
             this.type = type;
             this.timestamp = timestamp;
+            this.organizerId = organizerId;
         }
     }
 }

@@ -20,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.eventflow.AdminDashboardActivity;
 import com.example.eventflow.EventDetailActivity;
 import com.example.eventflow.ProfileActivity;
 import com.example.eventflow.R;
@@ -73,6 +74,14 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
             userId = prefs.getString("userUid", "");
             Log.d("Dashboard", "Got userId from SharedPreferences: " + userId);
+        }
+
+        // If accessed from Admin Dashboard, we might need to use the fixed Admin ID
+        if (getIntent().getBooleanExtra("FROM_ADMIN", false)) {
+            // Check if we are currently logged in as admin (id = admin_global_id)
+            if ("admin_global_id".equals(userId)) {
+                Log.d("Dashboard", "Admin acting as Organizer - using admin_global_id");
+            }
         }
 
         lotteryController = new LotteryController();
@@ -142,9 +151,16 @@ public class EntrantDashboardActivity extends AppCompatActivity {
     private void setupNavigation() {
         if (navHome != null) {
             navHome.setOnClickListener(v -> {
-                Intent intent = new Intent(this, RoleSelectionActivity.class);
+                boolean fromAdmin = getIntent().getBooleanExtra("FROM_ADMIN", false);
+                Intent intent;
+                if (fromAdmin) {
+                    intent = new Intent(this, AdminDashboardActivity.class);
+                } else {
+                    intent = new Intent(this, RoleSelectionActivity.class);
+                }
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(intent);
+                finish();
             });
         }
 
