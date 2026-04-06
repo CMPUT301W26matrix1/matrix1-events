@@ -1,7 +1,9 @@
 # 🎟️ Event Flow
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/05247ed0-b100-4eff-b377-3bfa01a641fb" width="700px" controls autoplay loop muted>
+  <img src="https://github.com/user-attachments/assets/4aff5645-e876-4060-b4ce-fe4f8a9404ea" 
+       alt="App Design Animation" 
+       width="600"/>
 </p>
 
 full demo video link - https://drive.google.com/drive/folders/19VsZlUG890pAXhSYkqBpkPsShjqNSp2s?usp=sharing
