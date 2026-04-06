@@ -201,6 +201,7 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
                     List<String> selectedEntrants = (List<String>) documentSnapshot.get("selectedEntrants");
                     Long capacity = documentSnapshot.getLong("capacity");
                     String eventName = documentSnapshot.getString("name");
+                    String organizerId = documentSnapshot.getString("organizerId");
 
                     int currentSelected = selectedEntrants != null ? selectedEntrants.size() : 0;
                     int maxCapacity = capacity != null ? capacity.intValue() : 0;
@@ -236,12 +237,12 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
                                 Toast.makeText(this, "Drew " + numToDraw + " entrants! " + remainingSlots + " slots remaining.", Toast.LENGTH_LONG).show();
 
                                 for (String winnerId : winners) {
-                                    sendSelectionNotification(winnerId, eventName);
+                                    sendSelectionNotification(winnerId, eventName, organizerId);
                                     updateUserEventStatus(winnerId, eventId, "PENDING");
                                 }
 
                                 for (String loserId : losers) {
-                                    sendLostLotteryNotification(loserId, eventId, eventName);
+                                    sendLostLotteryNotification(loserId, eventId, eventName, organizerId);
                                     updateUserEventStatus(loserId, eventId, "REJECTED");
                                 }
 
@@ -272,7 +273,7 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
                 });
     }
 
-    private void sendSelectionNotification(String userId, String eventName) {
+    private void sendSelectionNotification(String userId, String eventName, String organizerId) {
         Map<String, Object> notification = new HashMap<>();
         notification.put("title", "You've been selected!");
         notification.put("message", "Congratulations! You have been selected for " + eventName);
@@ -283,17 +284,20 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
         notification.put("read", false);
         notification.put("accepted", false);
         notification.put("declined", false);
+        notification.put("organizerId", organizerId);
 
         db.collection("users")
                 .document(userId)
                 .collection("notifications")
                 .add(notification)
-                .addOnSuccessListener(aVoid -> {
+                .addOnSuccessListener(documentReference -> {
+                    // US 03.08.01 — Mirror to top-level collection for Admin logs
+                    db.collection("notifications").document(documentReference.getId()).set(notification);
                     Toast.makeText(this, "Notification sent to selected entrant", Toast.LENGTH_SHORT).show();
                 });
     }
 
-    private void sendLostLotteryNotification(String userId, String eventId, String eventName) {
+    private void sendLostLotteryNotification(String userId, String eventId, String eventName, String organizerId) {
         Map<String, Object> notification = new HashMap<>();
         notification.put("title", "Not Selected");
         notification.put("message", "You weren't selected for " + eventName + ". Click TRY AGAIN to stay on the waiting list.");
@@ -304,12 +308,15 @@ public class CancelledEntrantsActivity extends AppCompatActivity {
         notification.put("read", false);
         notification.put("accepted", false);
         notification.put("declined", false);
+        notification.put("organizerId", organizerId);
 
         db.collection("users")
                 .document(userId)
                 .collection("notifications")
                 .add(notification)
-                .addOnSuccessListener(aVoid -> {
+                .addOnSuccessListener(documentReference -> {
+                    // US 03.08.01 — Mirror to top-level collection for Admin logs
+                    db.collection("notifications").document(documentReference.getId()).set(notification);
                     Toast.makeText(this, "Notification sent to non-selected entrant", Toast.LENGTH_SHORT).show();
                 });
     }
