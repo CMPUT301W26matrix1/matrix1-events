@@ -79,6 +79,19 @@
             android:textSize="12sp"
             android:visibility="gone" />
 
+        <TextView
+            android:id="@+id/tvToggleReplies"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="View 1 reply"
+            android:textColor="#4285F4"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            android:clickable="true"
+            android:focusable="true" />
+
         <Button
             android:id="@+id/btnDeleteComment"
             android:layout_width="wrap_content"

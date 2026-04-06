@@ -592,16 +592,44 @@ public class EventDetailActivity extends AppCompatActivity {
     }
 
     private void showReactionDialog(Comment comment) {
-        String[] emojis = {"👍", "❤️", "😂"};
-        new AlertDialog.Builder(this).setItems(emojis, (dialog, which) -> {
-            Map<String, Object> reactions = comment.getReactions();
-            if (reactions == null) reactions = new HashMap<>();
-            List<String> users = (List<String>) reactions.get(emojis[which]);
-            if (users == null) users = new ArrayList<>();
-            if (!users.contains(uid)) users.add(uid);
-            else users.remove(uid);
-            reactions.put(emojis[which], users);
-            db.collection("events").document(eventId).collection("comments").document(comment.getCommentId()).update("reactions", reactions);
-        }).show();
+        View view = getLayoutInflater().inflate(R.layout.dialog_reaction_picker, null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(view)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        String[] emojis = {"👍", "❤️", "😂", "😮", "😢", "😡", "👏", "🔥"};
+        int[] ids = {
+                R.id.tv_react_like, R.id.tv_react_heart, R.id.tv_react_laugh,
+                R.id.tv_react_wow, R.id.tv_react_sad, R.id.tv_react_angry,
+                R.id.tv_react_clap, R.id.tv_react_fire
+        };
+
+        for (int i = 0; i < emojis.length; i++) {
+            final int index = i;
+            View emojiView = view.findViewById(ids[i]);
+            if (emojiView != null) {
+                emojiView.setOnClickListener(v -> {
+                    handleReaction(comment, emojis[index]);
+                    dialog.dismiss();
+                });
+            }
+        }
+
+        dialog.show();
+    }
+
+    private void handleReaction(Comment comment, String emoji) {
+        Map<String, Object> reactions = comment.getReactions();
+        if (reactions == null) reactions = new HashMap<>();
+        List<String> users = (List<String>) reactions.get(emoji);
+        if (users == null) users = new ArrayList<>();
+        if (!users.contains(uid)) users.add(uid);
+        else users.remove(uid);
+        reactions.put(emoji, users);
+        db.collection("events").document(eventId).collection("comments").document(comment.getCommentId()).update("reactions", reactions);
     }
 }

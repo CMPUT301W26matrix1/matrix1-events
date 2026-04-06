@@ -44,7 +44,6 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
 
     private void updateDisplayList() {
         displayComments.clear();
-        // Everyone sees threads now to maintain structure
         for (Comment c : allComments) {
             if (c.isTopLevel()) {
                 displayComments.add(c);
@@ -76,14 +75,31 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
         Comment comment = displayComments.get(position);
         bindComment(holder, comment);
 
-        // Handle Replies for everyone to maintain nested format
-        List<Comment> replies = getRepliesFor(comment.getCommentId());
-        if (!replies.isEmpty()) {
-            holder.rvReplies.setVisibility(View.VISIBLE);
-            ReplyAdapter replyAdapter = new ReplyAdapter(replies, actionListener, isOrganizer, isAdmin);
+        int totalReplies = countAllReplies(comment.getCommentId());
+        if (totalReplies > 0) {
+            holder.tvToggleReplies.setVisibility(View.VISIBLE);
+            String replyText = totalReplies == 1 ? "View 1 reply" : "View " + totalReplies + " replies";
+            holder.tvToggleReplies.setText(replyText);
+            
+            // Initial state: hidden
+            holder.rvReplies.setVisibility(View.GONE);
+            
+            List<Comment> directReplies = getRepliesFor(comment.getCommentId());
+            ReplyAdapter replyAdapter = new ReplyAdapter(directReplies, actionListener, isOrganizer, isAdmin);
             holder.rvReplies.setLayoutManager(new LinearLayoutManager(holder.itemView.getContext()));
             holder.rvReplies.setAdapter(replyAdapter);
+
+            holder.tvToggleReplies.setOnClickListener(v -> {
+                if (holder.rvReplies.getVisibility() == View.GONE) {
+                    holder.rvReplies.setVisibility(View.VISIBLE);
+                    holder.tvToggleReplies.setText("Hide replies");
+                } else {
+                    holder.rvReplies.setVisibility(View.GONE);
+                    holder.tvToggleReplies.setText(replyText);
+                }
+            });
         } else {
+            holder.tvToggleReplies.setVisibility(View.GONE);
             holder.rvReplies.setVisibility(View.GONE);
         }
     }
@@ -99,7 +115,6 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             holder.tvCommentTime.setText("");
         }
 
-        // Reactions
         Map<String, Object> reactions = comment.getReactions();
         if (reactions != null && !reactions.isEmpty()) {
             StringBuilder sb = new StringBuilder();
@@ -115,7 +130,6 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             holder.tvReactions.setVisibility(View.GONE);
         }
 
-        // Action Listeners
         holder.tvReply.setOnClickListener(v -> {
             if (actionListener != null) actionListener.onReplyClick(comment);
         });
@@ -134,7 +148,6 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             holder.btnDeleteComment.setVisibility(View.GONE);
         }
         
-        // Admin should not be able to reply or react, only view and delete
         if (isAdmin) {
             holder.tvReply.setVisibility(View.GONE);
             holder.tvReact.setVisibility(View.GONE);
@@ -156,13 +169,22 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
         return replies;
     }
 
+    private int countAllReplies(String parentId) {
+        List<Comment> direct = getRepliesFor(parentId);
+        int count = direct.size();
+        for (Comment c : direct) {
+            count += countAllReplies(c.getCommentId());
+        }
+        return count;
+    }
+
     @Override
     public int getItemCount() {
         return displayComments.size();
     }
 
     static class CommentViewHolder extends RecyclerView.ViewHolder {
-        TextView tvCommentUser, tvCommentText, tvCommentTime, tvReply, tvReact, tvReactions;
+        TextView tvCommentUser, tvCommentText, tvCommentTime, tvReply, tvReact, tvReactions, tvToggleReplies;
         Button btnDeleteComment;
         RecyclerView rvReplies;
 
@@ -174,6 +196,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             tvReply = itemView.findViewById(R.id.tvReply);
             tvReact = itemView.findViewById(R.id.tvReact);
             tvReactions = itemView.findViewById(R.id.tvReactions);
+            tvToggleReplies = itemView.findViewById(R.id.tvToggleReplies);
             btnDeleteComment = itemView.findViewById(R.id.btnDeleteComment);
             rvReplies = itemView.findViewById(R.id.rvReplies);
         }
@@ -204,7 +227,10 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             Comment comment = replies.get(position);
             bindComment(holder, comment);
             
-            // Handle further nested replies
+            // In the ReplyAdapter, we don't show individual toggles.
+            // All nested replies will be shown when the top-level dropdown is clicked.
+            holder.tvToggleReplies.setVisibility(View.GONE);
+            
             List<Comment> nestedReplies = getRepliesFor(comment.getCommentId());
             if (!nestedReplies.isEmpty()) {
                 holder.rvReplies.setVisibility(View.VISIBLE);
