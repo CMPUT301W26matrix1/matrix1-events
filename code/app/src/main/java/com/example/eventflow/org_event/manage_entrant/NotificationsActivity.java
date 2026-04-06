@@ -17,6 +17,7 @@ import com.example.eventflow.R;
 import com.example.eventflow.model.entities.Entrant;
 import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.text.SimpleDateFormat;
@@ -330,6 +331,8 @@ public class NotificationsActivity extends AppCompatActivity {
             }
         }
 
+        String currentOrgId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
         Map<String, Object> notification = new HashMap<>();
         notification.put("title", title);
         notification.put("message", message);
@@ -340,6 +343,7 @@ public class NotificationsActivity extends AppCompatActivity {
         notification.put("eventName", eventName);
         notification.put("type", "ORGANIZER_BROADCAST");
         notification.put("userId", recipientType); // For compatibility with Admin log display
+        notification.put("organizerId", currentOrgId);
 
         db.collection("events").document(eventId)
                 .collection("notifications")

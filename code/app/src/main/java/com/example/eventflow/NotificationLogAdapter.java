@@ -52,6 +52,8 @@ public class NotificationLogAdapter extends BaseAdapter {
         TextView tvEvent = convertView.findViewById(R.id.tv_event);
         TextView tvTime = convertView.findViewById(R.id.tv_time);
         TextView tvType = convertView.findViewById(R.id.tv_type);
+        TextView tvOrganizer = convertView.findViewById(R.id.tv_organizer);
+        View layoutOrganizer = convertView.findViewById(R.id.layout_organizer);
         View viewAccent = convertView.findViewById(R.id.view_accent);
 
         AdminNotificationLogsActivity.NotificationLog log = logs.get(position);
@@ -61,6 +63,14 @@ public class NotificationLogAdapter extends BaseAdapter {
         tvUser.setText(log.userName);
         tvEvent.setText(log.eventName);
         tvTime.setText(log.timestamp);
+
+        // Show Organizer if available
+        if (log.organizerName != null && !log.organizerName.isEmpty()) {
+            tvOrganizer.setText(log.organizerName);
+            layoutOrganizer.setVisibility(View.VISIBLE);
+        } else {
+            layoutOrganizer.setVisibility(View.GONE);
+        }
 
         // Dynamic Styling based on Type
         String type = log.type != null ? log.type : "GENERAL";
