@@ -434,15 +434,17 @@ public class EventDetailActivity extends AppCompatActivity {
         eventController.joinWaitingList(currentEvent, new EventRepository.ActionCallback() {
             @Override
             public void onSuccess() {
-                // US 02.01.01 — Inform user of queue position
-                int currentCount = currentEvent.getWaitingList() != null ? currentEvent.getWaitingList().size() : 0;
-                int position = currentCount + 1;
+                // US 02.01.01 — Fetch FRESH count directly from Firestore to avoid race conditions
+                db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
+                    List<String> list = (List<String>) doc.get("waitingList");
+                    int count = (list != null) ? list.size() : 1;
 
-                saveToUserJoinedEvents(currentEvent, "Waiting");
+                    saveToUserJoinedEvents(currentEvent, "Waiting");
 
-                Toast.makeText(EventDetailActivity.this,
-                        "✅ Joined waiting list! You are entrant #" + position + " in line.",
-                        Toast.LENGTH_LONG).show();
+                    Toast.makeText(EventDetailActivity.this,
+                            "✅ Joined waiting list! You are entrant #" + count + " in line.",
+                            Toast.LENGTH_LONG).show();
+                });
             }
             @Override public void onFailure(Exception e) {
                 Toast.makeText(EventDetailActivity.this,
