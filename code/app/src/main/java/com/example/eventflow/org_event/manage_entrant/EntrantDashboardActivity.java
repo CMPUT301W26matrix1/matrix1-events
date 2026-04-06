@@ -58,6 +58,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
     private OrganizerEventAdapter organizerAdapter;
     private final List<Event> myEvents = new ArrayList<>();
     private LotteryController lotteryController;
+    private boolean isEventsLoading = false;
 
     private View navHome, navDashboard, navCreate, navProfile;
 
@@ -94,13 +95,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         eventId = getIntent().getStringExtra("eventId");
         eventName = getIntent().getStringExtra("eventName");
 
-        if (eventId != null) {
-            fetchEventDetails(eventId);
-        } else {
-            fetchLatestEvent();
-        }
-
-        loadMyEvents();
+        // Data loading is handled in onResume() to avoid redundant calls and race conditions
         setupClickListeners();
 
         // Run migrations
@@ -120,8 +115,6 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         loadMyEvents();
         if (eventId != null) {
             fetchEventDetails(eventId);
-        } else {
-            fetchLatestEvent();
         }
     }
 
@@ -190,7 +183,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                 }
             }
             navDashboard.setOnClickListener(v -> {
-                fetchLatestEvent();
+                eventId = null; // Reset to latest event
                 loadMyEvents();
             });
         }
@@ -217,85 +210,6 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             navProfile.setOnClickListener(v -> startActivity(
                     new Intent(this, ProfileActivity.class)));
         }
-    }
-
-    private void fetchLatestEvent() {
-        if (userId == null || userId.isEmpty()) {
-            SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
-            userId = prefs.getString("userUid", "");
-        }
-
-        if (userId == null || userId.isEmpty()) {
-            tvEventName.setText("No Events Available");
-            tvEventDate.setText("Please log in");
-            tvEventLocation.setText("");
-            resetStats();
-            return;
-        }
-
-        Log.d("Dashboard", "fetchLatestEvent for userId: " + userId);
-
-        // First check events where user is organizer
-        db.collection("events")
-                .whereEqualTo("organizerId", userId)
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    Log.d("Dashboard", "fetchLatestEvent results: " + queryDocumentSnapshots.size());
-                    if (!queryDocumentSnapshots.isEmpty()) {
-                        // Find latest event by createdAt or eventDate manually to avoid index requirement
-                        Event latestEvent = null;
-                        for (var doc : queryDocumentSnapshots) {
-                            Event event = doc.toObject(Event.class);
-                            if (event != null) {
-                                event.setEventId(doc.getId());
-                                if (latestEvent == null) {
-                                    latestEvent = event;
-                                } else {
-                                    // Fallback to eventDate if createdAt is missing
-                                    if (event.getEventDate() != null && latestEvent.getEventDate() != null) {
-                                        if (event.getEventDate().compareTo(latestEvent.getEventDate()) > 0) {
-                                            latestEvent = event;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        
-                        if (latestEvent != null) {
-                            updateUI(latestEvent);
-                            fetchStatsFromEvent(latestEvent.getEventId());
-                        }
-                    } else {
-                        // If no organizer events, check co-organizer events
-                        db.collection("events")
-                                .whereArrayContains("coOrganizerIds", userId)
-                                .limit(1)
-                                .get()
-                                .addOnSuccessListener(coOrgSnapshot -> {
-                                    if (!coOrgSnapshot.isEmpty()) {
-                                        Event event = coOrgSnapshot.getDocuments().get(0).toObject(Event.class);
-                                        if (event != null) {
-                                            event.setEventId(coOrgSnapshot.getDocuments().get(0).getId());
-                                            updateUI(event);
-                                            fetchStatsFromEvent(event.getEventId());
-                                        }
-                                    } else {
-                                        tvEventName.setText("No Events Available");
-                                        tvEventDate.setText("Create an event to get started");
-                                        tvEventLocation.setText("");
-                                        if (ivEventBackground != null) ivEventBackground.setImageDrawable(null);
-                                        resetStats();
-                                    }
-                                });
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("Dashboard", "fetchLatestEvent error: " + e.getMessage());
-                    tvEventName.setText("No Events Available");
-                    tvEventDate.setText("Create an event to get started");
-                    tvEventLocation.setText("");
-                    resetStats();
-                });
     }
 
     private void fetchEventDetails(String id) {
@@ -428,8 +342,14 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         tvEnrolledSubtitle.setText("0 confirmed attendees");
     }
 
-    // FIXED: Prevents duplicate events by using Set to track event IDs
+    /**
+     * loadMyEvents handles fetching all events the user is involved in (as organizer or co-organizer).
+     * It also handles updating the top dashboard UI with the latest event if none is currently selected.
+     */
     private void loadMyEvents() {
+        if (isEventsLoading) return;
+        isEventsLoading = true;
+
         if (userId == null || userId.isEmpty()) {
             SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
             userId = prefs.getString("userUid", "");
@@ -437,16 +357,14 @@ public class EntrantDashboardActivity extends AppCompatActivity {
 
         if (userId == null || userId.isEmpty()) {
             Log.e("Dashboard", "loadMyEvents — userId is null/empty, cannot load");
-            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show();
+            isEventsLoading = false;
             return;
         }
 
         Log.d("Dashboard", "loadMyEvents querying for userId: " + userId);
 
-        // Clear existing events
+        // Clear existing events before starting fresh fetch
         myEvents.clear();
-
-        // Use a Set to track unique event IDs and prevent duplicates
         Set<String> eventIdSet = new HashSet<>();
 
         // First, load events where user is the organizer
@@ -475,7 +393,6 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                             .get()
                             .addOnSuccessListener(coOrganizerEvents -> {
                                 for (var doc : coOrganizerEvents) {
-                                    // Check if already added using Set
                                     if (!eventIdSet.contains(doc.getId())) {
                                         try {
                                             Event event = doc.toObject(Event.class);
@@ -492,7 +409,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                                     }
                                 }
 
-                                // Sort events in memory to avoid needing a Firestore composite index
+                                // Sort events by date descending
                                 Collections.sort(myEvents, (e1, e2) -> {
                                     if (e1.getEventDate() != null && e2.getEventDate() != null) {
                                         return e2.getEventDate().compareTo(e1.getEventDate());
@@ -503,23 +420,31 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                                 if (organizerAdapter != null) {
                                     organizerAdapter.notifyDataSetChanged();
                                 }
-                                Log.d("Dashboard", "Total events (organizer + co-organizer): " + myEvents.size());
 
-                                // Also update the top stats if no event selected and we have events
-                                if (eventId == null && !myEvents.isEmpty()) {
+                                // Handle empty state or auto-select latest event
+                                if (myEvents.isEmpty()) {
+                                    tvEventName.setText("No Events Available");
+                                    tvEventDate.setText("Create an event to get started");
+                                    tvEventLocation.setText("");
+                                    if (ivEventBackground != null) ivEventBackground.setImageDrawable(null);
+                                    resetStats();
+                                } else if (eventId == null) {
+                                    // Auto-select latest event if none selected
                                     Event firstEvent = myEvents.get(0);
                                     updateUI(firstEvent);
                                     fetchStatsFromEvent(firstEvent.getEventId());
                                 }
+
+                                isEventsLoading = false;
+                                Log.d("Dashboard", "Load complete. Total events: " + myEvents.size());
                             })
                             .addOnFailureListener(e -> {
-                                Log.e("Dashboard", "Failed to load co-organizer events: " + e.getMessage());
-                                if (organizerAdapter != null) {
-                                    organizerAdapter.notifyDataSetChanged();
-                                }
+                                isEventsLoading = false;
+                                Log.e("Dashboard", "Failed co-organizer fetch: " + e.getMessage());
                             });
                 })
                 .addOnFailureListener(e -> {
+                    isEventsLoading = false;
                     Log.e("Dashboard", "loadMyEvents failed: " + e.getMessage());
                     Toast.makeText(this, "Failed to load events", Toast.LENGTH_SHORT).show();
                 });
@@ -558,7 +483,6 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             });
         }
 
-        // FIXED: Notifications card - passes eventId and eventName
         if (cardNotifications != null) {
             cardNotifications.setOnClickListener(v -> {
                 if (eventId == null) {
@@ -595,7 +519,6 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             });
         }
 
-        // FIXED: Bell icon - passes eventId and eventName
         View bell = findViewById(R.id.ivNotificationBell);
         if (bell != null) {
             bell.setOnClickListener(v -> {
@@ -627,30 +550,19 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         db.collection("events").document(eventId).delete()
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, "Event deleted successfully", Toast.LENGTH_SHORT).show();
-                    // Reset UI
                     eventId = null;
                     eventName = null;
-                    tvEventName.setText("No Event Selected");
-                    tvEventDate.setText("Date");
-                    tvEventLocation.setText("Location");
-                    if (ivEventBackground != null) ivEventBackground.setImageDrawable(null);
-                    resetStats();
-
-                    // Refresh the lists
                     loadMyEvents();
-                    fetchLatestEvent();
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Failed to delete event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
-    // ==================== MIGRATION METHOD 1: Convert waitingList from deviceId to UID ====================
+    // ==================== MIGRATION METHODS ====================
 
     private void migrateWaitingListToUid() {
         if (userId == null || userId.isEmpty()) return;
-
-        Log.d("Migration", "Starting migration of waitingList from deviceId to UID...");
 
         db.collection("events").get()
                 .addOnSuccessListener(events -> {
@@ -665,25 +577,15 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                             if (id.length() == 16 && id.matches("[0-9a-f]+")) {
                                 findUidByDeviceId(id, newWaitingList);
                                 needsUpdate = true;
-                                Log.d("Migration", "Found deviceId to migrate: " + id);
                             } else {
                                 newWaitingList.add(id);
                             }
                         }
 
                         if (needsUpdate && !newWaitingList.isEmpty()) {
-                            eventDoc.getReference().update("waitingList", newWaitingList)
-                                    .addOnSuccessListener(aVoid -> {
-                                        Log.d("Migration", "✅ Updated waitingList for event: " + eventDoc.getId());
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        Log.e("Migration", "❌ Failed to update event: " + e.getMessage());
-                                    });
+                            eventDoc.getReference().update("waitingList", newWaitingList);
                         }
                     }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("Migration", "❌ Failed to fetch events: " + e.getMessage());
                 });
     }
 
@@ -696,66 +598,34 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                         String uid = snapshots.getDocuments().get(0).getString("uid");
                         if (uid != null && !uid.isEmpty()) {
                             newWaitingList.add(uid);
-                            Log.d("Migration", "✅ Migrated: " + deviceId + " → " + uid);
                         } else {
                             newWaitingList.add(deviceId);
-                            Log.d("Migration", "No UID found for: " + deviceId);
                         }
                     } else {
                         newWaitingList.add(deviceId);
-                        Log.d("Migration", "No credentials found for: " + deviceId);
                     }
-                })
-                .addOnFailureListener(e -> {
-                    newWaitingList.add(deviceId);
-                    Log.e("Migration", "Error finding UID for: " + deviceId);
                 });
     }
 
-    // ==================== MIGRATION METHOD 2: Add deviceId field to credentials ====================
-
     private void addDeviceIdToCredentials() {
-        Log.d("Migration", "Starting migration to add deviceId to credentials...");
-
         db.collection("credentials").get()
                 .addOnSuccessListener(snapshots -> {
                     for (QueryDocumentSnapshot credDoc : snapshots) {
-                        if (credDoc.contains("deviceId")) {
-                            Log.d("Migration", "deviceId already exists for: " + credDoc.getString("email"));
-                            continue;
-                        }
+                        if (credDoc.contains("deviceId")) continue;
 
                         String uid = credDoc.getString("uid");
-                        String email = credDoc.getString("email");
-
                         if (uid != null && !uid.isEmpty()) {
                             db.collection("users").document(uid).get()
                                     .addOnSuccessListener(userDoc -> {
                                         if (userDoc.exists()) {
                                             String deviceId = userDoc.getString("deviceId");
                                             if (deviceId != null && !deviceId.isEmpty()) {
-                                                credDoc.getReference().update("deviceId", deviceId)
-                                                        .addOnSuccessListener(aVoid -> {
-                                                            Log.d("Migration", "✅ Added deviceId to credentials for: " + email);
-                                                        })
-                                                        .addOnFailureListener(e -> {
-                                                            Log.e("Migration", "❌ Failed to add deviceId for: " + email);
-                                                        });
-                                            } else {
-                                                Log.d("Migration", "No deviceId found in user document for: " + email);
+                                                credDoc.getReference().update("deviceId", deviceId);
                                             }
-                                        } else {
-                                            Log.d("Migration", "User document not found for UID: " + uid);
                                         }
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        Log.e("Migration", "Failed to fetch user document for: " + uid);
                                     });
                         }
                     }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("Migration", "❌ Failed to fetch credentials: " + e.getMessage());
                 });
     }
 
@@ -780,7 +650,6 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             Event event = eventList.get(position);
             holder.tvName.setText(event.getName());
 
-            // Show role badge for co-organizers
             if ("co-organizer".equals(event.getUserRole())) {
                 holder.tvRole.setVisibility(View.VISIBLE);
                 holder.tvRole.setText("Co-organizer");
@@ -799,15 +668,12 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             int waitingCount = event.getWaitingList() != null ? event.getWaitingList().size() : 0;
             holder.tvWaitlist.setText(waitingCount + " waitlisted");
 
-            // HANDLE IMAGE DISPLAY IN THE LIST: URL vs BASE64
             if (event.getPosterUrl() != null && !event.getPosterUrl().isEmpty()) {
                 if (event.getPosterUrl().startsWith("http")) {
-                    // Legacy URL support
                     Picasso.get().load(event.getPosterUrl())
                             .placeholder(R.drawable.ic_placeholder)
                             .into(holder.ivImage);
                 } else {
-                    // Base64 Support
                     try {
                         byte[] decodedString = Base64.decode(event.getPosterUrl(), Base64.DEFAULT);
                         Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
@@ -831,7 +697,7 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                 holder.ivChevron.setOnClickListener(v -> {
                     Intent intent = new Intent(v.getContext(), EventDetailActivity.class);
                     intent.putExtra("eventId", event.getEventId());
-                    intent.putExtra("userRole", event.getUserRole()); // Pass role: organizer or co-organizer
+                    intent.putExtra("userRole", event.getUserRole());
                     v.getContext().startActivity(intent);
                 });
             }
