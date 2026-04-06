@@ -2,8 +2,7 @@
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/4aff5645-e876-4060-b4ce-fe4f8a9404ea" 
-       alt="App Design Animation" 
-       width="600"/>
+       alt="App Design Animation"/>
 </p>
 
 full demo video link - https://drive.google.com/drive/folders/19VsZlUG890pAXhSYkqBpkPsShjqNSp2s?usp=sharing
