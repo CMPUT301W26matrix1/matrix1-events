@@ -51,7 +51,7 @@
                 android:src="@drawable/ic_notification"
                 app:tint="@color/white" />
 
-            <!-- Red Dot -->
+            <!-- White Dot -->
             <View
                 android:layout_width="8dp"
                 android:layout_height="8dp"
@@ -59,7 +59,7 @@
                 android:layout_alignEnd="@id/btn_notifications"
                 android:layout_marginTop="2dp"
                 android:layout_marginEnd="2dp"
-                android:background="@drawable/badge_red_rounded" />
+                android:background="@drawable/badge_white_rounded" />
         </RelativeLayout>
     </RelativeLayout>
 
