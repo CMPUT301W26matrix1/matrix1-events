@@ -76,6 +76,14 @@ public class EntrantDashboardActivity extends AppCompatActivity {
             Log.d("Dashboard", "Got userId from SharedPreferences: " + userId);
         }
 
+        // If accessed from Admin Dashboard, we might need to use the fixed Admin ID
+        if (getIntent().getBooleanExtra("FROM_ADMIN", false)) {
+            // Check if we are currently logged in as admin (id = admin_global_id)
+            if ("admin_global_id".equals(userId)) {
+                Log.d("Dashboard", "Admin acting as Organizer - using admin_global_id");
+            }
+        }
+
         lotteryController = new LotteryController();
 
         initViews();

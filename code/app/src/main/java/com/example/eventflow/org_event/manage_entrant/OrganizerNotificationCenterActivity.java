@@ -1,6 +1,7 @@
 package com.example.eventflow.org_event.manage_entrant;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
@@ -38,7 +39,20 @@ public class OrganizerNotificationCenterActivity extends AppCompatActivity {
         setContentView(R.layout.activity_organizer_notification_center);
 
         db = FirebaseFirestore.getInstance();
-        userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        
+        // FIXED: Handle Admin login (where FirebaseAuth might be null)
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        } else {
+            SharedPreferences prefs = getSharedPreferences("eventflow_prefs", MODE_PRIVATE);
+            userId = prefs.getString("userUid", "");
+        }
+
+        if (userId == null || userId.isEmpty()) {
+            Toast.makeText(this, "User ID not found. Please log in again.", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
 
         // Get the selected event ID from intent
         eventId = getIntent().getStringExtra("eventId");
