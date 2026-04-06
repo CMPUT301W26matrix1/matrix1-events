@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212">
+    android:background="#000000">
 
     <!-- Header -->
     <RelativeLayout
@@ -67,29 +67,6 @@
                         android:src="@drawable/ic_profile_placeholder"
                         android:contentDescription="Profile Picture" />
                 </androidx.cardview.widget.CardView>
-
-                <!-- Camera Icon for Changing Profile Picture -->
-                <androidx.cardview.widget.CardView
-                    android:id="@+id/cv_change_photo"
-                    android:layout_width="42dp"
-                    android:layout_height="42dp"
-                    android:layout_alignBottom="@id/cv_edit_avatar"
-                    android:layout_alignEnd="@id/cv_edit_avatar"
-                    android:layout_marginBottom="10dp"
-                    android:layout_marginEnd="10dp"
-                    app:cardBackgroundColor="#000000"
-                    app:cardCornerRadius="21dp"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_gravity="center"
-                        android:src="@android:drawable/ic_menu_camera"
-                        android:contentDescription="Change Picture"
-                        app:tint="#999999" />
-                </androidx.cardview.widget.CardView>
             </RelativeLayout>
 
             <!-- Name Field -->
@@ -107,10 +84,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
                 android:layout_marginTop="8dp"
-                android:background="@drawable/bg_profile_input"
+                android:background="@drawable/search_bar_rounded_bg"
                 android:hint="Full Name"
                 android:inputType="textPersonName"
-                android:paddingHorizontal="16dp"
+                android:paddingHorizontal="20dp"
                 android:textColor="#FFFFFF"
                 android:textColorHint="#666666"
                 android:textSize="16sp" />
@@ -130,10 +107,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
                 android:layout_marginTop="8dp"
-                android:background="@drawable/bg_profile_input"
+                android:background="@drawable/search_bar_rounded_bg"
                 android:hint="Email Address"
                 android:inputType="textEmailAddress"
-                android:paddingHorizontal="16dp"
+                android:paddingHorizontal="20dp"
                 android:textColor="#FFFFFF"
                 android:textColorHint="#666666"
                 android:textSize="16sp" />
@@ -152,7 +129,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
                 android:layout_marginTop="8dp"
-                android:background="@drawable/bg_profile_input">
+                android:background="@drawable/search_bar_rounded_bg">
 
                 <EditText
                     android:id="@+id/etEditDOB"
@@ -162,7 +139,7 @@
                     android:focusable="false"
                     android:hint="Select DOB"
                     android:inputType="none"
-                    android:paddingHorizontal="16dp"
+                    android:paddingHorizontal="20dp"
                     android:textColor="#FFFFFF"
                     android:textColorHint="#666666"
                     android:textSize="16sp" />
@@ -193,9 +170,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
                 android:layout_marginTop="8dp"
-                android:background="@drawable/bg_profile_input"
+                android:background="@drawable/search_bar_rounded_bg"
                 android:gravity="center_vertical"
-                android:paddingHorizontal="16dp"
+                android:paddingHorizontal="20dp"
                 android:text="Loading..."
                 android:textColor="#FFFFFF"
                 android:textSize="16sp" />
