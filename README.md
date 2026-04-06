@@ -10,6 +10,22 @@ This is the repository for the group project for team `matrix1` in CMPUT 301 at 
 
 The project, an Android app, is an event lottery system that allows users to join a waitlist for events and be selected by lottery to join. Organizers can create and manage events for others to sign up.
 
+
+Key-Features
+Smart Pooling System: Automatically manage event interest by pulling selected entrants from a live waiting list. Organizers can run lotteries or manually choose participants with ease.
+
+QR Code Event Access: Entrants can instantly access event pages by scanning a QR code — view details, join waiting lists, and stay connected without manual searching.
+
+Real-Time Firebase Sync: All event data, attendee updates, notifications, and check-ins stay synced across devices in real time through Firebase integration.
+
+Role-Based User Experience: Entrants, Organizers, and Admins each get a tailored interface and permissions designed specifically for their role within the app.
+
+Event Poster Uploads: Organizers can upload custom event posters to make their event pages more engaging and visually distinct.
+
+Optional Geolocation Verification: When enabled by organizers, entrants’ join locations are captured from the device to verify authenticity and support location-based event rules.
+
+Dedicated Organizer Map Console: A specialized map interface available exclusively to event creators. Organizers can set, validate, and manage precise event coordinates using an integrated place-picker, ensuring accurate location data for geolocation rules and event logistics.
+
 See the project [Wiki](https://github.com/CMPUT301W26matrix1/matrix1-events/wiki) for more information.
 
 ## Technologies
