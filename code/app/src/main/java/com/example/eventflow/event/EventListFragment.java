@@ -1,6 +1,8 @@
 package com.example.eventflow.event;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.Editable;
@@ -94,7 +96,16 @@ public class EventListFragment extends Fragment {
         );
 
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
-        uid = (mAuth.getCurrentUser() != null) ? mAuth.getCurrentUser().getUid() : deviceId;
+        
+        // CONSISTENT UID LOGIC: Auth -> Prefs -> DeviceID
+        if (mAuth.getCurrentUser() != null) {
+            uid = mAuth.getCurrentUser().getUid();
+        } else {
+            SharedPreferences prefs = requireContext().getSharedPreferences("eventflow_prefs", Context.MODE_PRIVATE);
+            uid = prefs.getString("userUid", deviceId);
+        }
+
+        Log.d("EventList", "Using UID: " + uid);
 
         eventController = new EventController(uid);
         profileRepository = new ProfileRepository();
@@ -159,7 +170,7 @@ public class EventListFragment extends Fragment {
         // Notification button
         view.findViewById(R.id.btn_notifications).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), NotificationsActivity.class);
-            intent.putExtra("userId", deviceId);
+            intent.putExtra("userId", uid); // Changed to uid for consistency
             startActivity(intent);
         });
 
@@ -261,7 +272,9 @@ public class EventListFragment extends Fragment {
 
     private void loadProfileAndEvents() {
         if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
-        profileRepository.getProfileByDeviceId(deviceId, new ProfileRepository.LoadProfileCallback() {
+        
+        // Use uid instead of deviceId for profile lookup
+        profileRepository.getProfileByDeviceId(uid, new ProfileRepository.LoadProfileCallback() {
             @Override
             public void onSuccess(@NonNull Profile profile) {
                 currentProfile = profile;
