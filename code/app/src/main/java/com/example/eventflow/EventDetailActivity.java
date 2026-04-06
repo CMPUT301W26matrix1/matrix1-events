@@ -386,7 +386,7 @@ public class EventDetailActivity extends AppCompatActivity {
         participation.put("eventName", event.getName());
         participation.put("eventDate", dateString);
         participation.put("eventLocation", event.getLocation());
-        participation.put("posterUrl", event.getPosterUrl()); // FIX: Save poster URL when joining
+        participation.put("posterUrl", event.getPosterUrl());
         participation.put("status", status);
         participation.put("joinedAt", FieldValue.serverTimestamp());
         participation.put("userId", uid);
@@ -424,9 +424,14 @@ public class EventDetailActivity extends AppCompatActivity {
         eventController.joinWaitingList(currentEvent, new EventRepository.ActionCallback() {
             @Override
             public void onSuccess() {
+                // US 02.01.01 — Inform user of queue position
+                int currentCount = currentEvent.getWaitingList() != null ? currentEvent.getWaitingList().size() : 0;
+                int position = currentCount + 1;
+                
                 saveToUserJoinedEvents(currentEvent, "Waiting");
+                
                 Toast.makeText(EventDetailActivity.this,
-                        "✅ Joined waiting list! You'll be notified if selected.",
+                        "✅ Joined waiting list! You are entrant #" + position + " in line.",
                         Toast.LENGTH_LONG).show();
             }
             @Override public void onFailure(Exception e) {
