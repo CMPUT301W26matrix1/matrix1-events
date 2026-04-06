@@ -55,7 +55,14 @@ public class BrowseEventsActivity extends AppCompatActivity {
             bottomNav.setOnItemSelectedListener(item -> {
                 int id = item.getItemId();
                 if (id == R.id.nav_home) {
-                    startActivity(new Intent(this, RoleSelectionActivity.class));
+                    boolean fromAdmin = getIntent().getBooleanExtra("FROM_ADMIN", false);
+                    if (fromAdmin) {
+                        Intent intent = new Intent(this, AdminDashboardActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                        startActivity(intent);
+                    } else {
+                        startActivity(new Intent(this, RoleSelectionActivity.class));
+                    }
                     finish();
                     return true;
                 } else if (id == R.id.nav_profile) {
