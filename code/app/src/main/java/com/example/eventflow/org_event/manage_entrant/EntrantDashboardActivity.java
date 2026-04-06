@@ -31,11 +31,13 @@ import com.example.eventflow.model.entities.Event;
 import com.example.eventflow.org_event.OrgEventActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -112,8 +114,15 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         if (eventId != null && !eventId.isEmpty() && lotteryController != null) {
             lotteryController.checkAndAutoRejectExpiredSelections(eventId);
         }
-        // REMOVED: loadMyEvents() from here to prevent duplicate loading
-        // The events list will refresh when user clicks dashboard or selects an event
+        
+        // Refresh the events list and dashboard stats when returning to the activity
+        // This ensures new events created in OrgEventActivity are displayed immediately
+        loadMyEvents();
+        if (eventId != null) {
+            fetchEventDetails(eventId);
+        } else {
+            fetchLatestEvent();
+        }
     }
 
     private void initViews() {
@@ -229,16 +238,32 @@ public class EntrantDashboardActivity extends AppCompatActivity {
         // First check events where user is organizer
         db.collection("events")
                 .whereEqualTo("organizerId", userId)
-                .limit(1)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     Log.d("Dashboard", "fetchLatestEvent results: " + queryDocumentSnapshots.size());
                     if (!queryDocumentSnapshots.isEmpty()) {
-                        Event event = queryDocumentSnapshots.getDocuments().get(0).toObject(Event.class);
-                        if (event != null) {
-                            event.setEventId(queryDocumentSnapshots.getDocuments().get(0).getId());
-                            updateUI(event);
-                            fetchStatsFromEvent(event.getEventId());
+                        // Find latest event by createdAt or eventDate manually to avoid index requirement
+                        Event latestEvent = null;
+                        for (var doc : queryDocumentSnapshots) {
+                            Event event = doc.toObject(Event.class);
+                            if (event != null) {
+                                event.setEventId(doc.getId());
+                                if (latestEvent == null) {
+                                    latestEvent = event;
+                                } else {
+                                    // Fallback to eventDate if createdAt is missing
+                                    if (event.getEventDate() != null && latestEvent.getEventDate() != null) {
+                                        if (event.getEventDate().compareTo(latestEvent.getEventDate()) > 0) {
+                                            latestEvent = event;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (latestEvent != null) {
+                            updateUI(latestEvent);
+                            fetchStatsFromEvent(latestEvent.getEventId());
                         }
                     } else {
                         // If no organizer events, check co-organizer events
@@ -467,12 +492,20 @@ public class EntrantDashboardActivity extends AppCompatActivity {
                                     }
                                 }
 
+                                // Sort events in memory to avoid needing a Firestore composite index
+                                Collections.sort(myEvents, (e1, e2) -> {
+                                    if (e1.getEventDate() != null && e2.getEventDate() != null) {
+                                        return e2.getEventDate().compareTo(e1.getEventDate());
+                                    }
+                                    return 0;
+                                });
+
                                 if (organizerAdapter != null) {
                                     organizerAdapter.notifyDataSetChanged();
                                 }
                                 Log.d("Dashboard", "Total events (organizer + co-organizer): " + myEvents.size());
 
-                                // Also update the top stats if no event selected and we have co-organizer events
+                                // Also update the top stats if no event selected and we have events
                                 if (eventId == null && !myEvents.isEmpty()) {
                                     Event firstEvent = myEvents.get(0);
                                     updateUI(firstEvent);
@@ -759,6 +792,8 @@ public class EntrantDashboardActivity extends AppCompatActivity {
 
             if (event.getEventDate() != null) {
                 holder.tvDate.setText(sdf.format(event.getEventDate().toDate()));
+            } else {
+                holder.tvDate.setText("No date set");
             }
 
             int waitingCount = event.getWaitingList() != null ? event.getWaitingList().size() : 0;
